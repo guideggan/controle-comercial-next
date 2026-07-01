@@ -15,25 +15,25 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Plan:** 4
 **Total Plans in Phase:** 5
 **Status:** Ready to execute
-**Progress:** [██████░░░░] 60%
+**Progress:** [████████░░] 80%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 01-03 executado (login + rota protegida /painel com guard server-side; checkpoint humano aprovado)
+**Last Activity Description:** Plano 01-05 executado fora de ordem (depende só de 01/02): CRUD de produto/tier, seed do admin inicial (executado contra o Neon real, admin verificado e login confirmado) e config de deploy Render + README. Plano 01-04 (gestão de colaboradores, AUTH-05) ainda PENDENTE.
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 25 min
-- Total execution time: 1.25 hours
+- Total plans completed: 4
+- Average duration: 23.75 min
+- Total execution time: 1.58 hours
 
 **By Phase:**
 
 | Phase | Plans | Total (min) | Avg/Plan (min) |
 |-------|-------|-------|----------|
-| 01 | 3 | 75 | 25 |
+| 01 | 4 | 95 | 23.75 |
 
 **Recent Trend:**
-- Last 5 plans: 55min (01-01), 5min (01-02), 15min (01-03)
+- Last 5 plans: 55min (01-01), 5min (01-02), 15min (01-03), 20min (01-05)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -54,10 +54,11 @@ Recent decisions affecting current work:
 - [Phase 01]: Papel reexportado do @prisma/client em vez de union duplicado em session.ts (fonte unica do enum e prisma/schema.prisma)
 - [Phase 01]: Login feito pelo authClient (client) via signIn.email; guard real de autorização sempre em requireUser no server component do layout, middleware só faz redirect-if-logged-out (UX, CVE-2025-29927)
 - [Phase 01]: Better Auth additionalFields obrigatórios (required:true, input:false) precisam de defaultValue, senão auth.api.signUpEmail lança MISSING_FIELD mesmo server-side; defaultValue role=SDR aplicado (menor privilégio)
+- [Phase 01]: Scripts tsx standalone que importam algo de src/server/ (que tem "import server-only" na cadeia) precisam da flag `--conditions=react-server` para não lançar o erro proposital do pacote server-only fora do bundler do Next (usado em prisma/seed.ts)
 
 ### Pending Todos
 
-None yet.
+- Executar o plano 01-04 (gestão admin de contas: criar/desativar/redefinir senha colaborador, AUTH-05) — pulado nesta sessão porque o plano 01-05 só depende de 01/02 e foi solicitado primeiro; 01-04 não tem dependência de 01-05 e pode ser executado a qualquer momento antes de fechar a Fase 1.
 
 ### Blockers/Concerns
 
@@ -66,6 +67,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T15:07:47.509Z
-**Stopped At:** Completed 01-03-PLAN.md
+**Last session:** 2026-07-01T15:24:07.347Z
+**Stopped At:** Completed 01-05-PLAN.md (01-04 ainda pendente)
 **Resume File:** None

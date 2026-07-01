@@ -23,7 +23,7 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 - [ ] **COLAB-04**: Admin define plano de comissão no formato fixo + variável (valor garantido + % por cima)
 - [ ] **COLAB-05**: Admin define plano de comissão de SDR/SS por quantidade de calls (agendamentos) realizadas
 - [ ] **COLAB-06**: Plano de comissão é versionado por vigência (início/fim), de forma que mudanças não reescrevem o histórico já apurado
-- [ ] **COLAB-07**: Admin cadastra e edita produtos/tiers (START/PRO/MASTER/PADRÃO/Elite) usados nas vendas
+- [x] **COLAB-07**: Admin cadastra e edita produtos/tiers (START/PRO/MASTER/PADRÃO/Elite) usados nas vendas
 
 ### Vendas e Parcelas (VENDA)
 
@@ -129,7 +129,7 @@ Explicitamente excluído para evitar aumento de escopo.
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
 | AUTH-05 | Phase 1 | Pending |
-| COLAB-07 | Phase 1 | Pending |
+| COLAB-07 | Phase 1 | Complete |
 | COLAB-01 | Phase 2 | Pending |
 | COLAB-02 | Phase 2 | Pending |
 | COLAB-03 | Phase 2 | Pending |
