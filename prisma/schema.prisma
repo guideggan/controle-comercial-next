@@ -42,6 +42,36 @@ enum PlanoTipo {
 }
 
 // ============================================================
+// ENUMS DA FASE 3 — venda e parcela
+// ============================================================
+
+enum Plataforma {
+  ASAAS
+  PAGARME
+  INTER
+  GURU
+  OUTRO
+}
+
+enum TipoPagamento {
+  A_VISTA
+  MENSALISTA
+}
+
+enum ParcelaTipo {
+  ENTRADA
+  MENSALIDADE
+  AVISTA
+}
+
+// PENDENTE/PAGO são usados a partir da Fase 4 (marcar como recebido); aqui
+// na Fase 3 toda parcela nasce PENDENTE.
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+}
+
+// ============================================================
 // TABELAS GERENCIADAS PELO BETTER AUTH (auth: login, sessão, verificação)
 // Shape conforme better-auth.com/docs/concepts/database para better-auth@1.6.23
 // (Prisma adapter). Colunas adicionais (role/colaboradorId) configuradas via
@@ -141,9 +171,10 @@ model Colaborador {
 
   planosComissao PlanoComissao[]
 
+  vendasComoCloser Venda[] @relation("VendaCloser")
+  vendasComoSdr    Venda[] @relation("VendaSdr")
+
   // Fases futuras conectam aqui sem alterar o shape desta tabela:
-  // vendasComoCloser Venda[] @relation("closer")
-  // vendasComoSdr    Venda[] @relation("sdr")
   // metas Meta[]
   // agendamentos Agendamento[]
 
@@ -172,15 +203,15 @@ model Colaborador {
 //   por_calls:                { valorPorCall: number }
 //     ex.: { "valorPorCall": 15.00 }
 model PlanoComissao {
-  id             String    @id @default(cuid())
+  id             String      @id @default(cuid())
   colaboradorId  String
   colaborador    Colaborador @relation(fields: [colaboradorId], references: [id])
   tipo           PlanoTipo
   config         Json
-  vigenciaInicio DateTime  @db.Date
-  vigenciaFim    DateTime? @db.Date
-  createdAt      DateTime  @default(now()) @db.Timestamptz
-  updatedAt      DateTime  @updatedAt @db.Timestamptz
+  vigenciaInicio DateTime    @db.Date
+  vigenciaFim    DateTime?   @db.Date
+  createdAt      DateTime    @default(now()) @db.Timestamptz
+  updatedAt      DateTime    @updatedAt @db.Timestamptz
 
   // Índice único parcial (garante um único plano aberto por colaborador) é
   // criado via SQL bruto na migração — Prisma não suporta índice parcial
@@ -196,5 +227,92 @@ model Produto {
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
+  vendas Venda[]
+
   @@map("produto")
+}
+
+// ============================================================
+// FASE 3 — venda e parcela (formulário único de venda)
+// ============================================================
+// Venda é a linha lançada uma única vez pelo gestor/closer (VENDA-01);
+// Parcela é o cronograma gerado a partir dela (VENDA-02/VENDA-03), calculado
+// pelo módulo puro src/domain/vendas/parcelas.ts (Fase 03-01).
+//
+// `fechado` é um placeholder da trava de edição da Fase 5 (apuração
+// fechada bloqueia edição da venda) — nasce sempre false nesta fase.
+
+model Venda {
+  id String @id @default(cuid())
+
+  dataVenda DateTime @db.Date
+
+  alunoNome   String
+  pagadorNome String
+
+  plataforma Plataforma
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+
+  tipoPagamento TipoPagamento
+
+  valorTotal       Decimal @db.Decimal(14, 2) // TCV — NUNCA usado para cálculo de comissão
+  entrada          Decimal @default(0) @db.Decimal(14, 2)
+  valorMensalidade Decimal @default(0) @db.Decimal(14, 2)
+  numeroParcelas   Int     @default(1)
+  diaVencimento    Int // âncora 1..31 — validação de faixa é responsabilidade do Zod (Pitfall 7)
+
+  mesReferencia DateTime @db.Date // 1º dia do mês inicial (competência da venda) — campo próprio, nunca derivado de dataVenda (Pitfall 2)
+
+  closerId String
+  closer   Colaborador @relation("VendaCloser", fields: [closerId], references: [id])
+
+  sdrId String?
+  sdr   Colaborador? @relation("VendaSdr", fields: [sdrId], references: [id])
+
+  observacao String?
+
+  fechado Boolean @default(false) // placeholder da trava de edição (Fase 5 integra com a apuração fechada)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  parcelas Parcela[]
+
+  @@index([closerId])
+  @@index([sdrId])
+  @@index([mesReferencia])
+  @@map("venda")
+}
+
+// Colunas de recebimento (statusPagamento/valorRecebido/dataPagamento) já
+// existem a partir desta migração, mas a lógica de marcar-pago pertence à
+// Fase 4 — nesta fase toda parcela nasce PENDENTE com valorRecebido e
+// dataPagamento null, evitando uma migração de tipo depois.
+model Parcela {
+  id String @id @default(cuid())
+
+  vendaId String
+  venda   Venda  @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+
+  tipo   ParcelaTipo
+  numero Int // 0 para ENTRADA/AVISTA; 1..N para MENSALIDADE
+
+  mesReferencia  DateTime @db.Date // competência (1º dia do mês)
+  dataVencimento DateTime @db.Date // já ancorada/clampada pelo domínio (03-01)
+
+  valorPrevisto Decimal @db.Decimal(14, 2)
+
+  statusPagamento StatusPagamento @default(PENDENTE)
+  valorRecebido   Decimal?        @db.Decimal(14, 2) // null até pago (Fase 4)
+  dataPagamento   DateTime?       @db.Date // null até pago (Fase 4)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([vendaId, tipo, numero])
+  @@index([mesReferencia])
+  @@index([statusPagamento])
+  @@map("parcela")
 }
