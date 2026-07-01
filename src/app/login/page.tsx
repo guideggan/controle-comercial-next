@@ -22,18 +22,30 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-1 items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Entrar</CardTitle>
-          <CardDescription>
-            Acesse com seu e-mail e senha cadastrados.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LoginForm />
-        </CardContent>
-      </Card>
+    <div className="flex min-h-full flex-1 items-center justify-center bg-muted/40 px-4 py-12">
+      <div className="flex w-full max-w-sm flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-2">
+          <span className="flex size-12 items-center justify-center rounded-full bg-primary text-sm font-bold tracking-tight text-primary-foreground">
+            NEXT
+          </span>
+          <div className="text-center">
+            <p className="text-sm font-semibold">Controle Comercial</p>
+            <p className="text-xs text-muted-foreground">NEXT Ecommerce</p>
+          </div>
+        </div>
+
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Entrar</CardTitle>
+            <CardDescription>
+              Acesse com seu e-mail e senha cadastrados.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LoginForm />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
