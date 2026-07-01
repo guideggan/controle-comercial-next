@@ -35,9 +35,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Admin/Gestor acessa todas as telas e todos os dados sem restrição
   4. Admin cria uma conta de colaborador, desativa uma conta e redefine senha
   5. Admin cadastra e edita produtos/tiers (START/PRO/MASTER/PADRÃO/Elite) que ficam disponíveis para uso em vendas
-**Plans**: 1/5 plans executed
+**Plans**: 2/5 plans executed
 - [x] 01-01-PLAN.md — Scaffold Next.js + Prisma 6 schema base + instância Better Auth (AUTH-01, AUTH-02)
-- [ ] 01-02-PLAN.md — DAL authz guards (requireUser/requireRole/requireSelfOrAdmin) via TDD, com teste "manipulated request" (AUTH-03, AUTH-04)
+- [x] 01-02-PLAN.md — DAL authz guards (requireUser/requireRole/requireSelfOrAdmin) via TDD, com teste "manipulated request" (AUTH-03, AUTH-04)
 - [ ] 01-03-PLAN.md — Tela de login + rota protegida /painel com guard server-side (AUTH-01..04)
 - [ ] 01-04-PLAN.md — Gestão admin de contas: criar/desativar/redefinir senha (AUTH-05)
 - [ ] 01-05-PLAN.md — Produto CRUD + seed do admin + config de deploy Render (COLAB-07)
@@ -153,7 +153,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundação — Auth, Papéis e Base | 1/5 | In Progress | - |
+| 1. Fundação — Auth, Papéis e Base | 2/5 | In Progress | - |
 | 2. Colaboradores e Planos de Comissão | 0/TBD | Not started | - |
 | 3. Vendas e Parcelas | 0/TBD | Not started | - |
 | 4. Recebimentos | 0/TBD | Not started | - |

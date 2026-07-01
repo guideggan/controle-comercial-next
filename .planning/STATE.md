@@ -12,28 +12,28 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Phase:** 1
 **Current Phase Name:** fundacao-auth-papeis-e-base
 **Total Phases:** 10
-**Current Plan:** 2
+**Current Plan:** 3
 **Total Plans in Phase:** 5
 **Status:** Ready to execute
-**Progress:** [██░░░░░░░░] 20%
+**Progress:** [████░░░░░░] 40%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 01-01 executado (scaffold, schema Prisma, Better Auth)
+**Last Activity Description:** Plano 01-02 executado (DAL authz guards via TDD: requireUser/requireRole/requireSelfOrAdmin)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 55 min
-- Total execution time: 0.9 hours
+- Total plans completed: 2
+- Average duration: 30 min
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total (min) | Avg/Plan (min) |
 |-------|-------|-------|----------|
-| 01 | 1 | 55 | 55 |
+| 01 | 2 | 60 | 30 |
 
 **Recent Trend:**
-- Last 5 plans: 55min (01-01)
+- Last 5 plans: 55min (01-01), 5min (01-02)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -51,6 +51,7 @@ Recent decisions affecting current work:
 - [Phase 01]: Prisma 6.19.3 classico (sem prisma.config.ts, sem driver adapter) confirmado funcional com Next.js 16 + Turbopack; prisma init do 6.19.3 gera por padrao o setup do Prisma 7 e precisou ser revertido manualmente
 - [Phase 01]: Schema Better Auth (User/Session/Account/Verification) validado via npx @better-auth/cli generate contra better-auth@1.6.23 real, nao apenas copiado do research
 - [Phase 01]: shadcn/ui style base-nova usa Base UI (nao Radix); form.tsx adaptado manualmente pois o registry oficial ainda nao publica esse componente para o style base-nova
+- [Phase 01]: Papel reexportado do @prisma/client em vez de union duplicado em session.ts (fonte unica do enum e prisma/schema.prisma)
 
 ### Pending Todos
 
@@ -64,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T14:08:42.105Z
-**Stopped At:** Completed 01-01-PLAN.md
+**Last session:** 2026-07-01T14:19:44.142Z
+**Stopped At:** Completed 01-02-PLAN.md
 **Resume File:** None
