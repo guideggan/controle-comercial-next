@@ -13,6 +13,7 @@ O sistema nasce de dentro para fora: primeiro trava as decisões que não podem 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Fundação — Auth, Papéis e Base** - Login funcional, papéis aplicados no servidor e decisões de dinheiro/data travadas
+- [ ] **Phase 1.1: Fundação de Design (UI shell)** - INSERTED - App shell (sidebar agrupada + topbar + cards + gráficos) espelhando o DRE Consolidado; corrige bugs de estilo e reestiliza as telas da Fase 1
 - [ ] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
 - [ ] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
 - [ ] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
