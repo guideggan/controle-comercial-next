@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Fundação — Auth, Papéis e Base** - Login funcional, papéis aplicados no servidor e decisões de dinheiro/data travadas
 - [x] **Phase 1.1: Fundação de Design (UI shell)** - INSERTED - App shell (sidebar agrupada + topbar + cards + gráficos) espelhando o DRE Consolidado; corrige bugs de estilo e reestiliza as telas da Fase 1
-- [ ] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
+- [x] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
 - [ ] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
 - [ ] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
 - [ ] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
@@ -75,10 +75,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Admin configura um plano fixo + variável para outro colaborador
   5. Admin configura um plano por quantidade de calls realizadas para um SDR/SS
   6. Ao mudar o plano de um colaborador no meio do mês, a apuração de meses anteriores não é reescrita (nova vigência criada, histórico intacto)
-**Plans**: 3 plans
+**Plans**: 3/3 plans executed
 - [x] 02-01-PLAN.md — Migração plano_comissao (JSONB versionado) + schemas Zod dos 4 formatos + edição de colaborador (COLAB-01)
-- [ ] 02-02-PLAN.md — Serviço de versionamento de plano (fecha vigência anterior + abre nova, transacional) via TDD (COLAB-02..06)
-- [ ] 02-03-PLAN.md — UI: página de detalhe do colaborador, form dinâmico dos 4 formatos, histórico de vigência + checkpoint humano (COLAB-01..06)
+- [x] 02-02-PLAN.md — Serviço de versionamento de plano (fecha vigência anterior + abre nova, transacional) via TDD (COLAB-02..06)
+- [x] 02-03-PLAN.md — UI: página de detalhe do colaborador, form dinâmico dos 4 formatos, histórico de vigência + checkpoint humano (COLAB-01..06)
+
+**Fase 2 encerrada** (2026-07-01): todos os 3 planos executados, todos os requisitos (COLAB-01..06) completos e verificados via UI real com sessão ADMIN — os 4 formatos de plano configuram e exibem corretamente, e trocar de plano preserva o histórico de vigência (checkpoint humano aprovado pelo usuário).
 
 ### Phase 3: Vendas e Parcelas
 **Goal**: O admin registra uma venda em um único formulário e o sistema gera automaticamente o cronograma de parcelas, sem drift de data em meses curtos.
@@ -180,7 +182,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Fundação — Auth, Papéis e Base | 5/5 | Complete | 2026-07-01 |
 | 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
-| 2. Colaboradores e Planos de Comissão | 2/3 | In progress | - |
+| 2. Colaboradores e Planos de Comissão | 3/3 | Complete | 2026-07-01 |
 | 3. Vendas e Parcelas | 0/TBD | Not started | - |
 | 4. Recebimentos | 0/TBD | Not started | - |
 | 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |

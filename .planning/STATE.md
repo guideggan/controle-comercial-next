@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 2 — Colaboradores e Planos de Comissão (em andamento)
+**Current focus:** Phase 3 — Vendas e Parcelas (não iniciada)
 
 ## Current Position
 
-**Current Phase:** 02
-**Current Phase Name:** colaboradores-e-planos-de-comissao
+**Current Phase:** 03
+**Current Phase Name:** vendas-e-parcelas
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 3
-**Total Plans in Phase:** 3
-**Status:** In progress
-**Progress:** [██████----] 67%
+**Current Plan:** 0
+**Total Plans in Phase:** TBD
+**Status:** Not started
+**Progress:** [███-------] 30%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 02-02 executado: service `definirPlanoComissao` transacional (COLAB-06) que fecha a vigência do plano anterior e abre uma nova linha na mesma db.$transaction, validando a config JSONB contra o tipo (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls — COLAB-02..05) antes de qualquer escrita; repositório plano-comissao.repo.ts e 11 testes cobrindo primeiro plano, troca de plano, invariante de 1-aberto e validação por tipo.
+**Last Activity Description:** Fase 2 encerrada (3/3 planos): plano 02-03 entregou a UI admin — server action `definirPlanoComissaoAction` (gated ADMIN), página de detalhe do colaborador com dados/plano vigente/histórico, form dinâmico dos 4 formatos de plano (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls), edição de colaborador e link da listagem; checkpoint humano aprovado pelo usuário confirmando os 4 formatos e que a troca de plano preserva o histórico (COLAB-06). Todos os requisitos COLAB-01..06 completos. Configuração de fluxo alterada para modo autônomo (yolo) a partir daqui — checkpoints de verificação humana são auto-aprovados salvo auth gates. Próximo: Fase 3 (Vendas e Parcelas).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 23 min
-- Total execution time: 3.08 hours
+- Total plans completed: 9
+- Average duration: 24 min
+- Total execution time: 3.63 hours
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 |-------|-------|-------|----------|
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
-| 02 | 2 | 35 | 17.5 |
+| 02 | 3 | 70 | 23.3 |
 
 **Recent Trend:**
-- Last 5 plans: 20min (02-01), 15min (02-02), 20min (01-05), 25min (01-04), 30min (01.1)
+- Last 5 plans: 35min (02-03), 20min (02-01), 15min (02-02), 20min (01-05), 25min (01-04)
 - Trend: Stable
 
 **Plan Metrics:**
@@ -44,6 +44,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 |------|-----------------|-------|-------|
 | Phase 02 P01 | 20 | 3 tasks | 6 files |
 | Phase 02 P02 | 15 | 1 task (TDD) | 3 files |
+| Phase 02 P03 | 35 | 3 tasks (2 auto + 1 checkpoint) | 7 files |
 
 *Updated after each plan completion*
 
@@ -75,10 +76,13 @@ Recent decisions affecting current work:
 - [Phase 02-01]: `editarColaborador` sincroniza name/role do User vinculado ao salvar, mantendo sessão logada e listagem de colaboradores coerentes
 - [Phase 02-02]: `vigenciaFim` do plano fechado = `vigenciaInicio` do novo plano menos 1 dia (evita sobreposição e buraco, satisfaz o CHECK `vigenciaFim > vigenciaInicio` do banco); calculado por helper `diaAnterior` timezone-safe (Date.UTC + getUTC*, nunca Date local — Pitfall 6)
 - [Phase 02-02]: `getPlanoVigente` é lido FORA do callback de `db.$transaction` (decisão de fechar-ou-não já resolvida antes de escrever); `fecharVigencia`/`criarPlanoRow` recebem `tx` e rodam DENTRO da mesma transação, sempre fechando antes de criar, para nunca violar o índice único parcial do banco
+- [Phase 02-03]: Percentual é digitado pelo admin como número inteiro/decimal em % (ex. "3" para 3%) na UI e convertido para fração (0.03) só no onSubmit do form, mantendo a config no banco como number puro e consistente com `formatarPercentual`
+- [Phase 02-03]: `plano-form.tsx` reusa o mesmo Dialog para "definir" (sem plano vigente) e "trocar" (com plano vigente), variando apenas o título — evita duplicar o form dinâmico dos 4 formatos
+- [Config]: Fluxo de execução alterado para modo autônomo (yolo/auto_advance) a partir do fim da Fase 2 — checkpoints de verificação humana passam a ser auto-aprovados (auth gates continuam parando normalmente)
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: planos 02-01 e 02-02 completos (fundação de dados + versionamento de plano de comissão, COLAB-01..06); resta o plano 02-03 (tela de detalhe/edição do colaborador, consumindo definirPlanoComissao).
+Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Próximo: iniciar planejamento da Fase 3 (Vendas e Parcelas).
 
 ### Blockers/Concerns
 
@@ -88,6 +92,6 @@ Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requi
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T20:08:00Z
-**Stopped At:** Completed 02-02-PLAN.md (service definirPlanoComissao: versionamento transacional de plano de comissão, COLAB-02..06)
+**Last session:** 2026-07-01T23:12:12.069Z
+**Stopped At:** Completed 02-03-PLAN.md — Fase 2 encerrada (3/3 planos, COLAB-01..06 completos, checkpoint humano aprovado). Próximo: planejar Fase 3 (Vendas e Parcelas).
 **Resume File:** None
