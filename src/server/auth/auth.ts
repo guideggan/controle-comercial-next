@@ -27,6 +27,14 @@ export const auth = betterAuth({
         type: "string",
         required: true,
         input: false,
+        // defaultValue obrigatório: Better Auth lança MISSING_FIELD em
+        // qualquer signUpEmail (mesmo chamado server-side) se um campo é
+        // required + input:false sem defaultValue (ver parseInputData em
+        // better-auth/dist/db/schema). "SDR" é o papel de menor privilégio
+        // do enum Papel — signup público nunca deve resultar em ADMIN;
+        // plano 04 (Admin cria colaborador) troca o role explicitamente
+        // via server action após a criação.
+        defaultValue: "SDR",
       },
       colaboradorId: {
         type: "string",
