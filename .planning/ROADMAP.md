@@ -92,10 +92,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Uma venda com dia de vencimento 31 mantém o dia de vencimento ancorado ao longo de meses de 28/29/30 dias, sem escorregar permanentemente
   4. Admin edita uma venda e suas parcelas, e a edição é bloqueada ou avisada quando o mês já foi fechado
   5. Admin busca e lista vendas filtrando por aluno, closer, produto, status e mês de referência
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 - [x] 03-01-PLAN.md — (TDD) módulo de domínio puro: cronograma de parcelas + dia de vencimento ancorado sem drift (VENDA-03, VENDA-02)
 - [x] 03-02-PLAN.md — migração Prisma: models Venda + Parcela + enums (com colunas de recebimento da Fase 4 e flag `fechado`) (VENDA-01, VENDA-02, VENDA-04)
-- [ ] 03-03-PLAN.md — camada servidor: schema Zod + repo + service transacional (venda+parcelas) + actions gated ADMIN + trava de mês fechado (VENDA-01, VENDA-02, VENDA-04, VENDA-05)
+- [x] 03-03-PLAN.md — camada servidor: schema Zod + repo + service transacional (venda+parcelas) + actions gated ADMIN + trava de mês fechado (VENDA-01, VENDA-02, VENDA-04, VENDA-05)
 - [ ] 03-04-PLAN.md — UI admin: formulário único, lista com filtros, detalhe com parcelas, edição com guard + checkpoint humano (VENDA-01, VENDA-04, VENDA-05)
 
 ### Phase 4: Recebimentos

@@ -31,7 +31,7 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 - [x] **VENDA-02**: Ao salvar uma venda mensalista, o sistema gera automaticamente as parcelas mensais previstas (entrada + N mensalidades) de forma atômica com a venda
 - [x] **VENDA-03**: O dia de vencimento é ancorado, de modo que parcelas em meses curtos não escorregam permanentemente (31→30→29)
 - [x] **VENDA-04**: Admin edita/corrige uma venda e suas parcelas, com as devidas travas quando um mês já foi fechado
-- [ ] **VENDA-05**: Admin lista e busca vendas por aluno, closer, produto, status e mês de referência
+- [x] **VENDA-05**: Admin lista e busca vendas por aluno, closer, produto, status e mês de referência
 
 ### Recebimentos (PGTO)
 
@@ -140,7 +140,7 @@ Explicitamente excluído para evitar aumento de escopo.
 | VENDA-02 | Phase 3 | Complete |
 | VENDA-03 | Phase 3 | Complete |
 | VENDA-04 | Phase 3 | Complete |
-| VENDA-05 | Phase 3 | Pending |
+| VENDA-05 | Phase 3 | Complete |
 | PGTO-01 | Phase 4 | Pending |
 | PGTO-02 | Phase 4 | Pending |
 | PGTO-03 | Phase 4 | Pending |

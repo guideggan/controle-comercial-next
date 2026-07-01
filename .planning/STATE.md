@@ -12,19 +12,19 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Phase:** 03
 **Current Phase Name:** vendas-e-parcelas
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 2
+**Current Plan:** 4
 **Total Plans in Phase:** 4
 **Status:** In progress
-**Progress:** [█████████░] 92%
+**Progress:** [███████░░░] 75%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 03-02 completo: models `Venda` e `Parcela` (+ enums Plataforma/TipoPagamento/ParcelaTipo/StatusPagamento) adicionados ao Prisma schema e migração `add_venda_parcela` aplicada no Neon ao vivo. Todos os campos do formulário único (VENDA-01), relação venda→parcelas com cascade (VENDA-02) e flag `fechado` placeholder (VENDA-04) completos. Colunas de recebimento da Fase 4 já criadas (statusPagamento default PENDENTE, valorRecebido/dataPagamento nullable) para não exigir migração de tipo depois. `prisma migrate status` em dia, `tsc` limpo. Próximo: plano 03-03 (repository/service de venda consumindo o domínio do 03-01 e o schema do 03-02).
+**Last Activity Description:** Plano 03-03 completo: camada servidor da venda — `vendaSchema` (Zod, regras à vista/mensalista), `venda.repo.ts` (criar tx, inserirParcelas, apagarParcelasPendentes, getVenda, atualizarVendaRow, setVendaFechado, listarVendas com filtros), `venda.service.ts` (`criarVenda` transacional consumindo `gerarCronogramaParcelas` do 03-01, `atualizarVenda` com guard de venda fechada e regeneração de parcelas pendentes) e `vendas.actions.ts` (3 server actions gated `requireRole("ADMIN")`). 7 testes novos verdes, `tsc` limpo. Próximo: plano 03-04 (UI de formulário/listagem de venda).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 20.7 min
-- Total execution time: 3.8 hours
+- Total plans completed: 12
+- Average duration: 18.75 min
+- Total execution time: 3.9 hours
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
 | 02 | 3 | 70 | 23.3 |
-| 03 | 2 | 10 | 5 |
+| 03 | 3 | 16 | 5.3 |
 
 **Recent Trend:**
-- Last 5 plans: 8min (03-02), 2min (03-01), 35min (02-03), 20min (02-01), 15min (02-02)
-- Trend: Improving (schema/migration plan, no UI)
+- Last 5 plans: 6min (03-03), 8min (03-02), 2min (03-01), 35min (02-03), 20min (02-01)
+- Trend: Improving (server layer plans, no UI)
 
 **Plan Metrics:**
 
@@ -47,9 +47,10 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 02 P02 | 15 | 1 task (TDD) | 3 files |
 | Phase 02 P03 | 35 | 3 tasks (2 auto + 1 checkpoint) | 7 files |
 | Phase 03 P01 | 2 | 1 task (TDD) | 2 files |
+| Phase 03 P02 | 8 | 3 tasks | 2 files |
+| Phase 03 P03 | 6 | 3 tasks (2 auto + 1 TDD) | 5 files |
 
 *Updated after each plan completion*
-| Phase 03 P02 | 8 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -87,10 +88,13 @@ Recent decisions affecting current work:
 - [Phase 03-01]: `src/domain/vendas/parcelas.ts` estabelece o padrão de domain layer 100% puro (zero imports) para o restante da Fase 3, Fase 5 (motor) e Fase 10 (import de histórico)
 - [Phase 03-02]: mesReferencia mantido como campo próprio (não derivado) em Venda e Parcela, consistente com o Pitfall 2 do plano 03-01
 - [Phase 03-02]: Colunas de recebimento da Fase 4 (statusPagamento/valorRecebido/dataPagamento) e flag fechado da Fase 5 criadas antecipadamente na migração de Venda/Parcela para nunca exigir migração de tipo depois
+- [Phase 03-03]: `atualizarVenda` sempre regenera o cronograma (apaga parcelas PENDENTES + reinsere), inclusive para venda à vista — uma única estratégia de edição em vez de bifurcar por tipoPagamento; parcelas PAGAS nunca são tocadas
+- [Phase 03-03]: Trava de venda fechada (VENDA-04) implementada como checagem simples de `venda.fechado` no service, com comentário explícito de que a Fase 5 vai substituir por checagem de apuração fechada
+- [Phase 03-03]: Mapeamento domínio→prisma extraído em `montarParcelasParaInsercao` (função pura, sem DB) para manter o teste do fluxo transacional determinístico
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 2/4 planos completos (03-01: VENDA-02/VENDA-03; 03-02: VENDA-01/VENDA-02/VENDA-04, models Venda/Parcela migrados no Neon). Próximo: plano 03-03.
+Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 3/4 planos completos (03-01: VENDA-02/VENDA-03; 03-02: VENDA-01/VENDA-02/VENDA-04 migrados no Neon; 03-03: VENDA-01/VENDA-02/VENDA-04/VENDA-05 na camada servidor — schema/repo/service transacional/actions gated ADMIN). Próximo: plano 03-04 (UI de formulário/listagem de venda).
 
 ### Blockers/Concerns
 
@@ -100,6 +104,6 @@ Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos 
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T23:29:47.737Z
-**Stopped At:** Completed 03-02-PLAN.md
+**Last session:** 2026-07-01T23:39:00Z
+**Stopped At:** Completed 03-03-PLAN.md
 **Resume File:** None
