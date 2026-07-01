@@ -18,6 +18,20 @@ import { db } from "@/lib/db";
 // modelos.
 type VendaClient = Pick<typeof db, "venda" | "parcela">;
 
+// Converte "YYYY-MM-DD" para um `Date` em meia-noite UTC antes de escrever
+// em uma coluna @db.Date. Bug descoberto durante o smoke test do plano
+// 03-04 (Rule 1): o Prisma Client 6.19.3 rejeita string "YYYY-MM-DD" pura em
+// campos DateTime/Date ("Invalid value ... premature end of input. Expected
+// ISO-8601 DateTime") — precisa de um `Date` (ou string ISO-8601 completa).
+// Nunca usar `new Date("YYYY-MM-DD")` diretamente aqui: em alguns runtimes
+// isso é interpretado como UTC (ok), mas para manter a mesma convenção de
+// timezone-safety do resto do projeto (Pitfall 6) construímos o `Date`
+// explicitamente via `Date.UTC` a partir dos componentes da string.
+function paraDataUTC(data: string): Date {
+  const [ano, mes, dia] = data.split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia));
+}
+
 export type CriarVendaRowData = {
   dataVenda: string; // "YYYY-MM-DD", tratado como DATE puro (Pitfall 6)
   alunoNome: string;
@@ -77,7 +91,7 @@ export type ListarVendasFiltros = {
 export function criarVendaRow(tx: VendaClient, data: CriarVendaRowData) {
   return tx.venda.create({
     data: {
-      dataVenda: data.dataVenda,
+      dataVenda: paraDataUTC(data.dataVenda),
       alunoNome: data.alunoNome,
       pagadorNome: data.pagadorNome,
       plataforma: data.plataforma,
@@ -88,7 +102,7 @@ export function criarVendaRow(tx: VendaClient, data: CriarVendaRowData) {
       valorMensalidade: data.valorMensalidade,
       numeroParcelas: data.numeroParcelas,
       diaVencimento: data.diaVencimento,
-      mesReferencia: data.mesReferencia,
+      mesReferencia: paraDataUTC(data.mesReferencia),
       closerId: data.closerId,
       sdrId: data.sdrId ?? null,
       observacao: data.observacao ?? null,
@@ -105,8 +119,8 @@ export function inserirParcelas(tx: VendaClient, parcelas: InserirParcelaData[])
       vendaId: p.vendaId,
       tipo: p.tipo,
       numero: p.numero,
-      mesReferencia: p.mesReferencia,
-      dataVencimento: p.dataVencimento,
+      mesReferencia: paraDataUTC(p.mesReferencia),
+      dataVencimento: paraDataUTC(p.dataVencimento),
       valorPrevisto: p.valorPrevisto,
     })),
   });
@@ -144,7 +158,7 @@ export function atualizarVendaRow(
   return tx.venda.update({
     where: { id },
     data: {
-      dataVenda: data.dataVenda,
+      dataVenda: paraDataUTC(data.dataVenda),
       alunoNome: data.alunoNome,
       pagadorNome: data.pagadorNome,
       plataforma: data.plataforma,
@@ -155,7 +169,7 @@ export function atualizarVendaRow(
       valorMensalidade: data.valorMensalidade,
       numeroParcelas: data.numeroParcelas,
       diaVencimento: data.diaVencimento,
-      mesReferencia: data.mesReferencia,
+      mesReferencia: paraDataUTC(data.mesReferencia),
       closerId: data.closerId,
       sdrId: data.sdrId ?? null,
       observacao: data.observacao ?? null,
@@ -188,7 +202,7 @@ export function listarVendas(filtros: ListarVendasFiltros = {}) {
     where.produtoId = filtros.produtoId;
   }
   if (filtros.mesReferencia) {
-    where.mesReferencia = filtros.mesReferencia;
+    where.mesReferencia = paraDataUTC(filtros.mesReferencia);
   }
   if (filtros.statusPagamento) {
     where.parcelas = { some: { statusPagamento: filtros.statusPagamento } };
