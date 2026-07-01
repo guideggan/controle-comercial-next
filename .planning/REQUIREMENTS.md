@@ -9,8 +9,8 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Autenticação e Acesso (AUTH)
 
-- [ ] **AUTH-01**: Colaborador faz login com e-mail e senha
-- [ ] **AUTH-02**: Sessão persiste entre recarregamentos do navegador e carrega papel + colaborador vinculado
+- [x] **AUTH-01**: Colaborador faz login com e-mail e senha
+- [x] **AUTH-02**: Sessão persiste entre recarregamentos do navegador e carrega papel + colaborador vinculado
 - [ ] **AUTH-03**: Colaborador (Closer/SDR/SS) só acessa e vê os próprios dados; a restrição é imposta no servidor, não só na interface
 - [ ] **AUTH-04**: Admin/Gestor acessa todos os dados e todas as telas de cadastro
 - [ ] **AUTH-05**: Admin pode criar, desativar e redefinir senha de contas de colaboradores
@@ -124,8 +124,8 @@ Explicitamente excluído para evitar aumento de escopo.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Pending |
 | AUTH-05 | Phase 1 | Pending |
