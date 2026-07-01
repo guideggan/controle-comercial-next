@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 1.1 — Fundação de Design (UI shell), concluída; próxima fase: Phase 2 — Colaboradores e Planos de Comissão
+**Current focus:** Phase 2 — Colaboradores e Planos de Comissão (em andamento)
 
 ## Current Position
 
-**Current Phase:** 1.1
-**Current Phase Name:** fundacao-design-ui
+**Current Phase:** 02
+**Current Phase Name:** colaboradores-e-planos-de-comissao
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 1
-**Total Plans in Phase:** 1
-**Status:** Phase complete — ready for verification
-**Progress:** [██████████] 100%
+**Current Plan:** 2
+**Total Plans in Phase:** 3
+**Status:** In progress
+**Progress:** [███-------] 33%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Fase 1.1 (Fundação de Design/UI shell) executada e encerrada: bugs de estilo do scaffold corrigidos (fonte serifada, título/idioma), app shell reutilizável construído (sidebar agrupada por seções + topbar + user menu), navegação derivada do papel da sessão (ADMIN vê OPERAÇÃO+ADMINISTRAÇÃO, demais papéis veem shell enxuto), Recharts instalado e validado com um gráfico de exemplo, e as 4 telas da Fase 1 (login, painel, colaboradores, produtos) reestiladas sem alterar lógica de auth/autorização ou schema. Verificado com sessões reais (ADMIN semeado + conta SDR de teste, removida após verificação).
+**Last Activity Description:** Plano 02-01 executado: migração Neon com a tabela plano_comissao (enum PlanoTipo, config JSONB, vigência DATE versionada, índice único parcial de plano aberto por colaborador), schemas Zod discriminated-union para os 4 formatos de comissão (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls), e editarColaborador fechando o COLAB-01 (admin agora pode criar E editar colaborador com contato/PIX).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 25 min
-- Total execution time: 2.5 hours
+- Total plans completed: 7
+- Average duration: 24 min
+- Total execution time: 2.83 hours
 
 **By Phase:**
 
@@ -32,10 +32,17 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 |-------|-------|-------|----------|
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
+| 02 | 1 | 20 | 20 |
 
 **Recent Trend:**
-- Last 5 plans: 15min (01-03), 20min (01-05), 25min (01-04), 30min (01.1)
+- Last 5 plans: 20min (01-05), 25min (01-04), 30min (01.1), 20min (02-01)
 - Trend: Stable
+
+**Plan Metrics:**
+
+| Plan | Duration (min) | Tasks | Files |
+|------|-----------------|-------|-------|
+| Phase 02 P01 | 20 | 3 tasks | 6 files |
 
 *Updated after each plan completion*
 
@@ -61,10 +68,14 @@ Recent decisions affecting current work:
 - [Phase 01.1]: Navegação da sidebar derivada do papel da sessão via `getNavSections(role)` em `nav-config.ts`, mas os itens exportam uma CHAVE de ícone (`NavIconKey`), não o componente `LucideIcon` em si — componentes/funções não são serializáveis ao atravessar de Server Component (o layout, que lê a sessão) para Client Component (`AppSidebarNav`, que precisa de `usePathname` para o item ativo); o mapa chave→ícone vive só no client
 - [Phase 01.1]: Layout (admin) manteve o guard original inline via `auth.api.getSession` (em vez de trocar para `requireRole("ADMIN")` do DAL) porque este último lança uma exceção genérica em vez de redirecionar — trocar mudaria o comportamento de UX para um colaborador não-admin (era redirect para /login, viraria página de erro); decisão adiada para quando o DAL tiver um caminho de "forbidden" tratado
 - [Phase 01.1]: App shell (`src/components/shell/`) compartilhado por (admin) e (colaborador) via um único componente `AppShell(role, nome)`; cada layout de grupo só chama seu guard de sessão existente e repassa `role`/`nome` — nenhuma lógica de autorização nova foi introduzida no shell
+- [Phase 02-01]: Índice único parcial e CHECK de período válido em `plano_comissao` adicionados via SQL bruto editado na migração (gerada com `--create-only`) — Prisma não suporta índice parcial nativamente no schema
+- [Phase 02-01]: Campos comuns do discriminated union Zod (`colaboradorId`, `vigenciaInicio`) repetidos em cada membro da união em vez de `.extend` pós-união (Zod v4 não suporta extend direto sobre discriminatedUnion)
+- [Phase 02-01]: `editarColaboradorSchema` não inclui email/senhaInicial (email é a chave de login do User do Better Auth; editar aqui descasaria User.email) — edição de email fica fora de escopo desta fase
+- [Phase 02-01]: `editarColaborador` sincroniza name/role do User vinculado ao salvar, mantendo sessão logada e listagem de colaboradores coerentes
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR).
+Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: plano 02-01/03 completo (fundação de dados: plano_comissao + schemas Zod + COLAB-01); restam os planos 02-02 (CRUD de plano de comissão) e 02-03 (tela de detalhe/edição do colaborador).
 
 ### Blockers/Concerns
 
@@ -74,6 +85,6 @@ Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requi
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T16:20:57.719Z
-**Stopped At:** Completed Phase 01.1 (Fundação de Design/UI shell)
+**Last session:** 2026-07-01T22:52:25Z
+**Stopped At:** Completed 02-01-PLAN.md (fundação de dados: plano_comissao + schemas Zod + COLAB-01)
 **Resume File:** None

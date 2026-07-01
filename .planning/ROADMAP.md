@@ -76,7 +76,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Admin configura um plano por quantidade de calls realizadas para um SDR/SS
   6. Ao mudar o plano de um colaborador no meio do mês, a apuração de meses anteriores não é reescrita (nova vigência criada, histórico intacto)
 **Plans**: 3 plans
-- [ ] 02-01-PLAN.md — Migração plano_comissao (JSONB versionado) + schemas Zod dos 4 formatos + edição de colaborador (COLAB-01)
+- [x] 02-01-PLAN.md — Migração plano_comissao (JSONB versionado) + schemas Zod dos 4 formatos + edição de colaborador (COLAB-01)
 - [ ] 02-02-PLAN.md — Serviço de versionamento de plano (fecha vigência anterior + abre nova, transacional) via TDD (COLAB-02..06)
 - [ ] 02-03-PLAN.md — UI: página de detalhe do colaborador, form dinâmico dos 4 formatos, histórico de vigência + checkpoint humano (COLAB-01..06)
 
@@ -180,7 +180,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 1. Fundação — Auth, Papéis e Base | 5/5 | Complete | 2026-07-01 |
 | 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
-| 2. Colaboradores e Planos de Comissão | 0/3 | Not started | - |
+| 2. Colaboradores e Planos de Comissão | 1/3 | In progress | - |
 | 3. Vendas e Parcelas | 0/TBD | Not started | - |
 | 4. Recebimentos | 0/TBD | Not started | - |
 | 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |
