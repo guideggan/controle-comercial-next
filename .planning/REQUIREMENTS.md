@@ -122,17 +122,61 @@ Explicitamente excluído para evitar aumento de escopo.
 
 ## Traceability
 
-Preenchido durante a criação do roadmap.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (a mapear pelo roadmapper) | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Pending |
+| COLAB-07 | Phase 1 | Pending |
+| COLAB-01 | Phase 2 | Pending |
+| COLAB-02 | Phase 2 | Pending |
+| COLAB-03 | Phase 2 | Pending |
+| COLAB-04 | Phase 2 | Pending |
+| COLAB-05 | Phase 2 | Pending |
+| COLAB-06 | Phase 2 | Pending |
+| VENDA-01 | Phase 3 | Pending |
+| VENDA-02 | Phase 3 | Pending |
+| VENDA-03 | Phase 3 | Pending |
+| VENDA-04 | Phase 3 | Pending |
+| VENDA-05 | Phase 3 | Pending |
+| PGTO-01 | Phase 4 | Pending |
+| PGTO-02 | Phase 4 | Pending |
+| PGTO-03 | Phase 4 | Pending |
+| COMIS-01 | Phase 5 | Pending |
+| COMIS-02 | Phase 5 | Pending |
+| COMIS-03 | Phase 5 | Pending |
+| COMIS-04 | Phase 5 | Pending |
+| COMIS-05 | Phase 5 | Pending |
+| COMIS-06 | Phase 5 | Pending |
+| COMIS-07 | Phase 5 | Pending |
+| AUDIT-01 | Phase 5 | Pending |
+| META-01 | Phase 6 | Pending |
+| META-02 | Phase 6 | Pending |
+| META-03 | Phase 6 | Pending |
+| META-04 | Phase 6 | Pending |
+| AGEND-01 | Phase 7 | Pending |
+| AGEND-02 | Phase 7 | Pending |
+| AGEND-03 | Phase 7 | Pending |
+| PAINEL-01 | Phase 8 | Pending |
+| PAINEL-02 | Phase 8 | Pending |
+| PAINEL-03 | Phase 8 | Pending |
+| PAINEL-04 | Phase 8 | Pending |
+| GESTOR-01 | Phase 9 | Pending |
+| GESTOR-02 | Phase 9 | Pending |
+| GESTOR-03 | Phase 9 | Pending |
+| GESTOR-04 | Phase 9 | Pending |
+| AUDIT-02 | Phase 9 | Pending |
+| IMPORT-01 | Phase 10 | Pending |
+| IMPORT-02 | Phase 10 | Pending |
+| IMPORT-03 | Phase 10 | Pending |
 
 **Coverage:**
-- v1 requirements: 43 total
-- Mapped to phases: 0 (pendente do roadmap)
-- Unmapped: 43 ⚠️
+- v1 requirements: 47 total (contagem corrigida — a nota inicial de "43 total" estava desatualizada; a contagem real de IDs nas categorias acima é 47)
+- Mapped to phases: 47/47 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 after initial definition*
+*Last updated: 2026-07-01 after roadmap creation (10 phases, full traceability mapped)*

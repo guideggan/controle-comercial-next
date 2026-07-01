@@ -1,0 +1,163 @@
+# Roadmap: Controle Comercial NEXT
+
+## Overview
+
+O sistema nasce de dentro para fora: primeiro trava as decisões que não podem ser refeitas depois (dinheiro em decimal exato, datas, controle de acesso no servidor), depois constrói a cadeia de dados que o motor de comissão precisa (colaborador → plano → venda → parcela → recebimento), isola o motor de comissão como sua própria fase com testes contra os números reais das planilhas, adiciona metas e agendamentos SDR/SS em paralelo conceitual, entrega os dois painéis self-service (colaborador e gestor) que são o valor central do produto, e termina com a importação do histórico — que só roda depois que todo caminho de entrada de dados ao vivo já está provado correto.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: Fundação — Auth, Papéis e Base** - Login funcional, papéis aplicados no servidor e decisões de dinheiro/data travadas
+- [ ] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
+- [ ] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
+- [ ] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
+- [ ] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
+- [ ] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
+- [ ] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
+- [ ] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
+- [ ] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
+- [ ] **Phase 10: Importação do Histórico** - Script carrega as duas planilhas antigas, recalcula e reconcilia com os totais originais
+
+## Phase Details
+
+### Phase 1: Fundação — Auth, Papéis e Base
+**Goal**: Existe login individual funcional com papéis aplicados no servidor, e as decisões estruturais de dinheiro/data/acesso que todo o resto do sistema depende estão travadas no schema desde o início.
+**Depends on**: Nothing (first phase)
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, COLAB-07
+**Success Criteria** (what must be TRUE):
+  1. Colaborador faz login com e-mail e senha e permanece logado após recarregar o navegador
+  2. Um Closer/SDR/SS autenticado não consegue acessar dados de outro colaborador nem manipulando a URL/requisição (restrição aplicada no servidor)
+  3. Admin/Gestor acessa todas as telas e todos os dados sem restrição
+  4. Admin cria uma conta de colaborador, desativa uma conta e redefine senha
+  5. Admin cadastra e edita produtos/tiers (START/PRO/MASTER/PADRÃO/Elite) que ficam disponíveis para uso em vendas
+**Plans**: TBD
+
+### Phase 2: Colaboradores e Planos de Comissão
+**Goal**: O admin cadastra colaboradores e configura o plano de comissão específico de cada um, nos 4 formatos existentes, com histórico de vigência preservado.
+**Depends on**: Phase 1
+**Requirements**: COLAB-01, COLAB-02, COLAB-03, COLAB-04, COLAB-05, COLAB-06
+**Success Criteria** (what must be TRUE):
+  1. Admin cadastra um colaborador com nome, papel e dados de contato/PIX
+  2. Admin configura um plano de % fixo sobre o recebido para um closer
+  3. Admin configura um plano progressivo por atingimento de meta (faixas de %) para outro closer
+  4. Admin configura um plano fixo + variável para outro colaborador
+  5. Admin configura um plano por quantidade de calls realizadas para um SDR/SS
+  6. Ao mudar o plano de um colaborador no meio do mês, a apuração de meses anteriores não é reescrita (nova vigência criada, histórico intacto)
+**Plans**: TBD
+
+### Phase 3: Vendas e Parcelas
+**Goal**: O admin registra uma venda em um único formulário e o sistema gera automaticamente o cronograma de parcelas, sem drift de data em meses curtos.
+**Depends on**: Phase 2
+**Requirements**: VENDA-01, VENDA-02, VENDA-03, VENDA-04, VENDA-05
+**Success Criteria** (what must be TRUE):
+  1. Admin preenche um único formulário de venda (aluno, pagador, plataforma, produto, tipo de pgto, TCV, entrada, mensalidade, nº parcelas, vencimento, closer, SDR/SS, observação) e salva
+  2. Ao salvar uma venda mensalista, as parcelas mensais (entrada + N mensalidades) aparecem automaticamente, geradas na mesma transação da venda
+  3. Uma venda com dia de vencimento 31 mantém o dia de vencimento ancorado ao longo de meses de 28/29/30 dias, sem escorregar permanentemente
+  4. Admin edita uma venda e suas parcelas, e a edição é bloqueada ou avisada quando o mês já foi fechado
+  5. Admin busca e lista vendas filtrando por aluno, closer, produto, status e mês de referência
+**Plans**: TBD
+
+### Phase 4: Recebimentos
+**Goal**: Cada parcela/entrada pode ser marcada como paga, e o sistema calcula corretamente o valor recebido no mês sem contar nada em duplicidade — essa é a base de entrada do motor de comissão.
+**Depends on**: Phase 3
+**Requirements**: PGTO-01, PGTO-02, PGTO-03
+**Success Criteria** (what must be TRUE):
+  1. Admin marca uma parcela como Paga informando valor efetivamente recebido e data do pagamento
+  2. O "valor recebido no mês" soma entrada + mensalidades + vendas à vista pagas naquele mês, sem duplicar nenhum valor
+  3. Uma parcela marcada como Pendente conta como zero em qualquer cálculo de comissão
+**Plans**: TBD
+
+### Phase 5: Motor de Comissão e Apuração
+**Goal**: O motor calcula a comissão de cada colaborador de acordo com o formato do plano dele, sobre o valor recebido (nunca o TCV), e grava um snapshot imutável por pessoa/mês que os painéis apenas leem.
+**Depends on**: Phase 4
+**Requirements**: COMIS-01, COMIS-02, COMIS-03, COMIS-04, COMIS-05, COMIS-06, COMIS-07, AUDIT-01
+**Success Criteria** (what must be TRUE):
+  1. A comissão calculada para uma venda bate com o valor recebido no mês, nunca com o TCV da venda
+  2. Rodando o motor contra os 4 formatos de plano (fixo, progressivo, fixo+variável, calls), o resultado bate com exemplos reais tirados das planilhas antigas
+  3. A apuração de um mês grava separadamente mês de referência e mês de pagamento (mês seguinte), ambos explícitos
+  4. Depois de apurado, o valor de comissão de uma pessoa/mês não muda ao reabrir o painel, mesmo que dados de origem sejam alterados depois (snapshot imutável)
+  5. Admin fecha/trava a apuração de um mês e, a partir daí, alterações retroativas nesse mês são impedidas ou exigem reabertura explícita
+  6. Colaborador (ou admin) abre o extrato de comissão de uma pessoa/mês e vê linha a linha como o valor foi calculado
+  7. Marcar uma parcela como paga, editar um valor ou trocar o plano de alguém fica registrado no histórico de alterações
+**Plans**: TBD
+
+### Phase 6: Metas e Proração Semanal
+**Goal**: Cada colaborador tem uma meta mensal definida pelo admin, quebrada automaticamente em metas semanais proporcionais, com % esperado vs atingido calculado a partir do realizado real.
+**Depends on**: Phase 4
+**Requirements**: META-01, META-02, META-03, META-04
+**Success Criteria** (what must be TRUE):
+  1. Admin define a meta de um closer em R$ e a meta de um SDR/SS em nº de agendamentos, por mês
+  2. A meta mensal aparece quebrada em metas semanais acumuladas proporcionais, validadas contra semanas reais das planilhas antigas
+  3. Para a semana corrente, o sistema mostra realizado, meta proporcional, % atingido, % esperado e saldo
+  4. O realizado do closer soma vendas à vista + mensalistas efetivamente recebidos; o do SDR/SS soma agendamentos realizados
+**Plans**: TBD
+
+### Phase 7: Agendamentos SDR/SS
+**Goal**: SDR/SS registra agendamentos por dia da semana com status, e essa mesma fonte de dados alimenta tanto a comissão por calls quanto o painel de meta — sem contadores duplicados.
+**Depends on**: Phase 2
+**Requirements**: AGEND-01, AGEND-02, AGEND-03
+**Success Criteria** (what must be TRUE):
+  1. SDR/SS registra um agendamento com status (agendado, realizado, no-show, cancelado) associado a um dia da semana
+  2. O total de calls realizadas no mês usado pelo motor de comissão (Phase 5) é exatamente o mesmo número usado no painel de meta (Phase 6) — uma única fonte de dados
+  3. O painel de agendadas x realizadas por dia (segunda a sábado) reflete a semana corrente corretamente
+**Plans**: TBD
+
+### Phase 8: Painel Self-Service do Colaborador
+**Goal**: Cada colaborador acessa, sozinho e sem depender do gestor, sua própria meta, realizado, proração semanal, comissão prevista/apurada e extrato — o valor central do produto.
+**Depends on**: Phase 5, Phase 6, Phase 7
+**Requirements**: PAINEL-01, PAINEL-02, PAINEL-03, PAINEL-04
+**Success Criteria** (what must be TRUE):
+  1. Colaborador vê o próprio acompanhamento de meta do mês corrente (meta, realizado, meta proporcional, % esperado vs atingido, saldo)
+  2. Colaborador vê a própria comissão prevista/apurada do mês corrente
+  3. Colaborador vê o próprio extrato de comissão e consegue navegar para meses anteriores
+  4. SDR/SS vê o próprio painel de agendadas x realizadas, e nenhum colaborador consegue ver o painel de outro trocando um parâmetro na URL
+**Plans**: TBD
+
+### Phase 9: Dashboard do Gestor
+**Goal**: O gestor enxerga, em uma única visão consolidada por mês, receita, contagem por produto, comissão total por pessoa e atingimento de meta de todo o time — sem precisar reunir ninguém para saber o status.
+**Depends on**: Phase 5, Phase 6, Phase 7
+**Requirements**: GESTOR-01, GESTOR-02, GESTOR-03, GESTOR-04, AUDIT-02
+**Success Criteria** (what must be TRUE):
+  1. Gestor vê a receita do mês consolidada por à vista, mensalista e total
+  2. Gestor vê a contagem de vendas por produto/tier no mês
+  3. Gestor vê a comissão total por closer e por SDR/SS no mês, separando referência e pagamento
+  4. Gestor acompanha o atingimento de meta de todos os colaboradores em uma única tela
+  5. Admin exporta vendas, comissões e metas para Excel/CSV
+**Plans**: TBD
+
+### Phase 10: Importação do Histórico
+**Goal**: O histórico completo das duas planilhas (Comissões de Vendas e Desempenho do Time) está carregado no banco, com a comissão recalculada a partir dos fatos brutos (não copiada da coluna FÓRMULA) e reconciliada contra os totais originais.
+**Depends on**: Phase 5, Phase 6, Phase 7, Phase 9
+**Requirements**: IMPORT-01, IMPORT-02, IMPORT-03
+**Success Criteria** (what must be TRUE):
+  1. Rodar o script de importação carrega o histórico das duas planilhas no banco, aparecendo nas mesmas telas usadas para dados cadastrados manualmente
+  2. Para cada mês histórico, a comissão recalculada pelo motor bate (ou o relatório de divergências explica a diferença) com os totais de rodapé da planilha original
+  3. Rodar a importação uma segunda vez não duplica nenhum registro
+  4. A importação recusa (com mensagem clara) uma carga cujos dados brutos não passam na validação, antes de gravar qualquer coisa
+**Plans**: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Fundação — Auth, Papéis e Base | 0/TBD | Not started | - |
+| 2. Colaboradores e Planos de Comissão | 0/TBD | Not started | - |
+| 3. Vendas e Parcelas | 0/TBD | Not started | - |
+| 4. Recebimentos | 0/TBD | Not started | - |
+| 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |
+| 6. Metas e Proração Semanal | 0/TBD | Not started | - |
+| 7. Agendamentos SDR/SS | 0/TBD | Not started | - |
+| 8. Painel Self-Service do Colaborador | 0/TBD | Not started | - |
+| 9. Dashboard do Gestor | 0/TBD | Not started | - |
+| 10. Importação do Histórico | 0/TBD | Not started | - |
+
+---
+*Roadmap created: 2026-07-01*
