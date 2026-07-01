@@ -1,0 +1,35 @@
+# Planilhas de origem (contêm PII: nomes, CPF/CNPJ, pagadores) — nunca versionar
+*.xlsx
+*.xls
+
+# Dependências
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js / build
+.next/
+out/
+build/
+dist/
+
+# Ambiente / segredos
+.env
+.env.*
+!.env.example
+
+# Logs e SO
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Prisma (mantém schema e migrations versionados; ignora artefatos locais)
+prisma/*.db
+prisma/*.db-journal
