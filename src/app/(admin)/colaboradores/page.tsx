@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireRole } from "@/server/auth/session";
 import { listarColaboradores } from "@/server/repositories/colaborador.repo";
 import { AppTopbar } from "@/components/shell/app-topbar";
@@ -58,7 +60,12 @@ export default async function ColaboradoresPage() {
               {colaboradores.map((colaborador) => (
                 <TableRow key={colaborador.id}>
                   <TableCell className="font-medium">
-                    {colaborador.nome}
+                    <Link
+                      href={`/colaboradores/${colaborador.id}`}
+                      className="hover:underline"
+                    >
+                      {colaborador.nome}
+                    </Link>
                   </TableCell>
                   <TableCell>{colaborador.email}</TableCell>
                   <TableCell>
