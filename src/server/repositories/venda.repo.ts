@@ -197,6 +197,6 @@ export function listarVendas(filtros: ListarVendasFiltros = {}) {
   return db.venda.findMany({
     where,
     orderBy: { dataVenda: "desc" },
-    include: { produto: true, closer: true },
+    include: { produto: true, closer: true, _count: { select: { parcelas: true } } },
   });
 }
