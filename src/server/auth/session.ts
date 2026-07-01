@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Papel } from "@prisma/client";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -15,7 +16,11 @@ import { auth } from "@/server/auth/auth";
 // Regra de ouro (Pitfall 1 — IDOR): nunca aceitar role/colaboradorId vindos do
 // cliente (query param, form data, hidden field). O único colaboradorId
 // confiável é o que vem da sessão, lido aqui.
-export type Papel = "ADMIN" | "CLOSER" | "SDR" | "SS";
+//
+// Papel reexportado do Prisma Client (fonte única do enum, definido em
+// prisma/schema.prisma) para que consumidores deste módulo não precisem
+// importar @prisma/client diretamente só para tipar um role.
+export type { Papel };
 
 type SessionUser = {
   role: Papel;
