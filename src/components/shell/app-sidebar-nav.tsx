@@ -2,9 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Boxes,
+  LayoutDashboard,
+  LineChart,
+  Percent,
+  Target,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { NavSection } from "@/components/shell/nav-config";
+import type { NavIconKey, NavSection } from "@/components/shell/nav-config";
+
+// Mapa chave -> componente de ícone. Vive no client component porque
+// componentes/funções não atravessam a fronteira Server -> Client
+// (nav-config.ts, que roda no server via getNavSections, só exporta a
+// CHAVE serializável).
+const ICONS: Record<NavIconKey, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  vendas: LineChart,
+  comissoes: Percent,
+  colaboradores: Users,
+  produtos: Boxes,
+  metas: Target,
+};
 
 // Client component: precisa de usePathname() para destacar o item de
 // navegação ativo. Os dados de navegação (quais seções/itens existem)
@@ -24,7 +46,7 @@ export function AppSidebarNav({ sections }: { sections: NavSection[] }) {
             {section.items.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
-              const Icon = item.icon;
+              const Icon = ICONS[item.icon];
 
               return (
                 <li key={item.href}>
