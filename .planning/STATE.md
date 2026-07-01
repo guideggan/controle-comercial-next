@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 3 — Vendas e Parcelas (não iniciada)
+**Current focus:** Phase 3 — Vendas e Parcelas (em andamento)
 
 ## Current Position
 
 **Current Phase:** 03
 **Current Phase Name:** vendas-e-parcelas
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 0
-**Total Plans in Phase:** TBD
-**Status:** Not started
-**Progress:** [███-------] 30%
+**Current Plan:** 1
+**Total Plans in Phase:** 4
+**Status:** In progress
+**Progress:** [████████░░] 83%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Fase 2 encerrada (3/3 planos): plano 02-03 entregou a UI admin — server action `definirPlanoComissaoAction` (gated ADMIN), página de detalhe do colaborador com dados/plano vigente/histórico, form dinâmico dos 4 formatos de plano (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls), edição de colaborador e link da listagem; checkpoint humano aprovado pelo usuário confirmando os 4 formatos e que a troca de plano preserva o histórico (COLAB-06). Todos os requisitos COLAB-01..06 completos. Configuração de fluxo alterada para modo autônomo (yolo) a partir daqui — checkpoints de verificação humana são auto-aprovados salvo auth gates. Próximo: Fase 3 (Vendas e Parcelas).
+**Last Activity Description:** Plano 03-01 completo (TDD): módulo de domínio puro `src/domain/vendas/parcelas.ts` — `gerarCronogramaParcelas` + `dataVencimentoAncorada` provados por 13 testes unitários, incluindo ano completo com âncora=31 sem drift (jan-31 → fev-28 → mar-31) e fevereiro bissexto (29). Requisitos VENDA-02/VENDA-03 completos. Zero dependências de framework/DB — pronto para reuso pela Fase 5 (motor) e Fase 10 (import). Próximo: plano 03-02 (repository/service de venda consumindo este módulo).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 24 min
-- Total execution time: 3.63 hours
+- Total plans completed: 10
+- Average duration: 22 min
+- Total execution time: 3.67 hours
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
 | 02 | 3 | 70 | 23.3 |
+| 03 | 1 | 2 | 2 |
 
 **Recent Trend:**
-- Last 5 plans: 35min (02-03), 20min (02-01), 15min (02-02), 20min (01-05), 25min (01-04)
-- Trend: Stable
+- Last 5 plans: 2min (03-01), 35min (02-03), 20min (02-01), 15min (02-02), 20min (01-05)
+- Trend: Improving (pure-function TDD plan, no I/O)
 
 **Plan Metrics:**
 
@@ -45,6 +46,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 02 P01 | 20 | 3 tasks | 6 files |
 | Phase 02 P02 | 15 | 1 task (TDD) | 3 files |
 | Phase 02 P03 | 35 | 3 tasks (2 auto + 1 checkpoint) | 7 files |
+| Phase 03 P01 | 2 | 1 task (TDD) | 2 files |
 
 *Updated after each plan completion*
 
@@ -79,10 +81,13 @@ Recent decisions affecting current work:
 - [Phase 02-03]: Percentual é digitado pelo admin como número inteiro/decimal em % (ex. "3" para 3%) na UI e convertido para fração (0.03) só no onSubmit do form, mantendo a config no banco como number puro e consistente com `formatarPercentual`
 - [Phase 02-03]: `plano-form.tsx` reusa o mesmo Dialog para "definir" (sem plano vigente) e "trocar" (com plano vigente), variando apenas o título — evita duplicar o form dinâmico dos 4 formatos
 - [Config]: Fluxo de execução alterado para modo autônomo (yolo/auto_advance) a partir do fim da Fase 2 — checkpoints de verificação humana passam a ser auto-aprovados (auth gates continuam parando normalmente)
+- [Phase 03-01]: Entrada (quando >0) ocupa sozinha o mês inicial do cronograma; mensalidades sempre começam no mês seguinte via `proximoMes`, evitando duas parcelas na mesma competência
+- [Phase 03-01]: `ultimoDiaDoMes` reaproveita o overflow nativo de `Date.UTC(ano, mes, 0)` em vez de reimplementar regra de ano bissexto — menos superfície de bug para o clamp do dia-âncora (Pitfall 7)
+- [Phase 03-01]: `src/domain/vendas/parcelas.ts` estabelece o padrão de domain layer 100% puro (zero imports) para o restante da Fase 3, Fase 5 (motor) e Fase 10 (import de histórico)
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Próximo: iniciar planejamento da Fase 3 (Vendas e Parcelas).
+Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 1/4 planos completos (03-01, requisitos VENDA-02/VENDA-03). Próximo: plano 03-02.
 
 ### Blockers/Concerns
 
@@ -92,6 +97,6 @@ Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos 
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T23:12:12.069Z
-**Stopped At:** Completed 02-03-PLAN.md — Fase 2 encerrada (3/3 planos, COLAB-01..06 completos, checkpoint humano aprovado). Próximo: planejar Fase 3 (Vendas e Parcelas).
+**Last session:** 2026-07-01T23:25:16.845Z
+**Stopped At:** Completed 03-01-PLAN.md
 **Resume File:** None

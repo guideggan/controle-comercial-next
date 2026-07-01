@@ -187,7 +187,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Fundação — Auth, Papéis e Base | 5/5 | Complete | 2026-07-01 |
 | 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
 | 2. Colaboradores e Planos de Comissão | 3/3 | Complete | 2026-07-01 |
-| 3. Vendas e Parcelas | 0/4 | Not started | - |
+| 3. Vendas e Parcelas | 1/4 | In Progress | - |
 | 4. Recebimentos | 0/TBD | Not started | - |
 | 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |
 | 6. Metas e Proração Semanal | 0/TBD | Not started | - |

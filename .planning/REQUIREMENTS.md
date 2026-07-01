@@ -28,8 +28,8 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 ### Vendas e Parcelas (VENDA)
 
 - [ ] **VENDA-01**: Admin cadastra uma venda em um único formulário (data, aluno, pagador, plataforma, produto, tipo de pgto à vista/mensalista, TCV, entrada, valor da mensalidade, nº de parcelas, dia de vencimento, closer, SDR/SS, observação)
-- [ ] **VENDA-02**: Ao salvar uma venda mensalista, o sistema gera automaticamente as parcelas mensais previstas (entrada + N mensalidades) de forma atômica com a venda
-- [ ] **VENDA-03**: O dia de vencimento é ancorado, de modo que parcelas em meses curtos não escorregam permanentemente (31→30→29)
+- [x] **VENDA-02**: Ao salvar uma venda mensalista, o sistema gera automaticamente as parcelas mensais previstas (entrada + N mensalidades) de forma atômica com a venda
+- [x] **VENDA-03**: O dia de vencimento é ancorado, de modo que parcelas em meses curtos não escorregam permanentemente (31→30→29)
 - [ ] **VENDA-04**: Admin edita/corrige uma venda e suas parcelas, com as devidas travas quando um mês já foi fechado
 - [ ] **VENDA-05**: Admin lista e busca vendas por aluno, closer, produto, status e mês de referência
 
@@ -137,8 +137,8 @@ Explicitamente excluído para evitar aumento de escopo.
 | COLAB-05 | Phase 2 | Complete |
 | COLAB-06 | Phase 2 | Complete |
 | VENDA-01 | Phase 3 | Pending |
-| VENDA-02 | Phase 3 | Pending |
-| VENDA-03 | Phase 3 | Pending |
+| VENDA-02 | Phase 3 | Complete |
+| VENDA-03 | Phase 3 | Complete |
 | VENDA-04 | Phase 3 | Pending |
 | VENDA-05 | Phase 3 | Pending |
 | PGTO-01 | Phase 4 | Pending |
