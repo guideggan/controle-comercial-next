@@ -30,6 +30,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# TypeScript
+*.tsbuildinfo
+
 # Prisma (mantém schema e migrations versionados; ignora artefatos locais)
 prisma/*.db
 prisma/*.db-journal
