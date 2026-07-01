@@ -12,28 +12,28 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Phase:** 1
 **Current Phase Name:** fundacao-auth-papeis-e-base
 **Total Phases:** 10
-**Current Plan:** 3
+**Current Plan:** 4
 **Total Plans in Phase:** 5
 **Status:** Ready to execute
-**Progress:** [████░░░░░░] 40%
+**Progress:** [██████░░░░] 60%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 01-02 executado (DAL authz guards via TDD: requireUser/requireRole/requireSelfOrAdmin)
+**Last Activity Description:** Plano 01-03 executado (login + rota protegida /painel com guard server-side; checkpoint humano aprovado)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 30 min
-- Total execution time: 1.0 hours
+- Total plans completed: 3
+- Average duration: 25 min
+- Total execution time: 1.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total (min) | Avg/Plan (min) |
 |-------|-------|-------|----------|
-| 01 | 2 | 60 | 30 |
+| 01 | 3 | 75 | 25 |
 
 **Recent Trend:**
-- Last 5 plans: 55min (01-01), 5min (01-02)
+- Last 5 plans: 55min (01-01), 5min (01-02), 15min (01-03)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -52,6 +52,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Schema Better Auth (User/Session/Account/Verification) validado via npx @better-auth/cli generate contra better-auth@1.6.23 real, nao apenas copiado do research
 - [Phase 01]: shadcn/ui style base-nova usa Base UI (nao Radix); form.tsx adaptado manualmente pois o registry oficial ainda nao publica esse componente para o style base-nova
 - [Phase 01]: Papel reexportado do @prisma/client em vez de union duplicado em session.ts (fonte unica do enum e prisma/schema.prisma)
+- [Phase 01]: Login feito pelo authClient (client) via signIn.email; guard real de autorização sempre em requireUser no server component do layout, middleware só faz redirect-if-logged-out (UX, CVE-2025-29927)
+- [Phase 01]: Better Auth additionalFields obrigatórios (required:true, input:false) precisam de defaultValue, senão auth.api.signUpEmail lança MISSING_FIELD mesmo server-side; defaultValue role=SDR aplicado (menor privilégio)
 
 ### Pending Todos
 
@@ -59,12 +61,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 1: DATABASE_URL real do Neon ainda não fornecida — migration inicial (20260701140017_init) criada mas NÃO aplicada; rodar `npx prisma migrate deploy` assim que a URL chegar (ver 01-01-SUMMARY.md "Pendências").
 - Phase 5: Convenção exata de arredondamento progressivo e regra de "qual versão do plano vale no mês X" precisam ser validadas contra números reais das planilhas antes de codificar o motor.
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T14:19:44.142Z
-**Stopped At:** Completed 01-02-PLAN.md
+**Last session:** 2026-07-01T15:07:47.509Z
+**Stopped At:** Completed 01-03-PLAN.md
 **Resume File:** None
