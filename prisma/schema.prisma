@@ -1,0 +1,150 @@
+// ============================================================
+// CONVENÇÕES DE TIPOS — TRAVADAS NA FASE 1 (fundação)
+// ============================================================
+// Dinheiro:     Decimal @db.Decimal(14, 2)  → Postgres NUMERIC(14,2). Nunca Float/Int.
+// Percentual:   Decimal @db.Decimal(6, 4)   → Postgres NUMERIC(6,4)  (ex.: 0.0125 = 1,25%).
+// Data-only:    DateTime @db.Date           → Postgres DATE (ex.: mês de referência, vencimento).
+//               Tratar como string "YYYY-MM-DD" na borda da aplicação; nunca fazer
+//               round-trip por um Date do JS ciente de timezone para comparação/exibição.
+// Instantes:    DateTime @db.Timestamptz    → Postgres TIMESTAMPTZ (createdAt/updatedAt,
+//               "quando foi marcado como pago" etc). Converter para America/Sao_Paulo
+//               somente na renderização (Intl/date-fns-tz), nunca hardcodar offset UTC-3.
+//
+// Fase 1 ainda não tem tabelas de dinheiro (sem venda/parcela), mas Colaborador e
+// Produto já seguem a convenção de instantes (Timestamptz) para que as fases 2+
+// encaixem sem migração de tipo depois.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Papel {
+  ADMIN
+  CLOSER
+  SDR
+  SS
+}
+
+// ============================================================
+// TABELAS GERENCIADAS PELO BETTER AUTH (auth: login, sessão, verificação)
+// Shape conforme better-auth.com/docs/concepts/database para better-auth@1.6.23
+// (Prisma adapter). Colunas adicionais (role/colaboradorId) configuradas via
+// `additionalFields` em src/server/auth/auth.ts.
+// ============================================================
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  // additionalFields configurados em auth.ts — nunca setáveis pelo cliente
+  // no signup (input: false); só um Admin, via server action, define estes valores.
+  role          Papel
+  colaboradorId String?      @unique
+  colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id])
+
+  sessions Session[]
+  accounts Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  password              String? // hash gerenciado pelo fluxo emailAndPassword do Better Auth
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @db.Timestamptz
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @updatedAt @db.Timestamptz
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ============================================================
+// DOMÍNIO DA APLICAÇÃO — fatia da Fase 1
+// ============================================================
+// User (auth) e Colaborador (negócio) são modelos separados de propósito:
+// Better Auth é dono de User/Session/Account/Verification (credenciais, sessão);
+// Colaborador é dono das colunas de negócio (papel, ativo, contato, pix) e de
+// toda FK futura (venda, plano_comissao, meta, agendamento). O vínculo 1:1 é
+// User.colaboradorId → Colaborador.id.
+
+model Colaborador {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  papel     Papel
+  ativo     Boolean  @default(true)
+  telefone  String?
+  pix       String?
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  // Back-reference para a conta de login (1:1)
+  user User?
+
+  // Fases futuras conectam aqui sem alterar o shape desta tabela:
+  // planosComissao PlanoComissao[]
+  // vendasComoCloser Venda[] @relation("closer")
+  // vendasComoSdr    Venda[] @relation("sdr")
+  // metas Meta[]
+  // agendamentos Agendamento[]
+
+  @@map("colaborador")
+}
+
+model Produto {
+  id        String   @id @default(cuid())
+  nome      String // START / PRO / MASTER / PADRAO / Elite
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@map("produto")
+}
