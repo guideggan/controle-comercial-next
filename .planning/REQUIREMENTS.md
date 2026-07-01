@@ -18,11 +18,11 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 ### Colaboradores e Planos de Comissão (COLAB)
 
 - [x] **COLAB-01**: Admin cadastra colaborador com nome, papel (Admin/Gestor, Closer, SDR, SS) e dados de contato/PIX
-- [ ] **COLAB-02**: Admin define o plano de comissão de cada colaborador, escolhendo o formato: % fixo sobre o recebido
-- [ ] **COLAB-03**: Admin define plano de comissão no formato progressivo por atingimento de meta (faixas de % conforme % da meta batida)
-- [ ] **COLAB-04**: Admin define plano de comissão no formato fixo + variável (valor garantido + % por cima)
-- [ ] **COLAB-05**: Admin define plano de comissão de SDR/SS por quantidade de calls (agendamentos) realizadas
-- [ ] **COLAB-06**: Plano de comissão é versionado por vigência (início/fim), de forma que mudanças não reescrevem o histórico já apurado
+- [x] **COLAB-02**: Admin define o plano de comissão de cada colaborador, escolhendo o formato: % fixo sobre o recebido
+- [x] **COLAB-03**: Admin define plano de comissão no formato progressivo por atingimento de meta (faixas de % conforme % da meta batida)
+- [x] **COLAB-04**: Admin define plano de comissão no formato fixo + variável (valor garantido + % por cima)
+- [x] **COLAB-05**: Admin define plano de comissão de SDR/SS por quantidade de calls (agendamentos) realizadas
+- [x] **COLAB-06**: Plano de comissão é versionado por vigência (início/fim), de forma que mudanças não reescrevem o histórico já apurado
 - [x] **COLAB-07**: Admin cadastra e edita produtos/tiers (START/PRO/MASTER/PADRÃO/Elite) usados nas vendas
 
 ### Vendas e Parcelas (VENDA)
@@ -131,11 +131,11 @@ Explicitamente excluído para evitar aumento de escopo.
 | AUTH-05 | Phase 1 | Complete |
 | COLAB-07 | Phase 1 | Complete |
 | COLAB-01 | Phase 2 | Complete |
-| COLAB-02 | Phase 2 | Pending |
-| COLAB-03 | Phase 2 | Pending |
-| COLAB-04 | Phase 2 | Pending |
-| COLAB-05 | Phase 2 | Pending |
-| COLAB-06 | Phase 2 | Pending |
+| COLAB-02 | Phase 2 | Complete |
+| COLAB-03 | Phase 2 | Complete |
+| COLAB-04 | Phase 2 | Complete |
+| COLAB-05 | Phase 2 | Complete |
+| COLAB-06 | Phase 2 | Complete |
 | VENDA-01 | Phase 3 | Pending |
 | VENDA-02 | Phase 3 | Pending |
 | VENDA-03 | Phase 3 | Pending |

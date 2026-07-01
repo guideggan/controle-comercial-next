@@ -12,19 +12,19 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Phase:** 02
 **Current Phase Name:** colaboradores-e-planos-de-comissao
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 2
+**Current Plan:** 3
 **Total Plans in Phase:** 3
 **Status:** In progress
-**Progress:** [███-------] 33%
+**Progress:** [██████----] 67%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 02-01 executado: migração Neon com a tabela plano_comissao (enum PlanoTipo, config JSONB, vigência DATE versionada, índice único parcial de plano aberto por colaborador), schemas Zod discriminated-union para os 4 formatos de comissão (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls), e editarColaborador fechando o COLAB-01 (admin agora pode criar E editar colaborador com contato/PIX).
+**Last Activity Description:** Plano 02-02 executado: service `definirPlanoComissao` transacional (COLAB-06) que fecha a vigência do plano anterior e abre uma nova linha na mesma db.$transaction, validando a config JSONB contra o tipo (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls — COLAB-02..05) antes de qualquer escrita; repositório plano-comissao.repo.ts e 11 testes cobrindo primeiro plano, troca de plano, invariante de 1-aberto e validação por tipo.
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 24 min
-- Total execution time: 2.83 hours
+- Total plans completed: 8
+- Average duration: 23 min
+- Total execution time: 3.08 hours
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 |-------|-------|-------|----------|
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
-| 02 | 1 | 20 | 20 |
+| 02 | 2 | 35 | 17.5 |
 
 **Recent Trend:**
-- Last 5 plans: 20min (01-05), 25min (01-04), 30min (01.1), 20min (02-01)
+- Last 5 plans: 20min (02-01), 15min (02-02), 20min (01-05), 25min (01-04), 30min (01.1)
 - Trend: Stable
 
 **Plan Metrics:**
@@ -43,6 +43,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Plan | Duration (min) | Tasks | Files |
 |------|-----------------|-------|-------|
 | Phase 02 P01 | 20 | 3 tasks | 6 files |
+| Phase 02 P02 | 15 | 1 task (TDD) | 3 files |
 
 *Updated after each plan completion*
 
@@ -72,10 +73,12 @@ Recent decisions affecting current work:
 - [Phase 02-01]: Campos comuns do discriminated union Zod (`colaboradorId`, `vigenciaInicio`) repetidos em cada membro da união em vez de `.extend` pós-união (Zod v4 não suporta extend direto sobre discriminatedUnion)
 - [Phase 02-01]: `editarColaboradorSchema` não inclui email/senhaInicial (email é a chave de login do User do Better Auth; editar aqui descasaria User.email) — edição de email fica fora de escopo desta fase
 - [Phase 02-01]: `editarColaborador` sincroniza name/role do User vinculado ao salvar, mantendo sessão logada e listagem de colaboradores coerentes
+- [Phase 02-02]: `vigenciaFim` do plano fechado = `vigenciaInicio` do novo plano menos 1 dia (evita sobreposição e buraco, satisfaz o CHECK `vigenciaFim > vigenciaInicio` do banco); calculado por helper `diaAnterior` timezone-safe (Date.UTC + getUTC*, nunca Date local — Pitfall 6)
+- [Phase 02-02]: `getPlanoVigente` é lido FORA do callback de `db.$transaction` (decisão de fechar-ou-não já resolvida antes de escrever); `fecharVigencia`/`criarPlanoRow` recebem `tx` e rodam DENTRO da mesma transação, sempre fechando antes de criar, para nunca violar o índice único parcial do banco
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: plano 02-01/03 completo (fundação de dados: plano_comissao + schemas Zod + COLAB-01); restam os planos 02-02 (CRUD de plano de comissão) e 02-03 (tela de detalhe/edição do colaborador).
+Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: planos 02-01 e 02-02 completos (fundação de dados + versionamento de plano de comissão, COLAB-01..06); resta o plano 02-03 (tela de detalhe/edição do colaborador, consumindo definirPlanoComissao).
 
 ### Blockers/Concerns
 
@@ -85,6 +88,6 @@ Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requi
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T22:52:25Z
-**Stopped At:** Completed 02-01-PLAN.md (fundação de dados: plano_comissao + schemas Zod + COLAB-01)
+**Last session:** 2026-07-01T20:08:00Z
+**Stopped At:** Completed 02-02-PLAN.md (service definirPlanoComissao: versionamento transacional de plano de comissão, COLAB-02..06)
 **Resume File:** None
