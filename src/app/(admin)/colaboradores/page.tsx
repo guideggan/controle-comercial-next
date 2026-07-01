@@ -1,6 +1,8 @@
 import { requireRole } from "@/server/auth/session";
 import { listarColaboradores } from "@/server/repositories/colaborador.repo";
+import { AppTopbar } from "@/components/shell/app-topbar";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -22,66 +24,69 @@ export default async function ColaboradoresPage() {
   const colaboradores = await listarColaboradores();
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Colaboradores</h1>
-          <p className="text-sm text-muted-foreground">
-            Contas de acesso do time (papel, contato/PIX e status).
-          </p>
-        </div>
-        <ColaboradorForm />
-      </div>
+    <div className="flex flex-1 flex-col">
+      <AppTopbar
+        breadcrumb="Administração › Colaboradores"
+        title="Colaboradores"
+        subtitle="Contas de acesso do time (papel, contato/PIX e status)."
+        actions={<ColaboradorForm />}
+      />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>E-mail</TableHead>
-            <TableHead>Papel</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {colaboradores.length === 0 && (
-            <TableRow>
-              <TableCell
-                colSpan={5}
-                className="text-center text-muted-foreground"
-              >
-                Nenhum colaborador cadastrado ainda.
-              </TableCell>
-            </TableRow>
-          )}
-          {colaboradores.map((colaborador) => (
-            <TableRow key={colaborador.id}>
-              <TableCell className="font-medium">
-                {colaborador.nome}
-              </TableCell>
-              <TableCell>{colaborador.email}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{colaborador.papel}</Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={colaborador.ativo ? "default" : "secondary"}>
-                  {colaborador.ativo ? "Ativo" : "Inativo"}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <ColaboradorActions
-                  colaborador={{
-                    id: colaborador.id,
-                    nome: colaborador.nome,
-                    ativo: colaborador.ativo,
-                    temContaVinculada: Boolean(colaborador.user?.id),
-                  }}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <div className="flex-1 px-6 py-6">
+        <Card className="overflow-hidden py-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>E-mail</TableHead>
+                <TableHead>Papel</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {colaboradores.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center text-muted-foreground"
+                  >
+                    Nenhum colaborador cadastrado ainda.
+                  </TableCell>
+                </TableRow>
+              )}
+              {colaboradores.map((colaborador) => (
+                <TableRow key={colaborador.id}>
+                  <TableCell className="font-medium">
+                    {colaborador.nome}
+                  </TableCell>
+                  <TableCell>{colaborador.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{colaborador.papel}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={colaborador.ativo ? "default" : "secondary"}
+                    >
+                      {colaborador.ativo ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ColaboradorActions
+                      colaborador={{
+                        id: colaborador.id,
+                        nome: colaborador.nome,
+                        ativo: colaborador.ativo,
+                        temContaVinculada: Boolean(colaborador.user?.id),
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
     </div>
   );
 }
