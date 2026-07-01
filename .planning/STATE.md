@@ -12,28 +12,28 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Phase:** 1
 **Current Phase Name:** fundacao-auth-papeis-e-base
 **Total Phases:** 10
-**Current Plan:** 4
+**Current Plan:** 5
 **Total Plans in Phase:** 5
-**Status:** Ready to execute
-**Progress:** [████████░░] 80%
+**Status:** Phase complete
+**Progress:** [██████████] 100%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 01-05 executado fora de ordem (depende só de 01/02): CRUD de produto/tier, seed do admin inicial (executado contra o Neon real, admin verificado e login confirmado) e config de deploy Render + README. Plano 01-04 (gestão de colaboradores, AUTH-05) ainda PENDENTE.
+**Last Activity Description:** Plano 01-04 finalizado (gestão admin de contas de colaborador: criar/desativar/redefinir senha, AUTH-05) — checkpoint humano aprovado (funcionalidade coberta por 11 testes automatizados + verificação manual; única ressalva do usuário foi visual/UX, endereçada à parte). Fase 1 encerrada: 5/5 planos executados, todos os requisitos (AUTH-01..05, COLAB-07) completos.
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 23.75 min
-- Total execution time: 1.58 hours
+- Total plans completed: 5
+- Average duration: 24 min
+- Total execution time: 2.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total (min) | Avg/Plan (min) |
 |-------|-------|-------|----------|
-| 01 | 4 | 95 | 23.75 |
+| 01 | 5 | 120 | 24 |
 
 **Recent Trend:**
-- Last 5 plans: 55min (01-01), 5min (01-02), 15min (01-03), 20min (01-05)
+- Last 5 plans: 55min (01-01), 5min (01-02), 15min (01-03), 20min (01-05), 25min (01-04)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -55,18 +55,21 @@ Recent decisions affecting current work:
 - [Phase 01]: Login feito pelo authClient (client) via signIn.email; guard real de autorização sempre em requireUser no server component do layout, middleware só faz redirect-if-logged-out (UX, CVE-2025-29927)
 - [Phase 01]: Better Auth additionalFields obrigatórios (required:true, input:false) precisam de defaultValue, senão auth.api.signUpEmail lança MISSING_FIELD mesmo server-side; defaultValue role=SDR aplicado (menor privilégio)
 - [Phase 01]: Scripts tsx standalone que importam algo de src/server/ (que tem "import server-only" na cadeia) precisam da flag `--conditions=react-server` para não lançar o erro proposital do pacote server-only fora do bundler do Next (usado em prisma/seed.ts)
+- [Phase 01]: Plugin `better-auth/plugins/admin` descartado (após doc-check) por colidir com o additionalField `role`/Papel e com `requireRole` já estabelecidos; gestão de contas usa `auth.api.signUpEmail` + `hashPassword` de `better-auth/crypto` diretamente
+- [Phase 01]: Redefinição de senha por admin escreve direto na tabela `Account` (providerId "credential") via `hashPassword`, não os endpoints nativos `setPassword`/`changePassword` (exigem sessão do próprio usuário); revogação de sessão (desativar/redefinir) via `db.session.deleteMany` direto, sem o plugin admin
 
 ### Pending Todos
 
-- Executar o plano 01-04 (gestão admin de contas: criar/desativar/redefinir senha colaborador, AUTH-05) — pulado nesta sessão porque o plano 01-05 só depende de 01/02 e foi solicitado primeiro; 01-04 não tem dependência de 01-05 e pode ser executado a qualquer momento antes de fechar a Fase 1.
+Nenhum pendente na Fase 1 — todos os 5 planos executados, todos os requisitos (AUTH-01..05, COLAB-07) completos.
 
 ### Blockers/Concerns
 
 - Phase 5: Convenção exata de arredondamento progressivo e regra de "qual versão do plano vale no mês X" precisam ser validadas contra números reais das planilhas antes de codificar o motor.
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
+- Fase 1.1 (Fundação de UI/Design) a ser inserida antes da Fase 2: usuário reportou que o scaffold atual tem bugs de estilização (mapeamento `--font-sans` quebrado caindo para fonte serif, título residual "Create Next App", `lang="en"` no `<html>`) e que as telas funcionais entregues na Fase 1 (login, /colaboradores, /produtos) estão corretas mas visualmente não estilizadas (sem design system/app shell aplicado). Não é um defeito funcional da Fase 1 — é um pré-requisito de UX a resolver antes de construir mais telas em cima do padrão visual atual.
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T15:24:07.347Z
-**Stopped At:** Completed 01-05-PLAN.md (01-04 ainda pendente)
+**Last session:** 2026-07-01T15:55:23.890Z
+**Stopped At:** Completed 01-04-PLAN.md (Fase 1 encerrada, 5/5 planos)
 **Resume File:** None

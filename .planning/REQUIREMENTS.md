@@ -13,7 +13,7 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 - [x] **AUTH-02**: Sessão persiste entre recarregamentos do navegador e carrega papel + colaborador vinculado
 - [x] **AUTH-03**: Colaborador (Closer/SDR/SS) só acessa e vê os próprios dados; a restrição é imposta no servidor, não só na interface
 - [x] **AUTH-04**: Admin/Gestor acessa todos os dados e todas as telas de cadastro
-- [ ] **AUTH-05**: Admin pode criar, desativar e redefinir senha de contas de colaboradores
+- [x] **AUTH-05**: Admin pode criar, desativar e redefinir senha de contas de colaboradores
 
 ### Colaboradores e Planos de Comissão (COLAB)
 
@@ -128,7 +128,7 @@ Explicitamente excluído para evitar aumento de escopo.
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | AUTH-04 | Phase 1 | Complete |
-| AUTH-05 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Complete |
 | COLAB-07 | Phase 1 | Complete |
 | COLAB-01 | Phase 2 | Pending |
 | COLAB-02 | Phase 2 | Pending |
