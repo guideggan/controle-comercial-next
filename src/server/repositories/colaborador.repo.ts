@@ -51,3 +51,25 @@ export function setColaboradorAtivo(id: string, ativo: boolean) {
     data: { ativo },
   });
 }
+
+export type AtualizarColaboradorRowData = {
+  nome: string;
+  papel: Papel;
+  telefone?: string;
+  pix?: string;
+};
+
+export function atualizarColaboradorRow(
+  id: string,
+  data: AtualizarColaboradorRowData,
+) {
+  return db.colaborador.update({
+    where: { id },
+    data: {
+      nome: data.nome,
+      papel: data.papel,
+      telefone: data.telefone,
+      pix: data.pix,
+    },
+  });
+}

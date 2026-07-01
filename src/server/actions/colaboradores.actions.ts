@@ -7,12 +7,14 @@ import { requireRole } from "@/server/auth/session";
 import { auth } from "@/server/auth/auth";
 import { db } from "@/lib/db";
 import {
+  atualizarColaboradorRow,
   criarColaboradorRow,
   getColaborador,
   setColaboradorAtivo,
 } from "@/server/repositories/colaborador.repo";
 import {
   criarColaboradorSchema,
+  editarColaboradorSchema,
   redefinirSenhaSchema,
 } from "@/server/actions/colaboradores.schemas";
 
@@ -87,6 +89,45 @@ export async function criarColaborador(input: {
   }
 
   revalidatePath("/colaboradores");
+}
+
+// Fecha o COLAB-01: hoje só existia criar/desativar/redefinir senha; esta
+// action adiciona o caminho de edição de nome/papel/telefone/pix de um
+// colaborador já existente. Email não é editável aqui (ver comentário em
+// editarColaboradorSchema).
+export async function editarColaborador(
+  id: string,
+  input: { nome: string; papel: string; telefone?: string; pix?: string },
+) {
+  await requireRole("ADMIN");
+
+  const parsed = editarColaboradorSchema.parse(input);
+
+  const colaborador = await getColaborador(id);
+  if (!colaborador) {
+    throw new Error("Colaborador não encontrado");
+  }
+
+  await atualizarColaboradorRow(id, {
+    nome: parsed.nome,
+    papel: parsed.papel,
+    telefone: parsed.telefone || undefined,
+    pix: parsed.pix || undefined,
+  });
+
+  // Mantém o User do Better Auth (fonte da sessão/exibição de nome no shell)
+  // coerente com o Colaborador (fonte de negócio) após a edição. Não é
+  // estritamente exigido pelo COLAB-01, mas evita nome/papel divergentes
+  // entre a sessão logada e a listagem de colaboradores.
+  if (colaborador.user?.id) {
+    await db.user.update({
+      where: { id: colaborador.user.id },
+      data: { name: parsed.nome, role: parsed.papel },
+    });
+  }
+
+  revalidatePath("/colaboradores");
+  revalidatePath(`/colaboradores/${id}`);
 }
 
 export async function desativarColaborador(id: string) {
