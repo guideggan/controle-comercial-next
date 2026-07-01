@@ -16,6 +16,13 @@ import { db } from "@/lib/db";
 // padrão de `criarColaboradorRow` em colaborador.repo.ts.
 type PlanoComissaoClient = Pick<typeof db, "planoComissao">;
 
+// Converte "YYYY-MM-DD" em Date UTC puro. O Prisma Client 6.19.x rejeita
+// strings cruas em colunas @db.Date — precisa ser um objeto Date (Pitfall 6).
+function paraDataUTC(data: string): Date {
+  const [ano, mes, dia] = data.split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia));
+}
+
 export type CriarPlanoRowData = {
   colaboradorId: string;
   tipo: PlanoTipo;
@@ -36,7 +43,7 @@ export function criarPlanoRow(
       colaboradorId: data.colaboradorId,
       tipo: data.tipo,
       config: data.config,
-      vigenciaInicio: data.vigenciaInicio,
+      vigenciaInicio: paraDataUTC(data.vigenciaInicio),
       vigenciaFim: null,
     },
   });
@@ -53,7 +60,7 @@ export function fecharVigencia(
 ) {
   return tx.planoComissao.update({
     where: { id: planoId },
-    data: { vigenciaFim },
+    data: { vigenciaFim: paraDataUTC(vigenciaFim) },
   });
 }
 
