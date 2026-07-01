@@ -12,19 +12,19 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Current Phase:** 03
 **Current Phase Name:** vendas-e-parcelas
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 1
+**Current Plan:** 2
 **Total Plans in Phase:** 4
 **Status:** In progress
-**Progress:** [████████░░] 83%
+**Progress:** [█████████░] 92%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 03-01 completo (TDD): módulo de domínio puro `src/domain/vendas/parcelas.ts` — `gerarCronogramaParcelas` + `dataVencimentoAncorada` provados por 13 testes unitários, incluindo ano completo com âncora=31 sem drift (jan-31 → fev-28 → mar-31) e fevereiro bissexto (29). Requisitos VENDA-02/VENDA-03 completos. Zero dependências de framework/DB — pronto para reuso pela Fase 5 (motor) e Fase 10 (import). Próximo: plano 03-02 (repository/service de venda consumindo este módulo).
+**Last Activity Description:** Plano 03-02 completo: models `Venda` e `Parcela` (+ enums Plataforma/TipoPagamento/ParcelaTipo/StatusPagamento) adicionados ao Prisma schema e migração `add_venda_parcela` aplicada no Neon ao vivo. Todos os campos do formulário único (VENDA-01), relação venda→parcelas com cascade (VENDA-02) e flag `fechado` placeholder (VENDA-04) completos. Colunas de recebimento da Fase 4 já criadas (statusPagamento default PENDENTE, valorRecebido/dataPagamento nullable) para não exigir migração de tipo depois. `prisma migrate status` em dia, `tsc` limpo. Próximo: plano 03-03 (repository/service de venda consumindo o domínio do 03-01 e o schema do 03-02).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 22 min
-- Total execution time: 3.67 hours
+- Total plans completed: 11
+- Average duration: 20.7 min
+- Total execution time: 3.8 hours
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
 | 02 | 3 | 70 | 23.3 |
-| 03 | 1 | 2 | 2 |
+| 03 | 2 | 10 | 5 |
 
 **Recent Trend:**
-- Last 5 plans: 2min (03-01), 35min (02-03), 20min (02-01), 15min (02-02), 20min (01-05)
-- Trend: Improving (pure-function TDD plan, no I/O)
+- Last 5 plans: 8min (03-02), 2min (03-01), 35min (02-03), 20min (02-01), 15min (02-02)
+- Trend: Improving (schema/migration plan, no UI)
 
 **Plan Metrics:**
 
@@ -49,6 +49,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 03 P01 | 2 | 1 task (TDD) | 2 files |
 
 *Updated after each plan completion*
+| Phase 03 P02 | 8 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -84,10 +85,12 @@ Recent decisions affecting current work:
 - [Phase 03-01]: Entrada (quando >0) ocupa sozinha o mês inicial do cronograma; mensalidades sempre começam no mês seguinte via `proximoMes`, evitando duas parcelas na mesma competência
 - [Phase 03-01]: `ultimoDiaDoMes` reaproveita o overflow nativo de `Date.UTC(ano, mes, 0)` em vez de reimplementar regra de ano bissexto — menos superfície de bug para o clamp do dia-âncora (Pitfall 7)
 - [Phase 03-01]: `src/domain/vendas/parcelas.ts` estabelece o padrão de domain layer 100% puro (zero imports) para o restante da Fase 3, Fase 5 (motor) e Fase 10 (import de histórico)
+- [Phase 03-02]: mesReferencia mantido como campo próprio (não derivado) em Venda e Parcela, consistente com o Pitfall 2 do plano 03-01
+- [Phase 03-02]: Colunas de recebimento da Fase 4 (statusPagamento/valorRecebido/dataPagamento) e flag fechado da Fase 5 criadas antecipadamente na migração de Venda/Parcela para nunca exigir migração de tipo depois
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 1/4 planos completos (03-01, requisitos VENDA-02/VENDA-03). Próximo: plano 03-02.
+Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 2/4 planos completos (03-01: VENDA-02/VENDA-03; 03-02: VENDA-01/VENDA-02/VENDA-04, models Venda/Parcela migrados no Neon). Próximo: plano 03-03.
 
 ### Blockers/Concerns
 
@@ -97,6 +100,6 @@ Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos 
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T23:25:16.845Z
-**Stopped At:** Completed 03-01-PLAN.md
+**Last session:** 2026-07-01T23:29:47.737Z
+**Stopped At:** Completed 03-02-PLAN.md
 **Resume File:** None
