@@ -79,11 +79,11 @@ Crie `src/server/actions/produtos.actions.ts` ("use server"), cada action inicia
 - `alternarProdutoAtivo(id, ativo)`: ativa/desativa (não deletar fisicamente — produtos são referenciados por vendas futuras).
 `revalidatePath("/produtos")` após mutações.
 
-Crie `src/app/(admin)/produtos/page.tsx` (server component, dentro do grupo (admin) que já tem o layout gated do plano 04): `await requireRole("ADMIN")`, lista produtos em <Table> (nome, status ativo via <Badge>), botão "Novo produto".
+Crie `src/app/(admin)/produtos/page.tsx` (server component, dentro do grupo (admin) que já tem o layout gated criado pelo plano 01): `await requireRole("ADMIN")`, lista produtos em <Table> (nome, status ativo via <Badge>), botão "Novo produto".
 
 Crie `src/app/(admin)/produtos/produto-form.tsx` ("use client"): Dialog com react-hook-form + zod para criar/editar, chamando as actions, toast (sonner), refresh no sucesso. Botão de ativar/desativar por linha. Texto em pt-BR.
 
-NOTA: este plano depende do layout (admin) do plano 04; se rodarem em paralelo na mesma wave e o layout ainda não existir, crie um layout (admin) mínimo gated por requireRole("ADMIN") aqui — o executor deve verificar se já existe para evitar conflito de arquivo. Para evitar conflito, NÃO edite (admin)/layout.tsx aqui se já existir; apenas crie a subrota produtos.
+NOTA: o gate `src/app/(admin)/layout.tsx` JÁ FOI criado pelo plano 01 (gate de role ADMIN). NÃO crie, verifique-em-runtime, nem reescreva esse arquivo aqui — apenas adicione a subrota (admin)/produtos/. Como o plano 04 (mesma wave 3) também só adiciona subrotas sob (admin)/, não há disputa de arquivo compartilhado.
   </action>
   <verify>`npm run dev`; /produtos lista, cria e edita produto; `npx tsc --noEmit` passa; `rtk lint` limpo. Não-admin bloqueado.</verify>
   <done>Admin cria/edita/ativa/desativa produtos numa tela gated por requireRole("ADMIN"); produtos ficam persistidos e listáveis (COLAB-07).</done>

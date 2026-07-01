@@ -98,11 +98,11 @@ Crie `src/middleware.ts` APENAS como UX sugar (redirect-if-logged-out coarse): s
 
 <task type="checkpoint:human-verify" gate="blocking">
   <name>Task 3: Verificar login, persistência de sessão e rota protegida</name>
-  <action>Pausa para verificação humana do fluxo de login, persistência de sessão e proteção de rota (ver how-to-verify). Antes do checkpoint, o executor deve garantir que existe um usuário para logar (rodar o seed do plano 05 ou criar um usuário de teste via auth.api.signUpEmail).</action>
-  <what-built>Fluxo completo de login por e-mail/senha (AUTH-01), persistência de sessão após reload (AUTH-02) e rota protegida self-scoped (/painel) com guard server-side. NOTA: precisa de um usuário existente — se o plano 05 (seed do admin) ainda não rodou, o executor deve criar um usuário de teste via `auth.api.signUpEmail` num script pontual OU rodar o seed antes deste checkpoint.</what-built>
+  <action>SETUP OBRIGATÓRIO antes do checkpoint (não depende de nenhum outro plano): o executor DEVE criar um usuário de teste próprio via `auth.api.signUpEmail`. Rode um script pontual com tsx (ex.: `npx tsx -e "..."` ou um arquivo temporário) que chama `auth.api.signUpEmail({ body: { email: 'teste@teste.com', password: 'senha1234', name: 'Teste' } })` importando `auth` de `@/server/auth/auth`. Isso NÃO depende do seed do plano 05 (que roda em outra wave e é para o admin real). Depois pause para verificação humana do fluxo (ver how-to-verify).</action>
+  <what-built>Fluxo completo de login por e-mail/senha (AUTH-01), persistência de sessão após reload (AUTH-02) e rota protegida self-scoped (/painel) com guard server-side. O usuário de teste é criado pelo próprio executor via `auth.api.signUpEmail` (setup obrigatório acima) — sem dependência do seed do plano 05.</what-built>
   <how-to-verify>
-1. Garanta que existe um usuário (rode o seed do plano 05, ou crie um de teste). Suba o app: `npm run dev`.
-2. Acesse http://localhost:3000/login e faça login com as credenciais do usuário.
+1. Confirme que o usuário de teste foi criado (setup obrigatório: `auth.api.signUpEmail` com teste@teste.com / senha1234). Suba o app: `npm run dev`.
+2. Acesse http://localhost:3000/login e faça login com teste@teste.com / senha1234.
 3. Confirme o redirect para /painel e que o nome/papel aparecem.
 4. Recarregue a página (F5) e confirme que continua logado (AUTH-02).
 5. Feche e reabra a aba em http://localhost:3000/painel — deve continuar logado.

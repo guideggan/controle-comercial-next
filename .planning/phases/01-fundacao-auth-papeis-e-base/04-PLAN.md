@@ -7,7 +7,6 @@ depends_on: [01, 02]
 files_modified:
   - src/server/repositories/colaborador.repo.ts
   - src/server/actions/colaboradores.actions.ts
-  - src/app/(admin)/layout.tsx
   - src/app/(admin)/colaboradores/page.tsx
   - src/app/(admin)/colaboradores/colaborador-form.tsx
   - src/app/(admin)/colaboradores/colaborador-actions.tsx
@@ -83,9 +82,9 @@ Use `revalidatePath("/colaboradores")` após mutações.
 
 <task type="auto">
   <name>Task 2: Telas admin de colaboradores (lista + form + ações)</name>
-  <files>src/app/(admin)/layout.tsx, src/app/(admin)/colaboradores/page.tsx, src/app/(admin)/colaboradores/colaborador-form.tsx, src/app/(admin)/colaboradores/colaborador-actions.tsx</files>
+  <files>src/app/(admin)/colaboradores/page.tsx, src/app/(admin)/colaboradores/colaborador-form.tsx, src/app/(admin)/colaboradores/colaborador-actions.tsx</files>
   <action>
-Crie `src/app/(admin)/layout.tsx` (server component) chamando `await requireRole("ADMIN")` no topo — não-admin é bloqueado/redirecionado. Header com navegação para Colaboradores e Produtos (a rota de produtos vem do plano 05) e botão de logout.
+IMPORTANTE: o gate `src/app/(admin)/layout.tsx` JÁ FOI criado pelo plano 01 (gate de role ADMIN via auth.api.getSession). NÃO crie nem reescreva esse arquivo aqui — apenas adicione as subrotas em (admin)/colaboradores/. Isso evita a corrida de arquivo compartilhado com o plano 05 (mesma wave 3).
 
 Crie `src/app/(admin)/colaboradores/page.tsx` (server component): `await requireRole("ADMIN")`, lista colaboradores via colaborador.repo em uma <Table> shadcn (nome, e-mail, papel via <Badge>, status ativo/inativo). Botão "Novo colaborador" que abre o form.
 
@@ -99,10 +98,10 @@ Crie `src/app/(admin)/colaboradores/colaborador-actions.tsx` ("use client"): bot
 
 <task type="checkpoint:human-verify" gate="blocking">
   <name>Task 3: Verificar gestão admin de contas (criar/desativar/reset)</name>
-  <action>Pausa para verificação humana da gestão de contas (ver how-to-verify): criar colaborador, logar com ele, desativar e confirmar perda de acesso, redefinir senha e confirmar. Requer estar logado como admin.</action>
-  <what-built>Gestão admin de contas (AUTH-05): criar colaborador com conta de login, desativar conta (com revogação de sessão), redefinir senha — tudo gated por requireRole("ADMIN"). Requer estar logado como admin (seed do plano 05 ou usuário admin existente).</what-built>
+  <action>SETUP OBRIGATÓRIO antes do checkpoint (não depende de nenhum outro plano): o executor DEVE criar um usuário ADMIN de teste próprio. Rode um script pontual com tsx que (1) chama `auth.api.signUpEmail({ body: { email: 'admin@teste.com', password: 'senha1234', name: 'Admin Teste' } })` importando `auth` de `@/server/auth/auth`, e (2) cria um Colaborador ADMIN e atualiza o User correspondente com `role = 'ADMIN'` + `colaboradorId` vinculado (via `db` de @/lib/db) para que o login caia no grupo (admin). Isso NÃO depende do seed do plano 05 (admin real, outra wave). Depois pause para verificação humana (ver how-to-verify).</action>
+  <what-built>Gestão admin de contas (AUTH-05): criar colaborador com conta de login, desativar conta (com revogação de sessão), redefinir senha — tudo gated por requireRole("ADMIN"). O admin de teste é criado pelo próprio executor (setup obrigatório acima via `auth.api.signUpEmail` + role ADMIN) — sem dependência do seed do plano 05.</what-built>
   <how-to-verify>
-1. Logado como admin, acesse /colaboradores.
+1. Logado como admin (admin@teste.com / senha1234, criado no setup obrigatório), acesse /colaboradores.
 2. Crie um colaborador (ex.: papel CLOSER) com uma senha inicial.
 3. Em outra aba/navegador anônimo, faça login com o novo colaborador — deve entrar e ver só /painel (não /colaboradores).
 4. Como admin, desative esse colaborador; confirme que a sessão dele deixa de funcionar (recarregar /painel na aba dele deve deslogar/bloquear).

@@ -20,6 +20,7 @@ files_modified:
   - src/server/auth/auth.ts
   - src/server/auth/auth-client.ts
   - src/app/api/auth/[...all]/route.ts
+  - src/app/(admin)/layout.tsx
 autonomous: true
 requirements: [AUTH-01, AUTH-02]
 user_setup:
@@ -51,6 +52,9 @@ must_haves:
     - path: "src/app/api/auth/[...all]/route.ts"
       provides: "Handler catch-all do Better Auth (GET/POST)"
       exports: ["GET", "POST"]
+    - path: "src/app/(admin)/layout.tsx"
+      provides: "Gate server-side do grupo de rotas (admin): lê a sessão via auth.api.getSession e redireciona para /login se não houver sessão ou se role !== ADMIN. Arquivo de propriedade EXCLUSIVA do plano 01 — planos 04/05 adicionam subrotas mas NÃO reescrevem este layout."
+      contains: "getSession"
   key_links:
     - from: "src/server/auth/auth.ts"
       to: "src/lib/db.ts"
@@ -60,6 +64,10 @@ must_haves:
       to: "src/server/auth/auth.ts"
       via: "toNextJsHandler(auth)"
       pattern: "auth"
+    - from: "src/app/(admin)/layout.tsx"
+      to: "src/server/auth/auth.ts"
+      via: "auth.api.getSession({ headers: await headers() }) + checagem role==='ADMIN'"
+      pattern: "getSession"
 ---
 
 <objective>
@@ -67,6 +75,8 @@ Scaffold do projeto Next.js 16 + TypeScript + Tailwind + shadcn/ui, setup do Pri
 
 Purpose: Esta é a fundação de TUDO. Sem o scaffold, o schema com os tipos corretos (Decimal(14,2)/Decimal(6,4)/@db.Date/@db.Timestamptz) e o Better Auth configurado, nenhum outro plano da fase (nem das fases seguintes) pode rodar. Cobre AUTH-01 (login e-mail/senha) e AUTH-02 (sessão persistente com role + colaboradorId).
 Output: Projeto Next.js executável, migration inicial aplicada, Better Auth respondendo em /api/auth.
+
+NOTA sobre contagem de arquivos: este plano lista ~16 arquivos em files_modified, acima do limiar de aviso de 10. Isso é ACEITÁVEL e intencional — a maioria (package.json, tsconfig.json, next.config.ts, tailwind.config.ts, components.json, .gitignore, layout.tsx/page.tsx/globals.css) é boilerplate gerado por `create-next-app` + `shadcn init`, não código autoral. O trabalho autoral real está concentrado em 3 tarefas coesas (scaffold, schema Prisma, instância Better Auth + gate (admin)). Mantido como um único plano porque dividir o scaffold do schema/auth adicionaria custo de coordenação (o schema e o auth dependem do scaffold ter rodado no mesmo diretório) sem reduzir risco real.
 </objective>
 
 <execution_context>
@@ -126,8 +136,8 @@ Aplique a migration: `npx prisma migrate dev --name init` (requer DATABASE_URL a
 </task>
 
 <task type="auto">
-  <name>Task 3: Instância Better Auth + handler + client</name>
-  <files>src/server/auth/auth.ts, src/server/auth/auth-client.ts, src/app/api/auth/[...all]/route.ts</files>
+  <name>Task 3: Instância Better Auth + handler + client + gate (admin)</name>
+  <files>src/server/auth/auth.ts, src/server/auth/auth-client.ts, src/app/api/auth/[...all]/route.ts, src/app/(admin)/layout.tsx</files>
   <action>
 Antes de codar, faça um doc-check rápido em better-auth.com/docs/adapters/prisma e better-auth.com/docs/concepts/database para confirmar a API exata da versão 1.6.23 (Open Question 1/2 do research: comportamento de `additionalFields` com `input:false`, e se `toNextJsHandler` é o helper correto para o route handler).
 
@@ -141,9 +151,11 @@ Crie `src/server/auth/auth.ts` (server-only) com `betterAuth({ ... })`:
 Crie `src/server/auth/auth-client.ts` ("use client") com `createAuthClient()` de "better-auth/react", exportando `authClient` (e helpers como signIn/signOut/useSession conforme a API 1.6.23).
 
 Crie `src/app/api/auth/[...all]/route.ts` exportando GET e POST a partir de `toNextJsHandler(auth)` (better-auth/next-js). Se o nome do helper divergir na doc-check, use o correto documentado.
+
+Crie `src/app/(admin)/layout.tsx` como um gate server-side MÍNIMO do grupo de rotas (admin). Este arquivo é criado AQUI no plano 01 (não nos planos 04/05) para que os planos 04 e 05 — ambos na wave 3 — apenas ADICIONEM subrotas em (admin)/ sem disputar/reescrever este arquivo compartilhado. Como os guards do DAL (requireRole) só nascem no plano 02, este layout NÃO depende de session.ts: ele lê a sessão diretamente via `const session = await auth.api.getSession({ headers: await headers() })` (de @/server/auth/auth e next/headers) e, se `!session` OU `session.user.role !== "ADMIN"`, chama `redirect("/login")` (next/navigation). Renderize `{children}` mais um header admin simples (nav para Colaboradores/Produtos + botão de logout pode ficar para os planos 04/05, mas o gate de role fica aqui). Mantenha-o trivial — planos 04/05 preenchem as subrotas, nunca este layout.
   </action>
-  <verify>`npm run dev` roda; `rtk curl http://localhost:3000/api/auth/ok` (ou o endpoint de health do Better Auth) responde; `npx tsc --noEmit` passa. Confirme que auth.ts importa "server-only" e não vaza para o client.</verify>
-  <done>Instância Better Auth configurada com prismaAdapter + emailAndPassword + additionalFields role/colaboradorId (input:false) + sessão de banco 30 dias; handler catch-all responde em /api/auth/[...all]; authClient disponível para client components.</done>
+  <verify>`npm run dev` roda; `rtk curl http://localhost:3000/api/auth/ok` (ou o endpoint de health do Better Auth) responde; `npx tsc --noEmit` passa. Confirme que auth.ts importa "server-only" e não vaza para o client. Acessar /(admin) sem sessão ADMIN redireciona para /login.</verify>
+  <done>Instância Better Auth configurada com prismaAdapter + emailAndPassword + additionalFields role/colaboradorId (input:false) + sessão de banco 30 dias; handler catch-all responde em /api/auth/[...all]; authClient disponível para client components; `(admin)/layout.tsx` existe como gate de role ADMIN (via auth.api.getSession), de propriedade exclusiva do plano 01.</done>
 </task>
 
 </tasks>
