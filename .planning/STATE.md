@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 3 — Vendas e Parcelas (em andamento)
+**Current focus:** Phase 4 — Recebimentos (próxima)
 
 ## Current Position
 
@@ -14,17 +14,17 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 **Total Phases:** 10 (+ Phase 1.1 inserted)
 **Current Plan:** 4
 **Total Plans in Phase:** 4
-**Status:** In progress
-**Progress:** [███████░░░] 75%
+**Status:** Complete
+**Progress:** [████████░░] 80%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 03-03 completo: camada servidor da venda — `vendaSchema` (Zod, regras à vista/mensalista), `venda.repo.ts` (criar tx, inserirParcelas, apagarParcelasPendentes, getVenda, atualizarVendaRow, setVendaFechado, listarVendas com filtros), `venda.service.ts` (`criarVenda` transacional consumindo `gerarCronogramaParcelas` do 03-01, `atualizarVenda` com guard de venda fechada e regeneração de parcelas pendentes) e `vendas.actions.ts` (3 server actions gated `requireRole("ADMIN")`). 7 testes novos verdes, `tsc` limpo. Próximo: plano 03-04 (UI de formulário/listagem de venda).
+**Last Activity Description:** Plano 03-04 completo (último da Fase 3): UI admin de venda — formulário único (venda-form.tsx, react-hook-form + zodResolver, condicional à vista/mensalista, modo bloqueado), lista com filtros (page.tsx + vendas-filtros.tsx: aluno/closer/produto/status/mesReferencia via querystring), detalhe da venda com tabela de parcelas geradas ([id]/page.tsx) e trava de mês fechado. Item "Vendas" da sidebar ativado. Smoke test próprio contra o Neon real (modo autônomo) descobriu e corrigiu um bug bloqueante: venda.repo.ts passava string "YYYY-MM-DD" crua para colunas @db.Date, rejeitada pelo Prisma Client 6.19.3 — corrigido com helper paraDataUTC. Confirmado end-to-end: venda MENSALISTA gera 1 ENTRADA + 12 MENSALIDADE ancoradas no dia 31 sem drift; venda À VISTA gera 1 parcela = TCV; todos os filtros de listarVendas funcionam contra o banco real. Fase 3 encerrada: 4/4 planos, requisitos VENDA-01..05 completos. Próximo: Fase 4 (Recebimentos).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 18.75 min
-- Total execution time: 3.9 hours
+- Total plans completed: 13
+- Average duration: 21.2 min
+- Total execution time: 4.6 hours
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 01 | 5 | 120 | 24 |
 | 01.1 | 1 | 30 | 30 |
 | 02 | 3 | 70 | 23.3 |
-| 03 | 3 | 16 | 5.3 |
+| 03 | 4 | 61 | 15.25 |
 
 **Recent Trend:**
-- Last 5 plans: 6min (03-03), 8min (03-02), 2min (03-01), 35min (02-03), 20min (02-01)
-- Trend: Improving (server layer plans, no UI)
+- Last 5 plans: 45min (03-04), 6min (03-03), 8min (03-02), 2min (03-01), 35min (02-03)
+- Trend: 03-04 mais longo por incluir smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo) + descoberta/correção de bug de datas
 
 **Plan Metrics:**
 
@@ -49,6 +49,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 03 P01 | 2 | 1 task (TDD) | 2 files |
 | Phase 03 P02 | 8 | 3 tasks | 2 files |
 | Phase 03 P03 | 6 | 3 tasks (2 auto + 1 TDD) | 5 files |
+| Phase 03 P04 | 45 | 2 tasks + 1 checkpoint (auto-aprovado) | 7 files |
 
 *Updated after each plan completion*
 
@@ -91,19 +92,23 @@ Recent decisions affecting current work:
 - [Phase 03-03]: `atualizarVenda` sempre regenera o cronograma (apaga parcelas PENDENTES + reinsere), inclusive para venda à vista — uma única estratégia de edição em vez de bifurcar por tipoPagamento; parcelas PAGAS nunca são tocadas
 - [Phase 03-03]: Trava de venda fechada (VENDA-04) implementada como checagem simples de `venda.fechado` no service, com comentário explícito de que a Fase 5 vai substituir por checagem de apuração fechada
 - [Phase 03-03]: Mapeamento domínio→prisma extraído em `montarParcelasParaInsercao` (função pura, sem DB) para manter o teste do fluxo transacional determinístico
+- [Phase 03-04]: `vendaSchema` tem campos com `.default()` (Zod v4) — tipo de ENTRADA (`z.input`) difere do tipo de SAÍDA (`z.infer`); `useForm` usa o generic de 3 posições (`TFieldValues=input, TContext, TTransformedValues=output`) para o `handleSubmit` entregar à Server Action o tipo já validado, sem cast manual
+- [Phase 03-04]: Bug descoberto no smoke test contra o Neon real: Prisma Client 6.19.3 rejeita string `"YYYY-MM-DD"` pura em colunas `@db.Date` ("premature end of input. Expected ISO-8601 DateTime") — corrigido em `venda.repo.ts` com helper `paraDataUTC` (Date.UTC dos componentes, nunca `new Date(string)`); o mesmo bug existe em `plano-comissao.repo.ts` (Fase 2) mas ficou fora de escopo deste plano — documentado em `.planning/phases/03-vendas-e-parcelas/deferred-items.md`
+- [Phase 03-04]: `_count.parcelas` adicionado ao include de `listarVendas` para a listagem mostrar quantas parcelas cada venda já gerou
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1 nem na Fase 2 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 3/4 planos completos (03-01: VENDA-02/VENDA-03; 03-02: VENDA-01/VENDA-02/VENDA-04 migrados no Neon; 03-03: VENDA-01/VENDA-02/VENDA-04/VENDA-05 na camada servidor — schema/repo/service transacional/actions gated ADMIN). Próximo: plano 03-04 (UI de formulário/listagem de venda).
+Nenhum pendente na Fase 1, Fase 1.1, Fase 2 nem Fase 3 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Próximo: Fase 4 — Recebimentos (PGTO-01..03).
 
 ### Blockers/Concerns
 
 - Phase 5: Convenção exata de arredondamento progressivo e regra de "qual versão do plano vale no mês X" precisam ser validadas contra números reais das planilhas antes de codificar o motor.
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
-- Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas novas rotas de placeholder da Fase 1.1 (`/inicio`, `/vendas`, `/comissoes`, `/metas`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
+- Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas novas rotas de placeholder da Fase 1.1 (`/inicio`, `/comissoes`, `/metas`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
+- **Bug em produção (descoberto na Fase 3, não corrigido — fora de escopo):** `plano-comissao.repo.ts` (Fase 2) tem o mesmo bug de datas corrigido em `venda.repo.ts` neste plano — `definirPlanoComissaoAction` está quebrada contra o banco real hoje (COLAB-02..05). Ver `.planning/phases/03-vendas-e-parcelas/deferred-items.md`. Recomendado priorizar correção antes/no início da Fase 4.
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T23:39:00Z
-**Stopped At:** Completed 03-03-PLAN.md
+**Last session:** 2026-07-02T00:38:00Z
+**Stopped At:** Completed 03-04-PLAN.md (Fase 3 encerrada — 4/4 planos)
 **Resume File:** None

@@ -92,11 +92,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Uma venda com dia de vencimento 31 mantém o dia de vencimento ancorado ao longo de meses de 28/29/30 dias, sem escorregar permanentemente
   4. Admin edita uma venda e suas parcelas, e a edição é bloqueada ou avisada quando o mês já foi fechado
   5. Admin busca e lista vendas filtrando por aluno, closer, produto, status e mês de referência
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans executed
 - [x] 03-01-PLAN.md — (TDD) módulo de domínio puro: cronograma de parcelas + dia de vencimento ancorado sem drift (VENDA-03, VENDA-02)
 - [x] 03-02-PLAN.md — migração Prisma: models Venda + Parcela + enums (com colunas de recebimento da Fase 4 e flag `fechado`) (VENDA-01, VENDA-02, VENDA-04)
 - [x] 03-03-PLAN.md — camada servidor: schema Zod + repo + service transacional (venda+parcelas) + actions gated ADMIN + trava de mês fechado (VENDA-01, VENDA-02, VENDA-04, VENDA-05)
-- [ ] 03-04-PLAN.md — UI admin: formulário único, lista com filtros, detalhe com parcelas, edição com guard + checkpoint humano (VENDA-01, VENDA-04, VENDA-05)
+- [x] 03-04-PLAN.md — UI admin: formulário único, lista com filtros, detalhe com parcelas, edição com guard + checkpoint humano (VENDA-01, VENDA-04, VENDA-05)
+
+**Fase 3 encerrada** (2026-07-01): todos os 4 planos executados, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint humano auto-aprovado em modo yolo, substituído por verificação automática): venda MENSALISTA gera entrada + N mensalidades ancoradas no dia 31 sem drift, venda À VISTA gera 1 parcela = TCV, lista filtra por aluno/closer/produto/status/mês, edição bloqueada em mês fechado.
 
 ### Phase 4: Recebimentos
 **Goal**: Cada parcela/entrada pode ser marcada como paga, e o sistema calcula corretamente o valor recebido no mês sem contar nada em duplicidade — essa é a base de entrada do motor de comissão.
@@ -187,7 +189,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1. Fundação — Auth, Papéis e Base | 5/5 | Complete | 2026-07-01 |
 | 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
 | 2. Colaboradores e Planos de Comissão | 3/3 | Complete | 2026-07-01 |
-| 3. Vendas e Parcelas | 1/4 | In Progress | - |
+| 3. Vendas e Parcelas | 4/4 | Complete | 2026-07-01 |
 | 4. Recebimentos | 0/TBD | Not started | - |
 | 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |
 | 6. Metas e Proração Semanal | 0/TBD | Not started | - |
