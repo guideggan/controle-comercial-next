@@ -31,6 +31,16 @@ enum Papel {
   SS
 }
 
+// Os 4 formatos de plano de comissão suportados pelo motor (Fase 5). A forma
+// da `config` (JSONB) de cada tipo é validada por Zod em
+// src/server/actions/planos-comissao.schemas.ts, nunca pelo Postgres.
+enum PlanoTipo {
+  percentual_fixo
+  progressivo_atingimento
+  fixo_variavel
+  por_calls
+}
+
 // ============================================================
 // TABELAS GERENCIADAS PELO BETTER AUTH (auth: login, sessão, verificação)
 // Shape conforme better-auth.com/docs/concepts/database para better-auth@1.6.23
@@ -129,14 +139,54 @@ model Colaborador {
   // Back-reference para a conta de login (1:1)
   user User?
 
+  planosComissao PlanoComissao[]
+
   // Fases futuras conectam aqui sem alterar o shape desta tabela:
-  // planosComissao PlanoComissao[]
   // vendasComoCloser Venda[] @relation("closer")
   // vendasComoSdr    Venda[] @relation("sdr")
   // metas Meta[]
   // agendamentos Agendamento[]
 
   @@map("colaborador")
+}
+
+// Plano de comissão do colaborador — polimorfismo config-driven (ver
+// ARCHITECTURE.md "Why config-driven JSONB"): uma tabela só, discriminada por
+// `tipo`, com a `config` (JSONB) validada por Zod na camada de domínio, não
+// pelo Postgres. Versionado por vigência: uma alteração de plano NUNCA
+// sobrescreve a linha atual — fecha `vigenciaFim` da linha aberta e insere
+// uma nova linha com `vigenciaInicio` no mês seguinte. Isso preserva o
+// histórico exato de qual plano valia em cada mês para recomputar comissões
+// passadas corretamente.
+//
+// Formas esperadas de `config` por `tipo` (validadas por
+// src/server/actions/planos-comissao.schemas.ts):
+//   percentual_fixo:          { percentual: number }
+//     ex.: { "percentual": 0.03 }
+//   progressivo_atingimento:  { faixas: [{ deAtingimento: number, percentual: number }] }
+//     ex.: { "faixas": [{ "deAtingimento": 0, "percentual": 0.005 },
+//                        { "deAtingimento": 0.70, "percentual": 0.01 },
+//                        { "deAtingimento": 1.00, "percentual": 0.0125 }] }
+//   fixo_variavel:            { valorFixo: number, percentualVariavel: number }
+//     ex.: { "valorFixo": 2000.00, "percentualVariavel": 0.01 }
+//   por_calls:                { valorPorCall: number }
+//     ex.: { "valorPorCall": 15.00 }
+model PlanoComissao {
+  id             String    @id @default(cuid())
+  colaboradorId  String
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id])
+  tipo           PlanoTipo
+  config         Json
+  vigenciaInicio DateTime  @db.Date
+  vigenciaFim    DateTime? @db.Date
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  // Índice único parcial (garante um único plano aberto por colaborador) é
+  // criado via SQL bruto na migração — Prisma não suporta índice parcial
+  // nativamente no schema. Ver prisma/migrations/*_add_plano_comissao.
+  @@index([colaboradorId])
+  @@map("plano_comissao")
 }
 
 model Produto {
