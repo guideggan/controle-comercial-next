@@ -39,7 +39,7 @@ const OPERACAO: NavSection = {
   label: "Operação",
   items: [
     { label: "Início", href: "/inicio", icon: "dashboard" },
-    { label: "Vendas", href: "/vendas", icon: "vendas", placeholder: true },
+    { label: "Vendas", href: "/vendas", icon: "vendas" },
     {
       label: "Comissões",
       href: "/comissoes",
