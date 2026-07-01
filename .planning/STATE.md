@@ -5,35 +5,36 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 1 — Fundação (Auth, Papéis e Base)
+**Current focus:** Phase 1.1 — Fundação de Design (UI shell), concluída; próxima fase: Phase 2 — Colaboradores e Planos de Comissão
 
 ## Current Position
 
-**Current Phase:** 1
-**Current Phase Name:** fundacao-auth-papeis-e-base
-**Total Phases:** 10
-**Current Plan:** 5
-**Total Plans in Phase:** 5
-**Status:** Phase complete
+**Current Phase:** 1.1
+**Current Phase Name:** fundacao-design-ui
+**Total Phases:** 10 (+ Phase 1.1 inserted)
+**Current Plan:** 1
+**Total Plans in Phase:** 1
+**Status:** Phase complete — ready for verification
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 01-04 finalizado (gestão admin de contas de colaborador: criar/desativar/redefinir senha, AUTH-05) — checkpoint humano aprovado (funcionalidade coberta por 11 testes automatizados + verificação manual; única ressalva do usuário foi visual/UX, endereçada à parte). Fase 1 encerrada: 5/5 planos executados, todos os requisitos (AUTH-01..05, COLAB-07) completos.
+**Last Activity Description:** Fase 1.1 (Fundação de Design/UI shell) executada e encerrada: bugs de estilo do scaffold corrigidos (fonte serifada, título/idioma), app shell reutilizável construído (sidebar agrupada por seções + topbar + user menu), navegação derivada do papel da sessão (ADMIN vê OPERAÇÃO+ADMINISTRAÇÃO, demais papéis veem shell enxuto), Recharts instalado e validado com um gráfico de exemplo, e as 4 telas da Fase 1 (login, painel, colaboradores, produtos) reestiladas sem alterar lógica de auth/autorização ou schema. Verificado com sessões reais (ADMIN semeado + conta SDR de teste, removida após verificação).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 24 min
-- Total execution time: 2.0 hours
+- Total plans completed: 6
+- Average duration: 25 min
+- Total execution time: 2.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total (min) | Avg/Plan (min) |
 |-------|-------|-------|----------|
 | 01 | 5 | 120 | 24 |
+| 01.1 | 1 | 30 | 30 |
 
 **Recent Trend:**
-- Last 5 plans: 55min (01-01), 5min (01-02), 15min (01-03), 20min (01-05), 25min (01-04)
+- Last 5 plans: 15min (01-03), 20min (01-05), 25min (01-04), 30min (01.1)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -57,19 +58,22 @@ Recent decisions affecting current work:
 - [Phase 01]: Scripts tsx standalone que importam algo de src/server/ (que tem "import server-only" na cadeia) precisam da flag `--conditions=react-server` para não lançar o erro proposital do pacote server-only fora do bundler do Next (usado em prisma/seed.ts)
 - [Phase 01]: Plugin `better-auth/plugins/admin` descartado (após doc-check) por colidir com o additionalField `role`/Papel e com `requireRole` já estabelecidos; gestão de contas usa `auth.api.signUpEmail` + `hashPassword` de `better-auth/crypto` diretamente
 - [Phase 01]: Redefinição de senha por admin escreve direto na tabela `Account` (providerId "credential") via `hashPassword`, não os endpoints nativos `setPassword`/`changePassword` (exigem sessão do próprio usuário); revogação de sessão (desativar/redefinir) via `db.session.deleteMany` direto, sem o plugin admin
+- [Phase 01.1]: Navegação da sidebar derivada do papel da sessão via `getNavSections(role)` em `nav-config.ts`, mas os itens exportam uma CHAVE de ícone (`NavIconKey`), não o componente `LucideIcon` em si — componentes/funções não são serializáveis ao atravessar de Server Component (o layout, que lê a sessão) para Client Component (`AppSidebarNav`, que precisa de `usePathname` para o item ativo); o mapa chave→ícone vive só no client
+- [Phase 01.1]: Layout (admin) manteve o guard original inline via `auth.api.getSession` (em vez de trocar para `requireRole("ADMIN")` do DAL) porque este último lança uma exceção genérica em vez de redirecionar — trocar mudaria o comportamento de UX para um colaborador não-admin (era redirect para /login, viraria página de erro); decisão adiada para quando o DAL tiver um caminho de "forbidden" tratado
+- [Phase 01.1]: App shell (`src/components/shell/`) compartilhado por (admin) e (colaborador) via um único componente `AppShell(role, nome)`; cada layout de grupo só chama seu guard de sessão existente e repassa `role`/`nome` — nenhuma lógica de autorização nova foi introduzida no shell
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1 — todos os 5 planos executados, todos os requisitos (AUTH-01..05, COLAB-07) completos.
+Nenhum pendente na Fase 1 nem na Fase 1.1 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR).
 
 ### Blockers/Concerns
 
 - Phase 5: Convenção exata de arredondamento progressivo e regra de "qual versão do plano vale no mês X" precisam ser validadas contra números reais das planilhas antes de codificar o motor.
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
-- Fase 1.1 (Fundação de UI/Design) a ser inserida antes da Fase 2: usuário reportou que o scaffold atual tem bugs de estilização (mapeamento `--font-sans` quebrado caindo para fonte serif, título residual "Create Next App", `lang="en"` no `<html>`) e que as telas funcionais entregues na Fase 1 (login, /colaboradores, /produtos) estão corretas mas visualmente não estilizadas (sem design system/app shell aplicado). Não é um defeito funcional da Fase 1 — é um pré-requisito de UX a resolver antes de construir mais telas em cima do padrão visual atual.
+- Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas novas rotas de placeholder da Fase 1.1 (`/inicio`, `/vendas`, `/comissoes`, `/metas`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
 
 ## Session Continuity
 
-**Last session:** 2026-07-01T15:55:23.890Z
-**Stopped At:** Completed 01-04-PLAN.md (Fase 1 encerrada, 5/5 planos)
+**Last session:** 2026-07-01T16:20:57.719Z
+**Stopped At:** Completed Phase 01.1 (Fundação de Design/UI shell)
 **Resume File:** None

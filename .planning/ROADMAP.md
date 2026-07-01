@@ -13,7 +13,7 @@ O sistema nasce de dentro para fora: primeiro trava as decisões que não podem 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Fundação — Auth, Papéis e Base** - Login funcional, papéis aplicados no servidor e decisões de dinheiro/data travadas
-- [ ] **Phase 1.1: Fundação de Design (UI shell)** - INSERTED - App shell (sidebar agrupada + topbar + cards + gráficos) espelhando o DRE Consolidado; corrige bugs de estilo e reestiliza as telas da Fase 1
+- [x] **Phase 1.1: Fundação de Design (UI shell)** - INSERTED - App shell (sidebar agrupada + topbar + cards + gráficos) espelhando o DRE Consolidado; corrige bugs de estilo e reestiliza as telas da Fase 1
 - [ ] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
 - [ ] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
 - [ ] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
@@ -44,6 +44,25 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 01-05-PLAN.md — Produto CRUD + seed do admin + config de deploy Render (COLAB-07) — executado fora de ordem (depende só de 01/02)
 
 **Fase 1 encerrada** (2026-07-01): todos os 5 planos executados, todos os requisitos (AUTH-01..05, COLAB-07) completos. Observação registrada para a sequência: usuário identificou bugs de estilização no scaffold atual (mapeamento `--font-sans` quebrado, título residual "Create Next App", `lang="en"`) e telas funcionalmente corretas mas sem design system aplicado — uma **Fase 1.1 (Fundação de UI/Design)** está sendo inserida antes da Fase 2 para corrigir isso.
+
+### Phase 1.1: Fundação de Design (UI shell)
+**Tipo**: INSERTED (feedback do usuário após a Fase 1 — ver DESIGN-SPEC.md)
+**Goal**: Existe um app shell reutilizável (sidebar agrupada por seções + topbar + cards + gráficos) espelhando o app de referência do usuário ("DRE Consolidado / NEXT Ecommerce"), os bugs de estilo do scaffold estão corrigidos, e as telas já entregues na Fase 1 (login, painel, colaboradores, produtos) foram reestilizadas nesse padrão.
+**Depends on**: Phase 1
+**Requirements**: Nenhum requisito formal de REQUIREMENTS.md (fase de presentation/UX, sem mudança de auth ou schema)
+**Success Criteria** (what must be TRUE):
+  1. Nenhuma tela usa fonte serifada; título e idioma do documento em pt-BR
+  2. Admin vê sidebar com seções OPERAÇÃO/ADMINISTRAÇÃO e navega entre Colaboradores/Produtos/Painel; item ativo destacado
+  3. Colaborador (não-admin) vê shell enxuto sem menu de administração
+  4. Login é uma tela limpa com card centralizado e a marca
+  5. Perfil do usuário aparece no rodapé da sidebar; logout funciona
+  6. Um gráfico Recharts renderiza corretamente (validação do padrão de gráficos)
+**Plans**: Executado como uma única sessão de execução direta (sem PLAN.md formal — ver 01.1-SUMMARY.md)
+- [x] Fix bugs do scaffold (fonte serifada, título/idioma) + instalação de componentes shadcn (avatar/dropdown-menu/separator) e recharts
+- [x] App shell reutilizável (AppShell/AppSidebar/AppSidebarNav/AppTopbar/UserMenu) com navegação derivada do papel da sessão
+- [x] Restyle de /login, /painel, /colaboradores, /produtos no novo padrão visual
+
+**Fase 1.1 encerrada** (2026-07-01): bugs de estilo corrigidos, app shell construído e verificado com sessões reais (ADMIN e SDR), todas as telas da Fase 1 reestiladas sem alteração de lógica de autenticação/autorização ou schema. Nenhum requisito formal de REQUIREMENTS.md associado (fase de UX/presentation).
 
 ### Phase 2: Colaboradores e Planos de Comissão
 **Goal**: O admin cadastra colaboradores e configura o plano de comissão específico de cada um, nos 4 formatos existentes, com histórico de vigência preservado.
@@ -157,6 +176,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundação — Auth, Papéis e Base | 5/5 | Complete | 2026-07-01 |
+| 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
 | 2. Colaboradores e Planos de Comissão | 0/TBD | Not started | - |
 | 3. Vendas e Parcelas | 0/TBD | Not started | - |
 | 4. Recebimentos | 0/TBD | Not started | - |
