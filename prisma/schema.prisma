@@ -176,9 +176,10 @@ model Colaborador {
 
   comissoesApuradas ComissaoApurada[] @relation("ComissaoColaborador")
 
+  agendamentos Agendamento[]
+
   // Fases futuras conectam aqui sem alterar o shape desta tabela:
   // metas Meta[]
-  // agendamentos Agendamento[]
 
   @@map("colaborador")
 }
@@ -385,6 +386,41 @@ enum AcaoAudit {
   FECHAR_APURACAO
   REABRIR_APURACAO
   APURAR_COMISSAO
+}
+
+// ============================================================
+// FASE 7 — agendamentos SDR/SS (AGEND-01/02/03)
+// ============================================================
+// Agendamento é lançado pelo próprio SDR/SS (ou por um ADMIN em nome dele) —
+// uma linha por chamada agendada, com status que evolui até o dia da call.
+// `contarCallsRealizadas` (src/domain/agendamentos/agregacao.ts) é a FONTE
+// ÚNICA que soma status=REALIZADO no mês; tanto a apuração por_calls (Fase
+// 5) quanto o painel de meta (Fase 6/8) leem essa MESMA contagem — nunca
+// dois caminhos de soma divergentes (AGEND-02).
+
+enum StatusAgendamento {
+  AGENDADO
+  REALIZADO
+  NO_SHOW
+  CANCELADO
+}
+
+model Agendamento {
+  id String @id @default(cuid())
+
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id])
+
+  data   DateTime          @db.Date // dia da call agendada (DATE puro, Pitfall 6)
+  status StatusAgendamento @default(AGENDADO)
+
+  observacao String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([colaboradorId, data])
+  @@map("agendamento")
 }
 
 model AuditLog {
