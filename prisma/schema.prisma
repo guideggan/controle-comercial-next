@@ -174,6 +174,8 @@ model Colaborador {
   vendasComoCloser Venda[] @relation("VendaCloser")
   vendasComoSdr    Venda[] @relation("VendaSdr")
 
+  comissoesApuradas ComissaoApurada[] @relation("ComissaoColaborador")
+
   // Fases futuras conectam aqui sem alterar o shape desta tabela:
   // metas Meta[]
   // agendamentos Agendamento[]
@@ -212,6 +214,8 @@ model PlanoComissao {
   vigenciaFim    DateTime?   @db.Date
   createdAt      DateTime    @default(now()) @db.Timestamptz
   updatedAt      DateTime    @updatedAt @db.Timestamptz
+
+  comissoesApuradas ComissaoApurada[]
 
   // Índice único parcial (garante um único plano aberto por colaborador) é
   // criado via SQL bruto na migração — Prisma não suporta índice parcial
@@ -315,4 +319,57 @@ model Parcela {
   @@index([mesReferencia])
   @@index([statusPagamento])
   @@map("parcela")
+}
+
+// ============================================================
+// FASE 5 — apuração de comissão (snapshot imutável) + trilha de auditoria
+// ============================================================
+// ComissaoApurada é a SAÍDA persistida do motor puro (src/domain/comissao,
+// Fase 05-01) — uma linha por (colaborador, mesReferencia). mesReferencia
+// (competência) e mesPagamento (competência + 1 mês) são gravados
+// EXPLICITAMENTE aqui, nunca derivados no read-time (Pitfall 2/COMIS-04).
+// inputSnapshot guarda o ComissaoInput completo usado no cálculo, permitindo
+// auditoria/replay sem recalcular sobre dados que podem já ter mudado
+// (Pitfall 4/COMIS-05). A IMUTABILIDADE após FECHADA é imposta na camada de
+// service (05-03), não pelo banco: o índice único permite upsert da linha
+// ABERTA (recomputa livremente); uma vez FECHADA o service recusa escrita
+// (COMIS-06) — reabertura é ação explícita registrada em AuditLog.
+
+enum StatusApuracao {
+  ABERTA
+  FECHADA
+}
+
+model ComissaoApurada {
+  id            String      @id @default(cuid())
+  colaboradorId String
+  colaborador   Colaborador @relation("ComissaoColaborador", fields: [colaboradorId], references: [id])
+
+  mesReferencia DateTime @db.Date // competência (1º dia do mês)
+  mesPagamento  DateTime @db.Date // mesReferencia + 1 mês, GRAVADO EXPLICITAMENTE (Pitfall 2/COMIS-04) — nunca derivado no read
+
+  planoComissaoId String // qual VERSÃO de plano foi usada (histórico intacto)
+  plano           PlanoComissao @relation(fields: [planoComissaoId], references: [id])
+  tipoPlano       PlanoTipo
+
+  valorBase          Decimal  @db.Decimal(14, 2) // recebido no mês OU nº de calls (quando por_calls) — nunca TCV
+  percentualAplicado Decimal? @db.Decimal(6, 4) // null quando por_calls
+  valorComissao      Decimal  @db.Decimal(14, 2) // saída do motor, já arredondada uma vez
+
+  inputSnapshot Json // ComissaoInput completo usado — auditoria/replay (COMIS-05, AUDIT-01)
+
+  status StatusApuracao @default(ABERTA)
+
+  calculadoEm  DateTime  @default(now()) @db.Timestamptz
+  calculadoPor String? // userId (better-auth) de quem rodou a apuração
+  fechadoEm    DateTime? @db.Timestamptz
+  fechadoPor   String? // userId de quem fechou o mês
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([colaboradorId, mesReferencia]) // 1 linha por pessoa/mês; recomputa a ABERTA, nunca a FECHADA (regra no service 05-03)
+  @@index([mesPagamento]) // "o que é pagável neste mês" vira WHERE mesPagamento = X
+  @@index([mesReferencia])
+  @@map("comissao_apurada")
 }
