@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
 - [x] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
 - [x] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
-- [ ] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
+- [x] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
 - [ ] **Phase 10: Importação do Histórico** - Script carrega as duas planilhas antigas, recalcula e reconcilia com os totais originais
 
 ## Phase Details
@@ -190,7 +190,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Gestor vê a comissão total por closer e por SDR/SS no mês, separando referência e pagamento
   4. Gestor acompanha o atingimento de meta de todos os colaboradores em uma única tela
   5. Admin exporta vendas, comissões e metas para Excel/CSV
-**Plans**: TBD
+**Plans**: Executado como uma única sessão de execução direta (sem PLAN.md formal — ver 09-SUMMARY.md)
+- [x] Domínio puro de agregação (receita por tipo, contagem por produto, rollup de comissão) + service consolidado + UI /inicio (KPI cards, gráfico, tabelas) + export CSV (AUDIT-02)
+
+**Fase 9 encerrada** (2026-07-02): construída em sessão única lean, planejada diretamente do roadmap/requisitos (sem planner separado). GESTOR-01..04 e AUDIT-02 completos, verificados via smoke test próprio contra o Neon real (ver 09-SUMMARY.md).
 
 ### Phase 10: Importação do Histórico
 **Goal**: O histórico completo das duas planilhas (Comissões de Vendas e Desempenho do Time) está carregado no banco, com a comissão recalculada a partir dos fatos brutos (não copiada da coluna FÓRMULA) e reconciliada contra os totais originais.
@@ -219,7 +222,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Metas e Proração Semanal | 1/1 | Complete | 2026-07-02 |
 | 7. Agendamentos SDR/SS | 3/3 | Complete | 2026-07-02 |
 | 8. Painel Self-Service do Colaborador | 1/1 | Complete | 2026-07-02 |
-| 9. Dashboard do Gestor | 0/TBD | Not started | - |
+| 9. Dashboard do Gestor | 1/1 | Complete | 2026-07-02 |
 | 10. Importação do Histórico | 0/TBD | Not started | - |
 
 ---

@@ -71,15 +71,15 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Dashboard do Gestor (GESTOR)
 
-- [ ] **GESTOR-01**: Gestor vê receita do mês consolidada (à vista, mensalista, total)
-- [ ] **GESTOR-02**: Gestor vê contagem de vendas por produto/tier no mês
-- [ ] **GESTOR-03**: Gestor vê comissão total por closer e por SDR/SS no mês (referência e pagamento)
-- [ ] **GESTOR-04**: Gestor acompanha o atingimento de meta de todos os colaboradores em uma visão única
+- [x] **GESTOR-01**: Gestor vê receita do mês consolidada (à vista, mensalista, total)
+- [x] **GESTOR-02**: Gestor vê contagem de vendas por produto/tier no mês
+- [x] **GESTOR-03**: Gestor vê comissão total por closer e por SDR/SS no mês (referência e pagamento)
+- [x] **GESTOR-04**: Gestor acompanha o atingimento de meta de todos os colaboradores em uma visão única
 
 ### Confiança e Auditoria (AUDIT)
 
 - [x] **AUDIT-01**: O sistema registra histórico de alterações em campos que afetam comissão (marcar como pago, editar valor, mudar plano)
-- [ ] **AUDIT-02**: Admin exporta vendas, comissões e metas para Excel/CSV
+- [x] **AUDIT-02**: Admin exporta vendas, comissões e metas para Excel/CSV
 
 ### Importação do Histórico (IMPORT)
 
@@ -163,11 +163,11 @@ Explicitamente excluído para evitar aumento de escopo.
 | PAINEL-02 | Phase 8 | Complete |
 | PAINEL-03 | Phase 8 | Complete |
 | PAINEL-04 | Phase 8 | Complete |
-| GESTOR-01 | Phase 9 | Pending |
-| GESTOR-02 | Phase 9 | Pending |
-| GESTOR-03 | Phase 9 | Pending |
-| GESTOR-04 | Phase 9 | Pending |
-| AUDIT-02 | Phase 9 | Pending |
+| GESTOR-01 | Phase 9 | Complete |
+| GESTOR-02 | Phase 9 | Complete |
+| GESTOR-03 | Phase 9 | Complete |
+| GESTOR-04 | Phase 9 | Complete |
+| AUDIT-02 | Phase 9 | Complete |
 | IMPORT-01 | Phase 10 | Pending |
 | IMPORT-02 | Phase 10 | Pending |
 | IMPORT-03 | Phase 10 | Pending |

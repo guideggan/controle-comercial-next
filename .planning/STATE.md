@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phases 5, 6, 7 e 8 completas — Phase 9 (Dashboard do Gestor) desbloqueada
+**Current focus:** Phases 5, 6, 7, 8 e 9 completas — Phase 10 (Importação do Histórico) desbloqueada
 
 ## Current Position
 
-**Current Phase:** 08
-**Current Phase Name:** painel-self-service-do-colaborador
+**Current Phase:** 09
+**Current Phase Name:** dashboard-do-gestor
 **Total Phases:** 10 (+ Phase 1.1 inserted)
 **Current Plan:** 1 de 1 (fase completa)
 **Total Plans in Phase:** 1
-**Status:** Fase 8 completa — Fases 5+6+7+8 completas, Fase 9 (Dashboard do Gestor) desbloqueada
+**Status:** Fase 9 completa — Fases 5+6+7+8+9 completas, Fase 10 (Importação do Histórico) desbloqueada
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Fase 8 (Painel Self-Service do Colaborador) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): reescrita de `/painel` como o dashboard real do colaborador — cards de meta/realizado/saldo/% e comissão prevista/apurada do mês, gráfico Recharts real de progresso semanal (% esperado vs % atingido, substituindo o gráfico de exemplo da Fase 1.1), tabela de acompanhamento semanal reutilizada de `/metas` (mesmo componente `AcompanhamentoSemanal`), grid agendadas x realizadas para SDR/SS reutilizando `getGridSemanaCorrente`, extrato de comissão linha a linha com seletor de mês (`?mes=`) — tudo lido via as fachadas de service já existentes (`meta.service`, `apuracao.service`, `agendamento.service`), nenhuma lógica de cálculo duplicada. Autorização: o `colaboradorId` usado em toda leitura vem EXCLUSIVAMENTE de `user.colaboradorId` (sessão via `requireUser`/`requireSelfOrAdmin`) — a página não aceita nenhum parâmetro de URL que identifique colaborador, só `?mes=`; ADMIN sem colaboradorId vinculado é direcionado ao dashboard consolidado (Fase 9) em vez de um painel vazio. Verificado via smoke test próprio contra o Neon real com sessões HTTP reais (signUpEmail + sign-in/email reais, cookie de sessão real batendo em `/painel`): CLOSER com meta R$8.000 e venda à vista de R$4.000 paga bateu 50% da meta e comissão apurada de R$120,00 (3%); SDR com meta 12 agendamentos e 3 REALIZADO bateu o realizado e comissão apurada de R$45,00 (R$15/call); painel do closer não vazou nenhum dado do SDR e vice-versa, inclusive tentando `?colaboradorId=<outro>` (ignorado — IDOR confirmado impossível); dados de teste removidos ao final. PAINEL-01..04 completos. tsc/vitest(98)/next build limpos. Próximo: Phase 9 (Dashboard do Gestor) — agora desbloqueada (depende de 5+6+7, todas completas).
+**Last Activity Description:** Fase 9 (Dashboard do Gestor) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): `/inicio` reescrito como o dashboard consolidado real do gestor no estilo "DRE Consolidado" — topbar com seletor de mês + botão preto "Exportar relatório", 5 KPI cards (receita total/à vista/mensalista, nº vendas, comissão total), gráfico Recharts de receita dos últimos 6 meses, tabela de comissão por colaborador (closer x SDR/SS, mês referência x mês pagamento lado a lado) e tabela de atingimento de meta de todos os colaboradores ativos. Domínio puro novo (`src/domain/dashboard/agregacao.ts`: `agregarReceitaPorTipo`, `contarVendasPorProduto`, `agregarComissaoPorColaborador`, 9 testes) + `dashboard.service.ts` orquestrando as fachadas já existentes (`recebidoNoMes`, `listarVendas`, `listarApuracoesDoMes` — snapshot, `getAcompanhamentoMeta`) sem recalcular nenhuma comissão. Export CSV (AUDIT-02) via Route Handler `GET /api/export/{vendas|comissoes|metas}?mes=`, gated por `requireRole("ADMIN")`, acionado por um dropdown com `DropdownMenuLinkItem` (novo wrapper de `Menu.LinkItem` do Base UI, `<a href download>` nativo). Verificado via smoke test próprio contra o Neon real: CLOSER com venda à vista de R$4.000 paga + venda mensalista com entrada de R$1.000 paga bateram receita total R$5.000,00 (à vista R$4.000 + mensalista R$1.000) no dashboard; comissão apurada de R$150,00 (3% de R$5.000) aparecendo na tabela; meta de R$8.000 aparecendo em atingimento; os três exports retornando CSV não vazio; export sem sessão bloqueado com redirect 307 para /login (não 200); dados de teste removidos ao final, confirmado 0 registros de teste restantes. GESTOR-01..04 e AUDIT-02 completos. tsc/vitest(107)/next build limpos. Próximo: Phase 10 (Importação do Histórico) — agora desbloqueada (depende de 5+6+7+9, todas completas).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
-- Average duration: 17.6 min
-- Total execution time: 8.87 hours
+- Total plans completed: 26
+- Average duration: 17.7 min
+- Total execution time: 9.62 hours
 
 **By Phase:**
 
@@ -39,10 +39,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 06 | 1 | 55 | 55 |
 | 07 | 3 | 70 | 23.3 |
 | 08 | 1 | 20 | 20 |
+| 09 | 1 | 45 | 45 |
 
 **Recent Trend:**
-- Last 5 plans: 20min (08, construído direto do roadmap/requisitos sem planner separado, reusando 100% das fachadas de service das Fases 5/6/7), 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado), 14min (05-02)
-- Trend: Fase 8 é a mais rápida até agora entre as fases construídas em sessão única — o painel do colaborador não precisou de nenhuma migração/domínio novo, só orquestrou getAcompanhamentoMeta/getApuracao/getExtrato/getGridSemanaCorrente (já prontos desde as Fases 5/6/7) atrás do guard requireUser/requireSelfOrAdmin já existente. Confirma a decisão de sequenciar Metas (6) e Agendamentos (7) antes do Painel (8): quando as fachadas de leitura já existem e já foram desenhadas pensando no consumidor seguinte, a fase de UI final vira composição pura, sem lógica nova.
+- Last 5 plans: 45min (09, dashboard consolidado + export CSV construído direto do roadmap/requisitos sem planner separado, domínio puro novo + orquestração de fachadas de service das Fases 4/5/6), 20min (08, construído direto do roadmap/requisitos sem planner separado, reusando 100% das fachadas de service das Fases 5/6/7), 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado)
+- Trend: Fase 9 foi mais longa que a Fase 8 apesar do mesmo padrão de sessão única lean — diferença explicada por ter um domínio puro NOVO (agregação de receita/produto/comissão, com 9 testes) e uma superfície nova (Route Handler de export CSV + componente Base UI novo DropdownMenuLinkItem), enquanto a Fase 8 foi pura composição de fachadas já existentes. Confirma que "sessão única lean" continua viável mesmo quando uma fase introduz um domínio novo pequeno, desde que a leitura de dados em si já esteja pronta nas fases anteriores (nenhum cálculo de comissão foi refeito).
 
 **Plan Metrics:**
 
@@ -64,6 +65,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 07 (única sessão) | 70 | domínio+migração+server+UI+wiring+smoke-verify | 17 files |
 | Phase 06 (única sessão) | 55 | domínio(TDD)+migração+server+UI+smoke-verify | 15 files |
 | Phase 08 (única sessão) | 20 | UI /painel (composição) + smoke-verify contra o Neon real | 6 files |
+| Phase 09 (única sessão) | 45 | domínio(TDD)+service+UI /inicio+export CSV+smoke-verify contra o Neon real | 10 files |
 
 *Updated after each plan completion*
 
@@ -133,10 +135,14 @@ Recent decisions affecting current work:
 - [Phase 05-03]: Auditoria (AUDIT-01) em `recebimentos.actions.ts`/`planos-comissao.actions.ts` é registrada APÓS a escrita do service, não dentro da mesma transação — é uma trilha, não uma invariante transacional crítica; expor `tx` do service para a action quebraria o encapsulamento atual
 - [Phase 05-03/04]: `fecharApuracao`/`reabrirApuracao` travam/destravam `comissao_apurada` (status) e `venda.fechado` na MESMA `db.$transaction`, substituindo definitivamente o placeholder de trava das Fases 3/4
 - [Phase 05-04]: Planos 05-03 e 05-04 executados em uma única sessão lean (a pedido do usuário): commits por task (não por micro-passo), um SUMMARY combinado, tsc/vitest rodados uma vez ao final, e o checkpoint `human-verify` de 05-04 substituído por self smoke-verify contra o Neon real (login real via API + cookie de sessão, dados de teste limpos ao final)
+- [Phase 09]: Export CSV (AUDIT-02) implementado como Route Handler (`/api/export/[dataset]`) em vez de Server Action — permite download direto via `<a href download>` sem JS de blob no client; gated por `requireRole("ADMIN")` como primeira linha, igual toda página server-side
+- [Phase 09]: Export usa CSV com separador `;` + BOM UTF-8 (não `.xlsx`) — abre nativamente no Excel pt-BR sem adicionar dependência nova ao projeto, mantendo o escopo lean pedido para a fase
+- [Phase 09]: `DropdownMenuLinkItem` adicionado a `src/components/ui/dropdown-menu.tsx` como wrapper de `Menu.LinkItem` do Base UI — item de menu que é literalmente um link `<a>` (para os 3 downloads de CSV), em vez de usar `render` prop em `DropdownMenuItem`/`DropdownMenuTrigger`
+- [Phase 09]: `src/domain/dashboard/agregacao.ts` segue exatamente o padrão de `src/domain/recebimentos/agregacao.ts` (módulo puro, sem `server-only`/Prisma) — receita à vista/mensalista sempre soma para o total (nenhuma dupla contagem), comissão por colaborador lida do snapshot já apurado (nunca recalculada)
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6 nem Fase 7 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 completa: 4/4 planos (05-01 motor puro, 05-02 migração comissao_apurada+audit_log, 05-03 apuracao.service + audit wiring, 05-04 UI /comissoes + extrato), COMIS-01..07 e AUDIT-01 completos e verificados via smoke test próprio contra o Neon real (recebido R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo). Fase 7 completa: módulo puro de agregação de agendamentos + migração + server layer + UI /agendamentos + wiring real em apuracao.service (por_calls), AGEND-01..03 completos e verificados via smoke test próprio (R$45,00 batendo ao centavo). Fase 6 completa: módulo puro de proração semanal (TDD) + migração Meta + server layer (definirMeta, getAcompanhamentoMeta) + UI /metas, META-01..04 completos e verificados via smoke test próprio contra o Neon real (CLOSER R$8.000/realizado R$4.000, SDR 12 agendamentos/realizado 3, última semana sempre fechando 100% da meta). Próximo: Phase 8 (Painel Self-Service do Colaborador) — desbloqueada agora que 5+6+7 estão completas.
+Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6, Fase 7, Fase 8 nem Fase 9 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 completa: 4/4 planos (05-01 motor puro, 05-02 migração comissao_apurada+audit_log, 05-03 apuracao.service + audit wiring, 05-04 UI /comissoes + extrato), COMIS-01..07 e AUDIT-01 completos e verificados via smoke test próprio contra o Neon real (recebido R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo). Fase 7 completa: módulo puro de agregação de agendamentos + migração + server layer + UI /agendamentos + wiring real em apuracao.service (por_calls), AGEND-01..03 completos e verificados via smoke test próprio (R$45,00 batendo ao centavo). Fase 6 completa: módulo puro de proração semanal (TDD) + migração Meta + server layer (definirMeta, getAcompanhamentoMeta) + UI /metas, META-01..04 completos e verificados via smoke test próprio contra o Neon real (CLOSER R$8.000/realizado R$4.000, SDR 12 agendamentos/realizado 3, última semana sempre fechando 100% da meta). Fase 8 completa: UI /painel real (composição pura das fachadas de service das Fases 5/6/7), PAINEL-01..04 completos e verificados via smoke test próprio contra o Neon real, IDOR via URL confirmado impossível. Fase 9 completa: domínio puro de agregação (receita/produto/comissão) + dashboard.service.ts + UI /inicio (KPI cards, gráfico, tabelas) + export CSV, GESTOR-01..04 e AUDIT-02 completos e verificados via smoke test próprio contra o Neon real (receita R$5.000 = R$4.000 à vista + R$1.000 mensalista, comissão R$150,00 = 3%, export bloqueado sem sessão). Próximo: Phase 10 (Importação do Histórico) — desbloqueada agora que 5+6+7+9 estão completas.
 
 ### Blockers/Concerns
 
@@ -146,6 +152,6 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6 nem 
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T01:44:20Z
-**Stopped At:** Completed Phase 6 (Metas e Proração Semanal) — single lean session, see 06-SUMMARY.md
+**Last session:** 2026-07-02T02:09:36Z
+**Stopped At:** Completed Phase 9 (Dashboard do Gestor) — single lean session, see 09-SUMMARY.md
 **Resume File:** None
