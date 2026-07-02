@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 5 — Motor de Comissão e Apuração (em andamento, 1/4 planos)
+**Current focus:** Phase 5 — Motor de Comissão e Apuração (em andamento, 2/4 planos)
 
 ## Current Position
 
 **Current Phase:** 05
 **Current Phase Name:** motor-de-comissao-e-apuracao
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 1
+**Current Plan:** 3
 **Total Plans in Phase:** 4
-**Status:** In progress
-**Progress:** [█████████░] 89%
+**Status:** Ready to execute
+**Progress:** [██████████] 95%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Plano 05-01 completo (1/4 da Fase 5): motor de comissão puro em `src/domain/comissao/` via TDD — 4 calculadoras (percentual_fixo, progressivo_atingimento, fixo_variavel, por_calls) despachadas por switch em `engine.ts`, dinheiro em `Decimal` (decimal.js) com arredondamento único no total via `money.ts::arredondar` (ROUND_HALF_UP). 16/16 testes batendo ao centavo com os exemplos reais das planilhas antigas (Cai Xing, Thiago, Maeli, Leticia), incluindo prova dedicada de arredondamento único (5920.33 × 1.25% = 74.004125 → 74.00). Motor 100% framework-free (zero imports de server-only/@prisma/client/@/lib/db/next), confirmado por grep — pronto para reuso direto na Fase 10. COMIS-01/02/03 completos. Próximo: 05-02 (apuração mensal).
+**Last Activity Description:** Plano 05-02 completo (2/4 da Fase 5): migração Prisma aplicada no Neon real adicionando `comissao_apurada` (snapshot imutável por colaborador/mês, `mesReferencia`/`mesPagamento` gravados explicitamente como DATE, `inputSnapshot` Json para auditoria/replay, `status` ABERTA|FECHADA, único por colaborador+mês) e `audit_log` (trilha de alterações com enum `AcaoAudit` de 7 ações). `prisma migrate status` sem drift; client regenerado com `db.comissaoApurada`/`db.auditLog`; `tsc` limpo. COMIS-04/05/06 e AUDIT-01 completos. Próximo: 05-03 (apuracao.service — motor→snapshot, fecho/reabrir, extrato).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 18.6 min
-- Total execution time: 5.5 hours
+- Total plans completed: 18
+- Average duration: 18.2 min
+- Total execution time: 5.7 hours
 
 **By Phase:**
 
@@ -35,10 +35,10 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 02 | 3 | 70 | 23.3 |
 | 03 | 4 | 61 | 15.25 |
 | 04 | 3 | 45 | 15 |
-| 05 | 1 | 12 | 12 |
+| 05 | 2 | 26 | 13 |
 
 **Recent Trend:**
-- Last 5 plans: 12min (05-01), 25min (04-03), 12min (04-02), 8min (04-01), 45min (03-04)
+- Last 5 plans: 14min (05-02), 12min (05-01), 25min (04-03), 12min (04-02), 8min (04-01)
 - Trend: Fase 5 iniciada com o motor de comissão puro via TDD, batendo ao centavo com os exemplos reais das planilhas já no primeiro plano
 
 **Plan Metrics:**
@@ -56,6 +56,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 04 P02 | 12 | 3 tasks | 5 files |
 | Phase 04 P03 | 25 | 2 tasks + 1 checkpoint (auto-aprovado) | 2 files |
 | Phase 05 P01 | 12 | 1 task (TDD) | 10 files |
+| Phase 05 P02 | 14 | 2 tasks | 2 files |
 
 *Updated after each plan completion*
 
@@ -109,10 +110,12 @@ Recent decisions affecting current work:
 - [Phase 05-01]: Arredondamento único (COMIS-03) centralizado em `money.ts::arredondar` (decimal.js, ROUND_HALF_UP, 2 casas), chamado exatamente uma vez por calculadora — inclusive em `fixo_variavel`, onde a parte fixa e a variável são somadas em `Decimal` ANTES do único arredondamento
 - [Phase 05-01]: `types.ts` reaproveita `PlanoConfig` de `planos-comissao.schemas.ts` via import de tipo (erased em build) em vez de redeclarar a união dos 4 formatos de plano
 - [Phase 05-01]: `percentualAtingimento`/`numeroCallsRealizadas` são opcionais em `ComissaoInput` com default 0 resolvido no `engine.ts` (ponto único) — pontos de integração pluggable com as Fases 6 (Metas) e 7 (Agendamentos), ainda inexistentes
+- [Phase 05-02]: Task 1/Task 2 commitados separadamente removendo/restaurando o bloco AuditLog do schema.prisma, mantendo um commit por task mesmo com os dois models compartilhando o mesmo arquivo
+- [Phase 05-02]: EPERM do prisma generate no Windows (dll.node bloqueado por node.exe orfao) resolvido matando processos node.exe residuais e rodando generate isolado, sem mudanca de schema
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3 nem Fase 4 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 em andamento: 1/4 planos (05-01 motor de comissão puro), COMIS-01/02/03 completos. Próximo: 05-02 (apuração mensal).
+Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3 nem Fase 4 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 em andamento: 2/4 planos (05-01 motor de comissão puro, 05-02 migração comissao_apurada + audit_log aplicada no Neon), COMIS-01..06 e AUDIT-01 completos. Próximo: 05-03 (apuracao.service — motor→snapshot, mesPagamento, fecho/reabrir, extrato, audit wiring).
 
 ### Blockers/Concerns
 
@@ -122,6 +125,6 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3 nem Fase 4 — Fase 1: 5/5 p
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T00:43:10.005Z
-**Stopped At:** Completed 05-01-PLAN.md
+**Last session:** 2026-07-02T00:51:04.400Z
+**Stopped At:** Completed 05-02-PLAN.md
 **Resume File:** None

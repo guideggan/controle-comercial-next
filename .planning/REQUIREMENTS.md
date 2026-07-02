@@ -44,9 +44,9 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 - [x] **COMIS-01**: A comissão incide sobre o valor recebido no mês, nunca sobre o TCV
 - [x] **COMIS-02**: O motor calcula a comissão de cada colaborador conforme o formato do plano dele (fixo, progressivo, fixo+variável, por calls)
 - [x] **COMIS-03**: Valores monetários usam decimal exato e o arredondamento ocorre uma única vez no total (não por faixa/parcela)
-- [ ] **COMIS-04**: A apuração separa mês de referência (competência) do mês de pagamento (mês seguinte), ambos gravados explicitamente
-- [ ] **COMIS-05**: A apuração é gravada como snapshot imutável por pessoa/mês; os painéis leem o snapshot e não recalculam ao vivo
-- [ ] **COMIS-06**: Admin pode "fechar/travar" a apuração de um mês, impedindo alterações retroativas silenciosas
+- [x] **COMIS-04**: A apuração separa mês de referência (competência) do mês de pagamento (mês seguinte), ambos gravados explicitamente
+- [x] **COMIS-05**: A apuração é gravada como snapshot imutável por pessoa/mês; os painéis leem o snapshot e não recalculam ao vivo
+- [x] **COMIS-06**: Admin pode "fechar/travar" a apuração de um mês, impedindo alterações retroativas silenciosas
 - [ ] **COMIS-07**: Extrato de comissão por pessoa/mês mostra, linha a linha, como o valor foi calculado (vendas, valores recebidos, % aplicado, total)
 
 ### Metas e Proração Semanal (META)
@@ -78,7 +78,7 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Confiança e Auditoria (AUDIT)
 
-- [ ] **AUDIT-01**: O sistema registra histórico de alterações em campos que afetam comissão (marcar como pago, editar valor, mudar plano)
+- [x] **AUDIT-01**: O sistema registra histórico de alterações em campos que afetam comissão (marcar como pago, editar valor, mudar plano)
 - [ ] **AUDIT-02**: Admin exporta vendas, comissões e metas para Excel/CSV
 
 ### Importação do Histórico (IMPORT)
@@ -147,11 +147,11 @@ Explicitamente excluído para evitar aumento de escopo.
 | COMIS-01 | Phase 5 | Complete |
 | COMIS-02 | Phase 5 | Complete |
 | COMIS-03 | Phase 5 | Complete |
-| COMIS-04 | Phase 5 | Pending |
-| COMIS-05 | Phase 5 | Pending |
-| COMIS-06 | Phase 5 | Pending |
+| COMIS-04 | Phase 5 | Complete |
+| COMIS-05 | Phase 5 | Complete |
+| COMIS-06 | Phase 5 | Complete |
 | COMIS-07 | Phase 5 | Pending |
-| AUDIT-01 | Phase 5 | Pending |
+| AUDIT-01 | Phase 5 | Complete |
 | META-01 | Phase 6 | Pending |
 | META-02 | Phase 6 | Pending |
 | META-03 | Phase 6 | Pending |
