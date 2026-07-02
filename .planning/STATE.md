@@ -5,19 +5,19 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 4 — Recebimentos (próxima)
+**Current focus:** Phase 4 — Recebimentos (em andamento)
 
 ## Current Position
 
-**Current Phase:** 03
-**Current Phase Name:** vendas-e-parcelas
+**Current Phase:** 04
+**Current Phase Name:** recebimentos
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 4
-**Total Plans in Phase:** 4
-**Status:** Complete
-**Progress:** [████████░░] 80%
-**Last Activity:** 2026-07-01
-**Last Activity Description:** Plano 03-04 completo (último da Fase 3): UI admin de venda — formulário único (venda-form.tsx, react-hook-form + zodResolver, condicional à vista/mensalista, modo bloqueado), lista com filtros (page.tsx + vendas-filtros.tsx: aluno/closer/produto/status/mesReferencia via querystring), detalhe da venda com tabela de parcelas geradas ([id]/page.tsx) e trava de mês fechado. Item "Vendas" da sidebar ativado. Smoke test próprio contra o Neon real (modo autônomo) descobriu e corrigiu um bug bloqueante: venda.repo.ts passava string "YYYY-MM-DD" crua para colunas @db.Date, rejeitada pelo Prisma Client 6.19.3 — corrigido com helper paraDataUTC. Confirmado end-to-end: venda MENSALISTA gera 1 ENTRADA + 12 MENSALIDADE ancoradas no dia 31 sem drift; venda À VISTA gera 1 parcela = TCV; todos os filtros de listarVendas funcionam contra o banco real. Fase 3 encerrada: 4/4 planos, requisitos VENDA-01..05 completos. Próximo: Fase 4 (Recebimentos).
+**Current Plan:** 1
+**Total Plans in Phase:** 3
+**Status:** In progress
+**Progress:** [█████████░] 93%
+**Last Activity:** 2026-07-02
+**Last Activity Description:** Plano 04-01 completo: núcleo puro `agregarRecebidoNoMes` (src/domain/recebimentos/agregacao.ts) via TDD — soma entrada+mensalidade+à vista PAGAS na competência, com dedup defensivo por parcelaId (PGTO-02, contra fan-out de join) e parcela PENDENTE contando zero (PGTO-03); agrupamento por closer e por sdr (sdrId null excluído de porSdr mas incluído no total). 7 testes verdes, zero imports de IO. Fonte única de "recebido no mês" a ser consumida pelo service 04-02 e pelo motor de comissão da Fase 5.
 
 ## Performance Metrics
 
