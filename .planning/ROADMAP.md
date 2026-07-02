@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
 - [x] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
 - [ ] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
-- [ ] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
+- [x] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
 - [ ] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
 - [ ] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
 - [ ] **Phase 10: Importação do Histórico** - Script carrega as duas planilhas antigas, recalcula e reconcilia com os totais originais
@@ -154,7 +154,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. SDR/SS registra um agendamento com status (agendado, realizado, no-show, cancelado) associado a um dia da semana
   2. O total de calls realizadas no mês usado pelo motor de comissão (Phase 5) é exatamente o mesmo número usado no painel de meta (Phase 6) — uma única fonte de dados
   3. O painel de agendadas x realizadas por dia (segunda a sábado) reflete a semana corrente corretamente
-**Plans**: TBD
+**Plans**: Executado em uma única sessão direta (modo lean — ver 07-SUMMARY.md)
+- [x] Migração Agendamento (colaboradorId, data @db.Date, StatusAgendamento) + módulo puro de agregação (contarCallsRealizadas/agregarPorDiaDaSemana) via TDD
+- [x] Repo/service/actions gated (requireSelfOrAdmin) + wiring real no apuracao.service (por_calls agora usa a contagem real em vez do placeholder 0)
+- [x] UI /agendamentos: registro de agendamento, grid semanal agendadas x realizadas (seg-sáb), lista do mês com status inline, seletor de colaborador para ADMIN, nav item para ADMIN/SDR/SS
+
+**Fase 7 encerrada** (2026-07-02): todos os requisitos (AGEND-01..03) completos. `contarCallsRealizadas` (src/domain/agendamentos/agregacao.ts) é a fonte única consumida tanto pela apuração por_calls quanto pelo painel semanal — verificado via smoke test próprio contra o Neon real (SDR com plano por_calls R$15/call, 3 agendamentos REALIZADO em julho/2026, apurarComissao calculou R$45,00 batendo ao centavo; grid semanal seg-sáb bateu com os dias reais das linhas cadastradas). tsc/vitest(91)/next build limpos. Dados de teste removidos ao final.
 
 ### Phase 8: Painel Self-Service do Colaborador
 **Goal**: Cada colaborador acessa, sozinho e sem depender do gestor, sua própria meta, realizado, proração semanal, comissão prevista/apurada e extrato — o valor central do produto.
@@ -202,9 +207,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 2. Colaboradores e Planos de Comissão | 3/3 | Complete | 2026-07-01 |
 | 3. Vendas e Parcelas | 4/4 | Complete | 2026-07-01 |
 | 4. Recebimentos | 3/3 | Complete | 2026-07-02 |
-| 5. Motor de Comissão e Apuração | 2/4 | In Progress | - |
+| 5. Motor de Comissão e Apuração | 4/4 | Complete | 2026-07-02 |
 | 6. Metas e Proração Semanal | 0/TBD | Not started | - |
-| 7. Agendamentos SDR/SS | 0/TBD | Not started | - |
+| 7. Agendamentos SDR/SS | 3/3 | Complete | 2026-07-02 |
 | 8. Painel Self-Service do Colaborador | 0/TBD | Not started | - |
 | 9. Dashboard do Gestor | 0/TBD | Not started | - |
 | 10. Importação do Histórico | 0/TBD | Not started | - |

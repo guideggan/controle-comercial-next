@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 5 concluída — próxima: Phase 6 (Metas e Proração Semanal)
+**Current focus:** Phase 7 concluída (fora de ordem, antes da Phase 6) — próxima: Phase 6 (Metas e Proração Semanal), pendente antes da Phase 8
 
 ## Current Position
 
-**Current Phase:** 05
-**Current Phase Name:** motor-de-comissao-e-apuracao
+**Current Phase:** 07
+**Current Phase Name:** agendamentos-sdr-ss
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 4 de 4 (fase completa)
-**Total Plans in Phase:** 4
-**Status:** Fase 5 completa — pronta para iniciar Phase 6
+**Current Plan:** 3 de 3 (fase completa)
+**Total Plans in Phase:** 3
+**Status:** Fase 7 completa — Fase 6 (Metas e Proração Semanal) ainda não iniciada; Fase 8 depende de 5+6+7
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Fase 5 encerrada (4/4 planos): 05-03 (apuracao.service — motor puro ligado ao banco: apurarComissao/apurarMes gravam snapshot `comissao_apurada` com `mesPagamento` explícito via `mesSeguinte` pura testada na virada de ano; mês FECHADO recusa reapuração; fecharApuracao/reabrirApuracao travam/destravam snapshot + `venda.fechado` na mesma transação; getExtrato devolve linha a linha; audit_log gravado em apurar/marcar-pago/reverter/trocar-plano/fechar/reabrir) e 05-04 (UI /comissoes: seletor de mês, tabela lida do snapshot com total geral, apurar/fechar/reabrir via actions ADMIN, extrato por colaborador com fórmula aplicada; "Comissões" agora rota real na sidebar). Executados em uma única sessão (modo lean): SUMMARY combinado, checkpoint humano de 05-04 substituído por self smoke-verify contra o Neon real (colaborador+plano percentual_fixo 3%+venda+parcela paga → apurarMes → R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo, mesPagamento = mês seguinte, confirmado via HTTP com sessão real; dados de teste removidos ao final). COMIS-01..07 e AUDIT-01 completos. tsc/vitest(79)/next build limpos. Próximo: Phase 6 (Metas e Proração Semanal).
+**Last Activity Description:** Fase 7 (Agendamentos SDR/SS) construída e encerrada em uma única sessão lean, fora de ordem (Phase 6 ainda pendente, mas Phase 7 só depende da Phase 2): módulo puro `src/domain/agendamentos/agregacao.ts` (contarCallsRealizadas + agregarPorDiaDaSemana, 7 testes) é a FONTE ÚNICA de contagem de calls realizadas; migração `Agendamento` (colaboradorId, data @db.Date, StatusAgendamento) aplicada ao Neon; repo/service/actions gated por requireSelfOrAdmin; `apuracao.service.ts` (por_calls) agora chama `contarCallsRealizadas` real em vez do placeholder 0; UI `/agendamentos` (grupo de rotas (colaborador), acessível a ADMIN e SDR/SS) com formulário de registro, grid semanal seg-sáb, lista do mês com status inline, seletor de colaborador para ADMIN. Verificado via smoke test próprio contra o Neon real: SDR com plano por_calls R$15/call + 3 agendamentos REALIZADO em julho/2026 → apurarComissao calculou R$45,00 batendo ao centavo; dados de teste removidos ao final. AGEND-01..03 completos. tsc/vitest(91)/next build limpos. Próximo: Phase 6 (Metas e Proração Semanal) — Phase 8 (Painel do Colaborador) só pode iniciar depois que 6 também estiver completa.
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 17.5 min
-- Total execution time: 6.45 hours
+- Total plans completed: 23
+- Average duration: 17.6 min
+- Total execution time: 7.62 hours
 
 **By Phase:**
 
@@ -36,10 +36,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 03 | 4 | 61 | 15.25 |
 | 04 | 3 | 45 | 15 |
 | 05 | 4 | 71 | 17.75 |
+| 07 | 3 | 70 | 23.3 |
 
 **Recent Trend:**
-- Last 5 plans: 45min (05-03+05-04 combinado), 14min (05-02), 12min (05-01), 25min (04-03), 12min (04-02)
-- Trend: Fase 5 encerrada em modo lean (05-03+05-04 executados juntos em uma sessão só, SUMMARY combinado, checkpoint humano substituído por self smoke-verify) — motor puro (05-01) provado ponta a ponta contra o Neon real batendo ao centavo
+- Last 5 plans: 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado), 14min (05-02), 12min (05-01), 25min (04-03)
+- Trend: Fase 7 construída fora de ordem (antes da Fase 6) em uma única sessão direta, sem planner separado — módulo puro + migração + server layer + UI + wiring real de apuração, tudo verificado via smoke test próprio contra o Neon real (por_calls batendo ao centavo)
 
 **Plan Metrics:**
 
@@ -58,6 +59,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 05 P01 | 12 | 1 task (TDD) | 10 files |
 | Phase 05 P02 | 14 | 2 tasks | 2 files |
 | Phase 05 P03+P04 | 45 | 6 tasks (3 auto + 2 auto + 1 checkpoint auto-aprovado/self-verify) | 15 files |
+| Phase 07 (única sessão) | 70 | domínio+migração+server+UI+wiring+smoke-verify | 17 files |
 
 *Updated after each plan completion*
 
@@ -68,6 +70,9 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 07]: Fase 7 (Agendamentos) construída fora de ordem, antes da Fase 6 (Metas) — dependência declarada no roadmap é só Phase 2, então Phase 7 não bloqueava em Phase 6. Phase 6 continua pendente e Phase 8 (Painel do Colaborador) só pode iniciar quando 5+6+7 estiverem completas.
+- [Phase 07]: `contarCallsRealizadas` (src/domain/agendamentos/agregacao.ts) é a ÚNICA função de contagem de calls realizadas no mês — apuracao.service (por_calls) e o futuro painel de meta (Fase 6/8) SEMPRE chamam esta função, nunca reimplementam a soma (AGEND-02).
+- [Phase 07]: Página /agendamentos vive no grupo de rotas (colaborador) em vez de (admin), porque o layout (colaborador) usa requireUser (qualquer papel autenticado) enquanto (admin) exige ADMIN e redirecionaria SDR/SS para /login — o mesmo layout compartilhado atende ADMIN e SDR/SS numa única rota.
 - Roadmap: Motor de comissão isolado como fase própria (Phase 5), separado do CRUD de venda/parcela, para permitir testes unitários dedicados contra números reais das planilhas antes de qualquer painel consumir o resultado.
 - Roadmap: Importação do histórico (Phase 10) sequenciada por último, depois inclusive do Dashboard do Gestor (Phase 9), para que os caminhos de entrada de dados ao vivo (venda, pagamento, comissão, metas, agendamentos) já estejam provados corretos antes de reutilizá-los na carga em massa do histórico.
 - Roadmap: Decisões de tipos de dinheiro (NUMERIC, nunca float), datas e controle de acesso no servidor travadas já na Phase 1 (fundação), por serem caras de retrofit depois.

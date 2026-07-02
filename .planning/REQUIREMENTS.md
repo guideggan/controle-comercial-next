@@ -58,9 +58,9 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Agendamentos SDR/SS (AGEND)
 
-- [ ] **AGEND-01**: SDR/SS registra agendamentos com status (agendado, realizado, no-show, cancelado) por dia da semana
-- [ ] **AGEND-02**: O total de calls realizadas alimenta tanto a comissão do SDR/SS quanto o painel de meta, a partir de uma única fonte de dados
-- [ ] **AGEND-03**: Painel de agendadas × realizadas por dia (segunda a sábado) para a semana corrente
+- [x] **AGEND-01**: SDR/SS registra agendamentos com status (agendado, realizado, no-show, cancelado) por dia da semana
+- [x] **AGEND-02**: O total de calls realizadas alimenta tanto a comissão do SDR/SS quanto o painel de meta, a partir de uma única fonte de dados
+- [x] **AGEND-03**: Painel de agendadas × realizadas por dia (segunda a sábado) para a semana corrente
 
 ### Painel do Colaborador (PAINEL)
 
@@ -156,9 +156,9 @@ Explicitamente excluído para evitar aumento de escopo.
 | META-02 | Phase 6 | Pending |
 | META-03 | Phase 6 | Pending |
 | META-04 | Phase 6 | Pending |
-| AGEND-01 | Phase 7 | Pending |
-| AGEND-02 | Phase 7 | Pending |
-| AGEND-03 | Phase 7 | Pending |
+| AGEND-01 | Phase 7 | Complete |
+| AGEND-02 | Phase 7 | Complete |
+| AGEND-03 | Phase 7 | Complete |
 | PAINEL-01 | Phase 8 | Pending |
 | PAINEL-02 | Phase 8 | Pending |
 | PAINEL-03 | Phase 8 | Pending |
