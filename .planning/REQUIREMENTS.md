@@ -41,9 +41,9 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Motor de Comissão e Apuração (COMIS)
 
-- [ ] **COMIS-01**: A comissão incide sobre o valor recebido no mês, nunca sobre o TCV
-- [ ] **COMIS-02**: O motor calcula a comissão de cada colaborador conforme o formato do plano dele (fixo, progressivo, fixo+variável, por calls)
-- [ ] **COMIS-03**: Valores monetários usam decimal exato e o arredondamento ocorre uma única vez no total (não por faixa/parcela)
+- [x] **COMIS-01**: A comissão incide sobre o valor recebido no mês, nunca sobre o TCV
+- [x] **COMIS-02**: O motor calcula a comissão de cada colaborador conforme o formato do plano dele (fixo, progressivo, fixo+variável, por calls)
+- [x] **COMIS-03**: Valores monetários usam decimal exato e o arredondamento ocorre uma única vez no total (não por faixa/parcela)
 - [ ] **COMIS-04**: A apuração separa mês de referência (competência) do mês de pagamento (mês seguinte), ambos gravados explicitamente
 - [ ] **COMIS-05**: A apuração é gravada como snapshot imutável por pessoa/mês; os painéis leem o snapshot e não recalculam ao vivo
 - [ ] **COMIS-06**: Admin pode "fechar/travar" a apuração de um mês, impedindo alterações retroativas silenciosas
@@ -144,9 +144,9 @@ Explicitamente excluído para evitar aumento de escopo.
 | PGTO-01 | Phase 4 | Complete |
 | PGTO-02 | Phase 4 | Complete |
 | PGTO-03 | Phase 4 | Complete |
-| COMIS-01 | Phase 5 | Pending |
-| COMIS-02 | Phase 5 | Pending |
-| COMIS-03 | Phase 5 | Pending |
+| COMIS-01 | Phase 5 | Complete |
+| COMIS-02 | Phase 5 | Complete |
+| COMIS-03 | Phase 5 | Complete |
 | COMIS-04 | Phase 5 | Pending |
 | COMIS-05 | Phase 5 | Pending |
 | COMIS-06 | Phase 5 | Pending |
