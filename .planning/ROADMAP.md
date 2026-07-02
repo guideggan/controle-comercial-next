@@ -108,7 +108,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. Admin marca uma parcela como Paga informando valor efetivamente recebido e data do pagamento
   2. O "valor recebido no mês" soma entrada + mensalidades + vendas à vista pagas naquele mês, sem duplicar nenhum valor
   3. Uma parcela marcada como Pendente conta como zero em qualquer cálculo de comissão
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 04-01-PLAN.md — (TDD) agregação pura do "recebido no mês" sem dupla contagem, pendente=zero (PGTO-02, PGTO-03)
+- [ ] 04-02-PLAN.md — camada servidor: repo + service marcar pago/reverter (trava mês fechado) + query recebidoNoMes + actions ADMIN (PGTO-01, PGTO-02, PGTO-03)
+- [ ] 04-03-PLAN.md — UI: diálogo marcar-pago/reverter na tabela de parcelas + colunas de recebimento + total recebido + checkpoint (PGTO-01, PGTO-02)
 
 ### Phase 5: Motor de Comissão e Apuração
 **Goal**: O motor calcula a comissão de cada colaborador de acordo com o formato do plano dele, sobre o valor recebido (nunca o TCV), e grava um snapshot imutável por pessoa/mês que os painéis apenas leem.
@@ -190,7 +193,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
 | 2. Colaboradores e Planos de Comissão | 3/3 | Complete | 2026-07-01 |
 | 3. Vendas e Parcelas | 4/4 | Complete | 2026-07-01 |
-| 4. Recebimentos | 0/TBD | Not started | - |
+| 4. Recebimentos | 0/3 | Not started | - |
 | 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |
 | 6. Metas e Proração Semanal | 0/TBD | Not started | - |
 | 7. Agendamentos SDR/SS | 0/TBD | Not started | - |
