@@ -47,7 +47,7 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 - [x] **COMIS-04**: A apuração separa mês de referência (competência) do mês de pagamento (mês seguinte), ambos gravados explicitamente
 - [x] **COMIS-05**: A apuração é gravada como snapshot imutável por pessoa/mês; os painéis leem o snapshot e não recalculam ao vivo
 - [x] **COMIS-06**: Admin pode "fechar/travar" a apuração de um mês, impedindo alterações retroativas silenciosas
-- [ ] **COMIS-07**: Extrato de comissão por pessoa/mês mostra, linha a linha, como o valor foi calculado (vendas, valores recebidos, % aplicado, total)
+- [x] **COMIS-07**: Extrato de comissão por pessoa/mês mostra, linha a linha, como o valor foi calculado (vendas, valores recebidos, % aplicado, total)
 
 ### Metas e Proração Semanal (META)
 
@@ -150,7 +150,7 @@ Explicitamente excluído para evitar aumento de escopo.
 | COMIS-04 | Phase 5 | Complete |
 | COMIS-05 | Phase 5 | Complete |
 | COMIS-06 | Phase 5 | Complete |
-| COMIS-07 | Phase 5 | Pending |
+| COMIS-07 | Phase 5 | Complete |
 | AUDIT-01 | Phase 5 | Complete |
 | META-01 | Phase 6 | Pending |
 | META-02 | Phase 6 | Pending |

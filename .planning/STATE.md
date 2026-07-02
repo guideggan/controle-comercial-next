@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 5 — Motor de Comissão e Apuração (em andamento, 2/4 planos)
+**Current focus:** Phase 5 concluída — próxima: Phase 6 (Metas e Proração Semanal)
 
 ## Current Position
 
 **Current Phase:** 05
 **Current Phase Name:** motor-de-comissao-e-apuracao
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 3
+**Current Plan:** 4 de 4 (fase completa)
 **Total Plans in Phase:** 4
-**Status:** Ready to execute
-**Progress:** [██████████] 95%
+**Status:** Fase 5 completa — pronta para iniciar Phase 6
+**Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Plano 05-02 completo (2/4 da Fase 5): migração Prisma aplicada no Neon real adicionando `comissao_apurada` (snapshot imutável por colaborador/mês, `mesReferencia`/`mesPagamento` gravados explicitamente como DATE, `inputSnapshot` Json para auditoria/replay, `status` ABERTA|FECHADA, único por colaborador+mês) e `audit_log` (trilha de alterações com enum `AcaoAudit` de 7 ações). `prisma migrate status` sem drift; client regenerado com `db.comissaoApurada`/`db.auditLog`; `tsc` limpo. COMIS-04/05/06 e AUDIT-01 completos. Próximo: 05-03 (apuracao.service — motor→snapshot, fecho/reabrir, extrato).
+**Last Activity Description:** Fase 5 encerrada (4/4 planos): 05-03 (apuracao.service — motor puro ligado ao banco: apurarComissao/apurarMes gravam snapshot `comissao_apurada` com `mesPagamento` explícito via `mesSeguinte` pura testada na virada de ano; mês FECHADO recusa reapuração; fecharApuracao/reabrirApuracao travam/destravam snapshot + `venda.fechado` na mesma transação; getExtrato devolve linha a linha; audit_log gravado em apurar/marcar-pago/reverter/trocar-plano/fechar/reabrir) e 05-04 (UI /comissoes: seletor de mês, tabela lida do snapshot com total geral, apurar/fechar/reabrir via actions ADMIN, extrato por colaborador com fórmula aplicada; "Comissões" agora rota real na sidebar). Executados em uma única sessão (modo lean): SUMMARY combinado, checkpoint humano de 05-04 substituído por self smoke-verify contra o Neon real (colaborador+plano percentual_fixo 3%+venda+parcela paga → apurarMes → R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo, mesPagamento = mês seguinte, confirmado via HTTP com sessão real; dados de teste removidos ao final). COMIS-01..07 e AUDIT-01 completos. tsc/vitest(79)/next build limpos. Próximo: Phase 6 (Metas e Proração Semanal).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
-- Average duration: 18.2 min
-- Total execution time: 5.7 hours
+- Total plans completed: 20
+- Average duration: 17.5 min
+- Total execution time: 6.45 hours
 
 **By Phase:**
 
@@ -35,11 +35,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 02 | 3 | 70 | 23.3 |
 | 03 | 4 | 61 | 15.25 |
 | 04 | 3 | 45 | 15 |
-| 05 | 2 | 26 | 13 |
+| 05 | 4 | 71 | 17.75 |
 
 **Recent Trend:**
-- Last 5 plans: 14min (05-02), 12min (05-01), 25min (04-03), 12min (04-02), 8min (04-01)
-- Trend: Fase 5 iniciada com o motor de comissão puro via TDD, batendo ao centavo com os exemplos reais das planilhas já no primeiro plano
+- Last 5 plans: 45min (05-03+05-04 combinado), 14min (05-02), 12min (05-01), 25min (04-03), 12min (04-02)
+- Trend: Fase 5 encerrada em modo lean (05-03+05-04 executados juntos em uma sessão só, SUMMARY combinado, checkpoint humano substituído por self smoke-verify) — motor puro (05-01) provado ponta a ponta contra o Neon real batendo ao centavo
 
 **Plan Metrics:**
 
@@ -57,6 +57,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 04 P03 | 25 | 2 tasks + 1 checkpoint (auto-aprovado) | 2 files |
 | Phase 05 P01 | 12 | 1 task (TDD) | 10 files |
 | Phase 05 P02 | 14 | 2 tasks | 2 files |
+| Phase 05 P03+P04 | 45 | 6 tasks (3 auto + 2 auto + 1 checkpoint auto-aprovado/self-verify) | 15 files |
 
 *Updated after each plan completion*
 
@@ -112,10 +113,14 @@ Recent decisions affecting current work:
 - [Phase 05-01]: `percentualAtingimento`/`numeroCallsRealizadas` são opcionais em `ComissaoInput` com default 0 resolvido no `engine.ts` (ponto único) — pontos de integração pluggable com as Fases 6 (Metas) e 7 (Agendamentos), ainda inexistentes
 - [Phase 05-02]: Task 1/Task 2 commitados separadamente removendo/restaurando o bloco AuditLog do schema.prisma, mantendo um commit por task mesmo com os dois models compartilhando o mesmo arquivo
 - [Phase 05-02]: EPERM do prisma generate no Windows (dll.node bloqueado por node.exe orfao) resolvido matando processos node.exe residuais e rodando generate isolado, sem mudanca de schema
+- [Phase 05-03]: Colaborador sem plano vigente faz `apurarComissao` pular (retorna `null`) em vez de lançar — `apurarMes` não trava a apuração de todos por causa de uma pessoa sem plano definido; documentado inline no service
+- [Phase 05-03]: Auditoria (AUDIT-01) em `recebimentos.actions.ts`/`planos-comissao.actions.ts` é registrada APÓS a escrita do service, não dentro da mesma transação — é uma trilha, não uma invariante transacional crítica; expor `tx` do service para a action quebraria o encapsulamento atual
+- [Phase 05-03/04]: `fecharApuracao`/`reabrirApuracao` travam/destravam `comissao_apurada` (status) e `venda.fechado` na MESMA `db.$transaction`, substituindo definitivamente o placeholder de trava das Fases 3/4
+- [Phase 05-04]: Planos 05-03 e 05-04 executados em uma única sessão lean (a pedido do usuário): commits por task (não por micro-passo), um SUMMARY combinado, tsc/vitest rodados uma vez ao final, e o checkpoint `human-verify` de 05-04 substituído por self smoke-verify contra o Neon real (login real via API + cookie de sessão, dados de teste limpos ao final)
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3 nem Fase 4 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 em andamento: 2/4 planos (05-01 motor de comissão puro, 05-02 migração comissao_apurada + audit_log aplicada no Neon), COMIS-01..06 e AUDIT-01 completos. Próximo: 05-03 (apuracao.service — motor→snapshot, mesPagamento, fecho/reabrir, extrato, audit wiring).
+Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4 nem Fase 5 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 completa: 4/4 planos (05-01 motor puro, 05-02 migração comissao_apurada+audit_log, 05-03 apuracao.service + audit wiring, 05-04 UI /comissoes + extrato), COMIS-01..07 e AUDIT-01 completos e verificados via smoke test próprio contra o Neon real (recebido R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo). Próximo: Phase 6 (Metas e Proração Semanal).
 
 ### Blockers/Concerns
 

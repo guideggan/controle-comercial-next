@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
 - [x] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
 - [x] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
-- [ ] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
+- [x] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
 - [ ] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
 - [ ] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
 - [ ] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
@@ -127,11 +127,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Admin fecha/trava a apuração de um mês e, a partir daí, alterações retroativas nesse mês são impedidas ou exigem reabertura explícita
   6. Colaborador (ou admin) abre o extrato de comissão de uma pessoa/mês e vê linha a linha como o valor foi calculado
   7. Marcar uma parcela como paga, editar um valor ou trocar o plano de alguém fica registrado no histórico de alterações
-**Plans**: 2/4 plans executed
+**Plans**: 4/4 plans executed
 - [x] 05-01-PLAN.md — (TDD) motor de comissão puro: 4 formatos despachados por tipo, exemplos reais das planilhas ao centavo, arredondamento único (COMIS-01, COMIS-02, COMIS-03)
 - [x] 05-02-PLAN.md — migração Prisma: comissao_apurada (snapshot imutável, mês ref x pgto, status) + audit_log (COMIS-04, COMIS-05, COMIS-06, AUDIT-01)
-- [ ] 05-03-PLAN.md — camada server: apuracao.service (motor→snapshot, mesPagamento, fecho/reabrir, extrato) + audit wiring + actions ADMIN + TDD (COMIS-04..07, AUDIT-01)
-- [ ] 05-04-PLAN.md — UI /comissoes: seletor de mês, apurar/fechar/reabrir, tabela por colaborador, extrato linha a linha + checkpoint (COMIS-05, COMIS-06, COMIS-07)
+- [x] 05-03-PLAN.md — camada server: apuracao.service (motor→snapshot, mesPagamento, fecho/reabrir, extrato) + audit wiring + actions ADMIN + TDD (COMIS-04..07, AUDIT-01)
+- [x] 05-04-PLAN.md — UI /comissoes: seletor de mês, apurar/fechar/reabrir, tabela por colaborador, extrato linha a linha + checkpoint (COMIS-05, COMIS-06, COMIS-07)
+
+**Fase 5 encerrada** (2026-07-02): todos os 4 planos executados, todos os requisitos (COMIS-01..07, AUDIT-01) completos. Motor puro (05-01) ligado ao banco via apuracao.service (05-03): snapshot imutável por colaborador/mês com mesPagamento explícito, trava de mês fechado substituindo o placeholder venda.fechado, audit_log gravado em apurar/marcar-pago/reverter/trocar-plano/fechar/reabrir. UI /comissoes (05-04) lê o snapshot (nunca recalcula), com apurar/fechar/reabrir e extrato linha a linha. Verificado via smoke test próprio contra o Neon real (checkpoint humano auto-aprovado em modo yolo/lean): recebido R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo, mês de pagamento = mês seguinte, dados de teste removidos ao final.
 
 ### Phase 6: Metas e Proração Semanal
 **Goal**: Cada colaborador tem uma meta mensal definida pelo admin, quebrada automaticamente em metas semanais proporcionais, com % esperado vs atingido calculado a partir do realizado real.
