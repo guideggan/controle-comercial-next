@@ -139,9 +139,8 @@ export function ParcelaPagamentoForm({
       }}
     >
       <DialogTrigger
-        render={
-          <Button type="button" size="sm" disabled={bloqueado} />
-        }
+        disabled={bloqueado}
+        render={<Button type="button" size="sm" />}
       >
         Marcar como pago
       </DialogTrigger>
