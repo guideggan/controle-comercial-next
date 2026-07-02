@@ -15,8 +15,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Fundação — Auth, Papéis e Base** - Login funcional, papéis aplicados no servidor e decisões de dinheiro/data travadas
 - [x] **Phase 1.1: Fundação de Design (UI shell)** - INSERTED - App shell (sidebar agrupada + topbar + cards + gráficos) espelhando o DRE Consolidado; corrige bugs de estilo e reestiliza as telas da Fase 1
 - [x] **Phase 2: Colaboradores e Planos de Comissão** - Admin cadastra pessoas e configura o plano de comissão de cada uma
-- [ ] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
-- [ ] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
+- [x] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
+- [x] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
 - [ ] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
 - [ ] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
 - [ ] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
@@ -108,10 +108,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. Admin marca uma parcela como Paga informando valor efetivamente recebido e data do pagamento
   2. O "valor recebido no mês" soma entrada + mensalidades + vendas à vista pagas naquele mês, sem duplicar nenhum valor
   3. Uma parcela marcada como Pendente conta como zero em qualquer cálculo de comissão
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 - [x] 04-01-PLAN.md — (TDD) agregação pura do "recebido no mês" sem dupla contagem, pendente=zero (PGTO-02, PGTO-03)
 - [x] 04-02-PLAN.md — camada servidor: repo + service marcar pago/reverter (trava mês fechado) + query recebidoNoMes + actions ADMIN (PGTO-01, PGTO-02, PGTO-03)
-- [ ] 04-03-PLAN.md — UI: diálogo marcar-pago/reverter na tabela de parcelas + colunas de recebimento + total recebido + checkpoint (PGTO-01, PGTO-02)
+- [x] 04-03-PLAN.md — UI: diálogo marcar-pago/reverter na tabela de parcelas + colunas de recebimento + total recebido + checkpoint (PGTO-01, PGTO-02)
+
+**Fase 4 encerrada** (2026-07-02): todos os 3 planos executados, todos os requisitos (PGTO-01..03) completos e verificados via smoke test próprio contra o Neon real (checkpoint humano auto-aprovado em modo yolo, substituído por verificação automática): venda MENSALISTA real marcada/revertida via os services reais, `recebidoNoMes` refletindo corretamente por competência sem vazar entre meses, trava de mês fechado confirmada no service e na UI (bug real do Base UI DialogTrigger descoberto e corrigido durante a verificação).
 
 ### Phase 5: Motor de Comissão e Apuração
 **Goal**: O motor calcula a comissão de cada colaborador de acordo com o formato do plano dele, sobre o valor recebido (nunca o TCV), e grava um snapshot imutável por pessoa/mês que os painéis apenas leem.
@@ -193,7 +195,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 1.1. Fundação de Design (UI shell) | 1/1 | Complete | 2026-07-01 |
 | 2. Colaboradores e Planos de Comissão | 3/3 | Complete | 2026-07-01 |
 | 3. Vendas e Parcelas | 4/4 | Complete | 2026-07-01 |
-| 4. Recebimentos | 0/3 | Not started | - |
+| 4. Recebimentos | 3/3 | Complete | 2026-07-02 |
 | 5. Motor de Comissão e Apuração | 0/TBD | Not started | - |
 | 6. Metas e Proração Semanal | 0/TBD | Not started | - |
 | 7. Agendamentos SDR/SS | 0/TBD | Not started | - |

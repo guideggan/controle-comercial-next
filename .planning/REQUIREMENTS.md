@@ -35,9 +35,9 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Recebimentos (PGTO)
 
-- [ ] **PGTO-01**: Admin marca cada parcela/entrada como Paga ou Pendente, informando valor recebido e data do pagamento
-- [ ] **PGTO-02**: O sistema calcula o "valor recebido no mês" somando entrada + mensalidades + vendas à vista efetivamente pagas naquele mês, sem dupla contagem
-- [ ] **PGTO-03**: Somente valores com status Pago entram na base de comissão; pendentes contam como zero
+- [x] **PGTO-01**: Admin marca cada parcela/entrada como Paga ou Pendente, informando valor recebido e data do pagamento
+- [x] **PGTO-02**: O sistema calcula o "valor recebido no mês" somando entrada + mensalidades + vendas à vista efetivamente pagas naquele mês, sem dupla contagem
+- [x] **PGTO-03**: Somente valores com status Pago entram na base de comissão; pendentes contam como zero
 
 ### Motor de Comissão e Apuração (COMIS)
 
@@ -141,9 +141,9 @@ Explicitamente excluído para evitar aumento de escopo.
 | VENDA-03 | Phase 3 | Complete |
 | VENDA-04 | Phase 3 | Complete |
 | VENDA-05 | Phase 3 | Complete |
-| PGTO-01 | Phase 4 | Pending |
-| PGTO-02 | Phase 4 | Pending |
-| PGTO-03 | Phase 4 | Pending |
+| PGTO-01 | Phase 4 | Complete |
+| PGTO-02 | Phase 4 | Complete |
+| PGTO-03 | Phase 4 | Complete |
 | COMIS-01 | Phase 5 | Pending |
 | COMIS-02 | Phase 5 | Pending |
 | COMIS-03 | Phase 5 | Pending |

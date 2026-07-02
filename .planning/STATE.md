@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 4 — Recebimentos (em andamento)
+**Current focus:** Phase 4 — Recebimentos (completa) — próxima: Phase 5 (Motor de Comissão)
 
 ## Current Position
 
 **Current Phase:** 04
 **Current Phase Name:** recebimentos
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 2
+**Current Plan:** 3
 **Total Plans in Phase:** 3
-**Status:** In progress
-**Progress:** [█████████░] 93%
+**Status:** Complete
+**Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Plano 04-02 completo: camada de servidor de recebimentos — recebimento.repo.ts (getParcelaComVenda, marcarParcelaPagaRow, reverterParcelaPendenteRow, listarRecebimentosDoMes, reutilizando paraDataUTC no padrão de venda.repo.ts), recebimento.service.ts (marcarParcelaPaga/reverterParcelaPendente com validação Zod antes de escrever e trava de mês fechado PGTO-01; recebidoNoMes delega a soma sem-dupla-contagem a agregarRecebidoNoMes do plano 04-01) e recebimentos.actions.ts (ADMIN-gated via requireRole). 7 novos testes de service com mocks do repo/agregação, 56 testes no total no projeto, tsc limpo. Próximo: 04-03 (UI de marcar-pago/reverter).
+**Last Activity Description:** Plano 04-03 completo (último da Fase 4): UI de recebimentos no detalhe da venda — ParcelaPagamentoForm (Dialog "Marcar como pago" com valorRecebido default=valorPrevisto + dataPagamento default hoje, e ação direta "Reverter para pendente"), tabela de parcelas com colunas Valor recebido/Pago em/Ações e "Total recebido nesta venda" no CardHeader (soma local sem dupla contagem). Smoke test ponta a ponta contra o Neon real (venda MENSALISTA criada via service real, parcela marcada paga refletida em recebidoNoMes da competência correta sem vazar para o mês vizinho, revertida, trava de mês fechado confirmada no service e na UI). Bug real corrigido durante a verificação: Base UI DialogTrigger descartava o `disabled` passado só no Button interno via render — corrigido passando disabled direto no DialogTrigger. Fase 4 completa (3/3 planos); PGTO-01/02/03 marcados completos em REQUIREMENTS.md. Próximo: Phase 5 (Motor de Comissão e Apuração).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 19.7 min
-- Total execution time: 4.9 hours
+- Total plans completed: 16
+- Average duration: 19.3 min
+- Total execution time: 5.3 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 01.1 | 1 | 30 | 30 |
 | 02 | 3 | 70 | 23.3 |
 | 03 | 4 | 61 | 15.25 |
-| 04 | 2 | 20 | 10 |
+| 04 | 3 | 45 | 15 |
 
 **Recent Trend:**
-- Last 5 plans: 12min (04-02), 8min (04-01), 45min (03-04), 6min (03-03), 8min (03-02)
-- Trend: Fase 4 iniciada com planos curtos (domínio puro + camada de servidor totalmente mockada, sem tocar o banco real ainda)
+- Last 5 plans: 25min (04-03), 12min (04-02), 8min (04-01), 45min (03-04), 6min (03-03)
+- Trend: Fase 4 encerrada com o plano de UI incluindo smoke test real (bug de UX real descoberto e corrigido no Base UI DialogTrigger)
 
 **Plan Metrics:**
 
@@ -53,6 +53,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 03 P04 | 45 | 2 tasks + 1 checkpoint (auto-aprovado) | 7 files |
 | Phase 04 P01 | 8 | 1 task (TDD) | 2 files |
 | Phase 04 P02 | 12 | 3 tasks | 5 files |
+| Phase 04 P03 | 25 | 2 tasks + 1 checkpoint (auto-aprovado) | 2 files |
 
 *Updated after each plan completion*
 
@@ -101,10 +102,12 @@ Recent decisions affecting current work:
 - [Phase 04-01]: `agregarRecebidoNoMes` (src/domain/recebimentos/agregacao.ts) é a fonte única de verdade do "recebido no mês" — nenhuma outra camada (service 04-02, motor da Fase 5) deve reimplementar a soma; dedup defensivo por `parcelaId` via Map protege contra fan-out de join mesmo que o caller já filtre por status/competência
 - [Phase 04-02]: `recebidoNoMes` converte `Date`→string "YYYY-MM-01" via `getUTCFullYear`/`getUTCMonth` (nunca `toISOString`) para alimentar a agregação pura com o mesmo formato de string usado na comparação de competência; conversão Decimal→number feita uma única vez, na fronteira do service, nunca no repo nem no domínio puro
 - [Phase 04-02]: Trava de mês fechado (`venda.fechado`) replicada em `marcarParcelaPaga`/`reverterParcelaPendente` com a mesma nota de placeholder de `atualizarVenda` — a Fase 5 vai substituir por checagem de apuração fechada
+- [Phase 04-03]: "Total recebido" exibido no detalhe da venda é soma local das parcelas `PAGO` desta venda (uma linha por parcela) — deliberadamente distinto de `recebidoNoMes` (agregação cross-venda por competência, reservada para o motor de comissão da Fase 5 e dashboards da Fase 9)
+- [Phase 04-03]: Bug real do Base UI descoberto no smoke test: `DialogTrigger` descarta o prop `disabled` passado apenas no `Button` interno via `render` (o componente desestrutura seu próprio `disabled` antes de repassar os `elementProps` do filho) — `disabled` precisa ir diretamente no `DialogTrigger`; padrão a repetir em qualquer novo Dialog acionado por botão condicionalmente desabilitado
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1, Fase 2 nem Fase 3 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 em andamento: 2/3 planos completos (04-01 agregação pura, 04-02 camada de servidor), PGTO-01/02/03 implementados e cobertos por teste (mocks, banco real ainda não exercitado). Próximo: 04-03 (UI: diálogo marcar-pago/reverter, colunas de recebimento, total recebido, checkpoint de verificação contra o Neon real).
+Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3 nem Fase 4 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Próximo: Phase 5 (Motor de Comissão e Apuração).
 
 ### Blockers/Concerns
 
@@ -115,6 +118,6 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2 nem Fase 3 — Fase 1: 5/5 planos, t
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T00:25:00Z
-**Stopped At:** Completed 04-02-PLAN.md (Fase 4: 2/3 planos)
+**Last session:** 2026-07-02T00:24:16Z
+**Stopped At:** Completed 04-03-PLAN.md (Fase 4: 3/3 planos — Fase 4 completa)
 **Resume File:** None
