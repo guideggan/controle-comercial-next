@@ -83,9 +83,9 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Importação do Histórico (IMPORT)
 
-- [ ] **IMPORT-01**: Script importa o histórico das duas planilhas atuais (Comissões de Vendas e Desempenho do Time) para o banco
-- [ ] **IMPORT-02**: A importação recomputa a comissão a partir dos fatos brutos e reconcilia com os totais das planilhas, gerando um relatório de divergências (não copia a coluna FÓRMULA cegamente)
-- [ ] **IMPORT-03**: A importação é idempotente (rodar de novo não duplica dados) e valida antes de carregar
+- [x] **IMPORT-01**: Script importa o histórico da planilha de Comissões de Vendas para o banco (Desempenho Time descoped — ver 10-SUMMARY.md)
+- [x] **IMPORT-02**: A importação recomputa a comissão a partir dos fatos brutos e reconcilia com os totais das planilhas, gerando um relatório de divergências (não copia a coluna FÓRMULA cegamente)
+- [x] **IMPORT-03**: A importação é idempotente (rodar de novo não duplica dados) e valida antes de carregar
 
 ## v2 Requirements
 
@@ -168,15 +168,16 @@ Explicitamente excluído para evitar aumento de escopo.
 | GESTOR-03 | Phase 9 | Complete |
 | GESTOR-04 | Phase 9 | Complete |
 | AUDIT-02 | Phase 9 | Complete |
-| IMPORT-01 | Phase 10 | Pending |
-| IMPORT-02 | Phase 10 | Pending |
-| IMPORT-03 | Phase 10 | Pending |
+| IMPORT-01 | Phase 10 | Complete |
+| IMPORT-02 | Phase 10 | Complete |
+| IMPORT-03 | Phase 10 | Complete |
 
 **Coverage:**
 - v1 requirements: 47 total (contagem corrigida — a nota inicial de "43 total" estava desatualizada; a contagem real de IDs nas categorias acima é 47)
 - Mapped to phases: 47/47 ✓
+- Complete: 47/47 ✓
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 after roadmap creation (10 phases, full traceability mapped)*
+*Last updated: 2026-07-02 after Phase 10 (Importação do Histórico) completion — all v1 requirements complete*

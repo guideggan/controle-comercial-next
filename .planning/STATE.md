@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phases 5, 6, 7, 8 e 9 completas — Phase 10 (Importação do Histórico) desbloqueada
+**Current focus:** Todas as 10 fases completas — v1 encerrado (47/47 requisitos completos)
 
 ## Current Position
 
-**Current Phase:** 09
-**Current Phase Name:** dashboard-do-gestor
+**Current Phase:** 10
+**Current Phase Name:** importacao-do-historico
 **Total Phases:** 10 (+ Phase 1.1 inserted)
 **Current Plan:** 1 de 1 (fase completa)
 **Total Plans in Phase:** 1
-**Status:** Fase 9 completa — Fases 5+6+7+8+9 completas, Fase 10 (Importação do Histórico) desbloqueada
+**Status:** Fase 10 completa — TODAS as fases (1 a 10, + 1.1) completas. v1 encerrado.
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Fase 9 (Dashboard do Gestor) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): `/inicio` reescrito como o dashboard consolidado real do gestor no estilo "DRE Consolidado" — topbar com seletor de mês + botão preto "Exportar relatório", 5 KPI cards (receita total/à vista/mensalista, nº vendas, comissão total), gráfico Recharts de receita dos últimos 6 meses, tabela de comissão por colaborador (closer x SDR/SS, mês referência x mês pagamento lado a lado) e tabela de atingimento de meta de todos os colaboradores ativos. Domínio puro novo (`src/domain/dashboard/agregacao.ts`: `agregarReceitaPorTipo`, `contarVendasPorProduto`, `agregarComissaoPorColaborador`, 9 testes) + `dashboard.service.ts` orquestrando as fachadas já existentes (`recebidoNoMes`, `listarVendas`, `listarApuracoesDoMes` — snapshot, `getAcompanhamentoMeta`) sem recalcular nenhuma comissão. Export CSV (AUDIT-02) via Route Handler `GET /api/export/{vendas|comissoes|metas}?mes=`, gated por `requireRole("ADMIN")`, acionado por um dropdown com `DropdownMenuLinkItem` (novo wrapper de `Menu.LinkItem` do Base UI, `<a href download>` nativo). Verificado via smoke test próprio contra o Neon real: CLOSER com venda à vista de R$4.000 paga + venda mensalista com entrada de R$1.000 paga bateram receita total R$5.000,00 (à vista R$4.000 + mensalista R$1.000) no dashboard; comissão apurada de R$150,00 (3% de R$5.000) aparecendo na tabela; meta de R$8.000 aparecendo em atingimento; os três exports retornando CSV não vazio; export sem sessão bloqueado com redirect 307 para /login (não 200); dados de teste removidos ao final, confirmado 0 registros de teste restantes. GESTOR-01..04 e AUDIT-02 completos. tsc/vitest(107)/next build limpos. Próximo: Phase 10 (Importação do Histórico) — agora desbloqueada (depende de 5+6+7+9, todas completas).
+**Last Activity Description:** Fase 10 (Importação do Histórico) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): script standalone `import/importar-historico.ts` (tsx + SheetJS) importa o histórico real de "Comissões_Vendas - NEXT.xlsx" para o Neon de produção. Pipeline em 3 módulos puros testáveis (`import/normalizacao.ts` 38 testes, `import/reconciliacao.ts` 11 testes, `import/planilha.ts`) — parse (13 abas mensais reconhecidas, 5 fora de escopo listadas explicitamente) → validação/dry-run (relatório completo sem truncar) → carga idempotente por chave natural (aluno+data+valorTotal), com comissão SEMPRE recomputada a partir dos fatos brutos (valor recebido × % histórico da linha, nunca a coluna FÓRMULA/COMISSÃO da planilha — Pitfall 9). Achado real corrigido durante o --apply: a mesma venda aparece repetida em várias abas mensais (uma linha por mês com movimento de pagamento) — corrigido agrupando por chave natural antes de gravar, fundindo os fatos de pagamento de todo o grupo; validado rodando --apply duas vezes consecutivas com resultado idêntico (261 vendas, IMPORT-03 confirmado). Carregado no Neon real: 20 colaboradores, 14 produtos, 261 vendas, 1.454 parcelas (304 pagas), 58 apurações históricas. Reconciliação: 28/65 combinações (mês, pessoa, papel) batem exatamente; divergências majoritariamente explicadas por linhas "Pendente" da própria planilha que já carregavam comissão pré-calculada (achado documentado, não uma falha do importador). "Desempenho Time - NEXT (1).xlsx" (metas/agendamentos históricos) explicitamente descoped — layout de blocos livres não confiavelmente parseável no orçamento da fase; metas/agendamentos rastreados a partir de hoje (Fases 6/7). Nenhum dado de planilha nem relatório de reconciliação commitado (gitignored). Dados verificados fluindo pelas mesmas funções de service/repo usadas pela UI (listarVendas, recebidoNoMes, getApuracao). IMPORT-01..03 completos. tsc/vitest(156)/next build limpos. **v1 do produto encerrado: todos os 47 requisitos das 10 fases completos.**
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
-- Average duration: 17.7 min
-- Total execution time: 9.62 hours
+- Total plans completed: 27
+- Average duration: 20.4 min
+- Total execution time: 11.1 hours
 
 **By Phase:**
 
@@ -40,10 +40,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 07 | 3 | 70 | 23.3 |
 | 08 | 1 | 20 | 20 |
 | 09 | 1 | 45 | 45 |
+| 10 | 1 | 90 | 90 |
 
 **Recent Trend:**
-- Last 5 plans: 45min (09, dashboard consolidado + export CSV construído direto do roadmap/requisitos sem planner separado, domínio puro novo + orquestração de fachadas de service das Fases 4/5/6), 20min (08, construído direto do roadmap/requisitos sem planner separado, reusando 100% das fachadas de service das Fases 5/6/7), 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado)
-- Trend: Fase 9 foi mais longa que a Fase 8 apesar do mesmo padrão de sessão única lean — diferença explicada por ter um domínio puro NOVO (agregação de receita/produto/comissão, com 9 testes) e uma superfície nova (Route Handler de export CSV + componente Base UI novo DropdownMenuLinkItem), enquanto a Fase 8 foi pura composição de fachadas já existentes. Confirma que "sessão única lean" continua viável mesmo quando uma fase introduz um domínio novo pequeno, desde que a leitura de dados em si já esteja pronta nas fases anteriores (nenhum cálculo de comissão foi refeito).
+- Last 5 plans: 90min (10, importação de histórico real contra o Neon — script SheetJS+tsx standalone, pipeline puro testado, achado real de agrupamento de vendas repetidas entre abas descoberto e corrigido em produção, 2 execuções --apply consecutivas validando idempotência), 45min (09, dashboard consolidado + export CSV construído direto do roadmap/requisitos sem planner separado, domínio puro novo + orquestração de fachadas de service das Fases 4/5/6), 20min (08, construído direto do roadmap/requisitos sem planner separado, reusando 100% das fachadas de service das Fases 5/6/7), 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal)
+- Trend: Fase 10 foi a mais longa da série lean (90min) — esperado, pois é a única fase que escreve MILHARES de registros reais contra um banco remoto (Neon) em vez de dezenas de linhas de smoke-test; o tempo foi dominado por I/O de rede (upserts sequenciais/paralelos por lote) e por um achado real de modelagem (mesma venda repetida em várias abas mensais) descoberto e corrigido só depois de rodar contra dados reais — não algo detectável em testes unitários isolados. Confirma que "sessão única lean" continua viável mesmo para a fase de maior volume de escrita, desde que o pipeline em si (parse/normalização/reconciliação) seja modular e testável isoladamente antes da carga real.
 
 **Plan Metrics:**
 
@@ -66,6 +67,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 06 (única sessão) | 55 | domínio(TDD)+migração+server+UI+smoke-verify | 15 files |
 | Phase 08 (única sessão) | 20 | UI /painel (composição) + smoke-verify contra o Neon real | 6 files |
 | Phase 09 (única sessão) | 45 | domínio(TDD)+service+UI /inicio+export CSV+smoke-verify contra o Neon real | 10 files |
+| Phase 10 (única sessão) | 90 | pipeline puro(38+11 testes)+script standalone+2 execuções --apply contra o Neon real (achado real corrigido entre execuções) | 9 files |
 
 *Updated after each plan completion*
 
@@ -76,6 +78,9 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 10]: Escopo de importação reduzido deliberadamente a "Comissões_Vendas - NEXT.xlsx" — "Desempenho Time - NEXT (1).xlsx" (metas/agendamentos históricos) tem layout de blocos livres não confiavelmente parseável no orçamento da fase; metas/agendamentos passam a ser rastreados só a partir de hoje (Fases 6/7 já funcionais), histórico dessas duas áreas não foi retroativamente carregado.
+- [Phase 10]: A mesma venda aparece repetida em várias abas mensais da planilha (uma linha por mês com movimento de pagamento, não vendas distintas) — achado real descoberto rodando `--apply` contra o Neon; o importador agrupa por chave natural (aluno+data+valorTotal) ANTES de gravar, fundindo os fatos de pagamento de todo o grupo num único cronograma de parcelas, para nunca perder meses pagos de linhas processadas anteriormente do mesmo grupo.
+- [Phase 10]: Comissão histórica SEMPRE recomputada (valorRecebidoNoMes × % histórico da própria linha, usando o mesmo helper de arredondamento do motor real) — nunca copiada da coluna COMISSÃO CLOSER/SDR/FÓRMULA da planilha (Pitfall 9); divergências viram entrada no relatório de reconciliação, nunca são silenciosamente aceitas como verdade.
 - [Phase 08]: `/painel` deriva o colaboradorId EXCLUSIVAMENTE de `user.colaboradorId` (sessão) — a página não expõe nenhum parâmetro de URL que identifique um colaborador (só `?mes=`), tornando o vetor de IDOR "trocar parâmetro na URL" estruturalmente impossível em vez de apenas bloqueado por checagem (mesmo padrão defensivo de /agendamentos, mas mais estrito: nem ADMIN escolhe outro colaborador aqui).
 - [Phase 08]: ADMIN sem colaboradorId vinculado não recebe um painel self-service vazio — é direcionado para /inicio (dashboard consolidado da Fase 9); mantém a página simples sem branch de "admin vendo o painel de outro colaborador" (esse caminho já existe em /comissoes/[colaboradorId] e /metas).
 - [Phase 08]: Nenhuma migração ou módulo de domínio novo — o painel é pura composição das fachadas de service já existentes (getAcompanhamentoMeta, getApuracao/getExtrato, getGridSemanaCorrente), confirmando a aposta feita nas Fases 6/7 de desenhar essas funções já pensando neste consumidor.
@@ -152,6 +157,6 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6, Fas
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T02:09:36Z
-**Stopped At:** Completed Phase 9 (Dashboard do Gestor) — single lean session, see 09-SUMMARY.md
+**Last session:** 2026-07-02T03:10:00Z
+**Stopped At:** Completed Phase 10 (Importação do Histórico) — single lean session, see 10-SUMMARY.md. ALL 10 phases complete, v1 requirements (47/47) complete.
 **Resume File:** None

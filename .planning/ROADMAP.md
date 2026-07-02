@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
 - [x] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
 - [x] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
-- [ ] **Phase 10: Importação do Histórico** - Script carrega as duas planilhas antigas, recalcula e reconcilia com os totais originais
+- [x] **Phase 10: Importação do Histórico** - Script carrega a planilha de comissões histórica, recalcula e reconcilia com os totais originais
 
 ## Phase Details
 
@@ -204,7 +204,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Para cada mês histórico, a comissão recalculada pelo motor bate (ou o relatório de divergências explica a diferença) com os totais de rodapé da planilha original
   3. Rodar a importação uma segunda vez não duplica nenhum registro
   4. A importação recusa (com mensagem clara) uma carga cujos dados brutos não passam na validação, antes de gravar qualquer coisa
-**Plans**: TBD
+**Plans**: Executado como uma única sessão de execução direta (sem PLAN.md formal — ver 10-SUMMARY.md)
+- [x] Script `import/importar-historico.ts` (SheetJS + tsx standalone): parse das 13 abas mensais reconhecidas de "Comissões_Vendas - NEXT.xlsx" (5 abas fora de escopo listadas explicitamente) → validação/dry-run (relatório completo) → carga idempotente por chave natural, agrupando linhas repetidas da mesma venda entre abas mensais → comissão sempre recomputada a partir dos fatos brutos (nunca copiada da coluna FÓRMULA/COMISSÃO) → reconciliação linha a linha e por (mês, pessoa)
+
+**Fase 10 encerrada** (2026-07-02): construída em sessão única lean. IMPORT-01..03 completos e verificados rodando `--apply` duas vezes consecutivas contra o Neon real (idempotência confirmada — mesmo número exato de vendas nas duas execuções). Histórico de "Comissões_Vendas - NEXT.xlsx" carregado: 20 colaboradores, 14 produtos, 261 vendas, 1.454 parcelas (304 pagas), 58 apurações históricas. Reconciliação: 28/65 combinações (mês, pessoa, papel) batem exatamente; as demais são majoritariamente linhas "Pendente" da própria planilha que já carregavam uma comissão pré-calculada (achado documentado, não uma falha do importador). "Desempenho Time - NEXT (1).xlsx" (metas/agendamentos históricos) foi explicitamente descoped — layout de blocos livres não confiavelmente parseável no orçamento desta fase; metas/agendamentos são rastreados a partir de hoje (Fases 6/7). Nenhum dado de planilha nem relatório de reconciliação foi commitado (gitignored). tsc/vitest(156)/next build limpos.
 
 ## Progress
 
@@ -223,7 +226,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Agendamentos SDR/SS | 3/3 | Complete | 2026-07-02 |
 | 8. Painel Self-Service do Colaborador | 1/1 | Complete | 2026-07-02 |
 | 9. Dashboard do Gestor | 1/1 | Complete | 2026-07-02 |
-| 10. Importação do Histórico | 0/TBD | Not started | - |
+| 10. Importação do Histórico | 1/1 | Complete | 2026-07-02 |
 
 ---
 *Roadmap created: 2026-07-01*
