@@ -75,7 +75,9 @@ export function listarRecebimentosDoMes(mesReferencia: string) {
       statusPagamento: "PAGO",
     },
     include: {
-      venda: { select: { id: true, closerId: true, sdrId: true } },
+      venda: {
+        select: { id: true, closerId: true, sdrId: true, alunoNome: true },
+      },
     },
   });
 }
