@@ -5,7 +5,13 @@ import { recebidoNoMes } from "@/server/services/recebimento.service";
 import { listarVendas } from "@/server/repositories/venda.repo";
 import { listarApuracoesDoMes } from "@/server/services/apuracao.service";
 import { listarColaboradores } from "@/server/repositories/colaborador.repo";
-import { getAcompanhamentoMeta } from "@/server/services/meta.service";
+import { listarAgendamentosDoMes, dataParaString } from "@/server/repositories/agendamento.repo";
+import {
+  getAcompanhamentoMeta,
+  listarMetasMes,
+  type ContextoAcompanhamentoMeta,
+} from "@/server/services/meta.service";
+import type { AgendamentoLinha } from "@/domain/agendamentos/agregacao";
 import {
   agregarReceitaPorTipo,
   contarVendasPorProduto,
@@ -86,19 +92,50 @@ export type AtingimentoMetaLinha = {
 // GESTOR-04: atingimento de meta de TODOS os colaboradores ativos
 // (CLOSER/SDR/SS) em uma única tela — chama getAcompanhamentoMeta (fonte
 // única, Fase 6) para cada um, nunca reimplementa a proporção.
+//
+// PERFORMANCE (N+1 corrigido): getAcompanhamentoMeta internamente busca
+// colaborador + meta + recebidoNoMes/contarCallsRealizadas — as duas
+// últimas fazem uma query do MÊS INTEIRO (todos os colaboradores) mesmo
+// quando só 1 pessoa é consultada. Chamar isso uma vez POR colaborador (até
+// 20 no time hoje) repetia as MESMAS 4 queries até 20x. Aqui buscamos tudo
+// UMA ÚNICA VEZ (em paralelo) e montamos um `contexto` por colaborador só
+// com dados já em memória — zero queries adicionais por colaborador.
 export async function getAtingimentoMetaTodos(
   mesReferencia: string,
 ): Promise<AtingimentoMetaLinha[]> {
-  const colaboradores = await listarColaboradores();
+  const [colaboradores, metasDoMes, recebido, agendamentosDoMesRaw] =
+    await Promise.all([
+      listarColaboradores(),
+      listarMetasMes(mesReferencia),
+      recebidoNoMes(mesReferencia),
+      listarAgendamentosDoMes(mesReferencia),
+    ]);
   const elegiveis = colaboradores.filter(
     (c) => c.ativo && (c.papel === "CLOSER" || c.papel === "SDR" || c.papel === "SS"),
   );
 
+  const agendamentosDoMes: AgendamentoLinha[] = agendamentosDoMesRaw.map((a) => ({
+    id: a.id,
+    colaboradorId: a.colaboradorId,
+    data: dataParaString(a.data),
+    status: a.status,
+  }));
+
+  const metaPorColaborador = new Map(metasDoMes.map((m) => [m.colaboradorId, m]));
+
   const linhas = await Promise.all(
     elegiveis.map(async (colaborador) => {
+      const contexto: ContextoAcompanhamentoMeta = {
+        colaborador: { papel: colaborador.papel },
+        meta: metaPorColaborador.get(colaborador.id) ?? null,
+        recebidoNoMes: recebido,
+        agendamentosDoMes,
+      };
+
       const acompanhamento = await getAcompanhamentoMeta(
         colaborador.id,
         mesReferencia,
+        contexto,
       );
 
       const percentualAtingido =
@@ -161,16 +198,15 @@ export async function getReceitaUltimosMeses(
 // Agrega tudo que o dashboard consolidado precisa em uma única chamada, para
 // a página fazer um único await em vez de orquestrar 5 promessas soltas.
 export async function getDashboardConsolidado(mesReferencia: string) {
-  const [receita, contagemProduto, comissao, atingimentoMeta, serieReceita] =
+  const [receita, contagemProduto, comissao, atingimentoMeta, serieReceita, vendas] =
     await Promise.all([
       getReceitaConsolidada(mesReferencia),
       getContagemPorProduto(mesReferencia),
       getComissaoPorColaborador(mesReferencia),
       getAtingimentoMetaTodos(mesReferencia),
       getReceitaUltimosMeses(mesReferencia),
+      listarVendas({ mesReferencia }),
     ]);
-
-  const vendas = await listarVendas({ mesReferencia });
 
   return {
     mesReferencia,

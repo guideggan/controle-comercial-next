@@ -103,12 +103,13 @@ export default async function ExtratoComissaoPage({
   const mesParam = Array.isArray(search.mes) ? search.mes[0] : search.mes;
   const mes = mesParam && /^\d{4}-\d{2}-01$/.test(mesParam) ? mesParam : mesCorrenteUTC();
 
-  const colaborador = await getColaborador(colaboradorId);
+  const [colaborador, { apuracao, linhas }] = await Promise.all([
+    getColaborador(colaboradorId),
+    getExtrato(colaboradorId, mes),
+  ]);
   if (!colaborador) {
     notFound();
   }
-
-  const { apuracao, linhas } = await getExtrato(colaboradorId, mes);
 
   const totalLinhas = linhas.reduce((soma, l) => soma + l.valorRecebido, 0);
 

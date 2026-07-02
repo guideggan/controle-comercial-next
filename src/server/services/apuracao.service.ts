@@ -261,9 +261,11 @@ export type ExtratoLinha = {
 // PAGAS da competência que pertencem a este colaborador (como closer OU
 // sdr), para exibir COMO o valorBase foi composto.
 export async function getExtrato(colaboradorId: string, mesReferencia: string) {
-  const apuracao = await getApuracaoRepo(colaboradorId, mesReferencia);
+  const [apuracao, linhasDoMes] = await Promise.all([
+    getApuracaoRepo(colaboradorId, mesReferencia),
+    listarRecebimentosDoMes(mesReferencia),
+  ]);
 
-  const linhasDoMes = await listarRecebimentosDoMes(mesReferencia);
   const linhas: ExtratoLinha[] = linhasDoMes
     .filter(
       (p) => p.venda.closerId === colaboradorId || p.venda.sdrId === colaboradorId,

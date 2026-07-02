@@ -16,6 +16,9 @@ import {
 import { proracaoSemanal, type SemanaProrateada } from "@/domain/metas/proracao";
 import { recebidoNoMes } from "@/server/services/recebimento.service";
 import { contarCallsRealizadas } from "@/server/services/agendamento.service";
+import type { ResultadoRecebidoNoMes } from "@/domain/recebimentos/agregacao";
+import type { AgendamentoLinha } from "@/domain/agendamentos/agregacao";
+import { contarCallsRealizadas as contarCallsRealizadasPuro } from "@/domain/agendamentos/agregacao";
 
 // Fachada pública da Fase 6 (META-01/02/03/04), consumida pelas Server
 // Actions (metas.actions.ts) e, a partir da Fase 8, pelo painel do
@@ -134,16 +137,35 @@ export type AcompanhamentoMeta = {
 // proporcional desta semana": o realizado do mês inteiro até hoje É o
 // acumulado correto de comparar contra a meta proporcional acumulada de
 // qualquer semana já iniciada.
+// Contexto opcional com os agregados do mês JÁ BUSCADOS pelo caller (batch),
+// para evitar que getAcompanhamentoMeta refaça QUALQUER query POR
+// COLABORADOR — era o N+1 do dashboard consolidado (GESTOR-04, até 20
+// colaboradores hoje = até 20x as mesmas 4 queries repetidas: colaborador,
+// meta, recebidoNoMes do mês inteiro, agendamentos do mês inteiro). Quando
+// omitido, o comportamento é IDÊNTICO ao original (busca sob demanda) —
+// usado pelos callers de um único colaborador (/painel, /metas), que não
+// pagam esse custo e continuam com a mesma assinatura de antes.
+export type ContextoAcompanhamentoMeta = {
+  colaborador: { papel: string };
+  meta: MetaDoColaborador;
+  recebidoNoMes: ResultadoRecebidoNoMes;
+  agendamentosDoMes: AgendamentoLinha[];
+};
+
 export async function getAcompanhamentoMeta(
   colaboradorId: string,
   mesReferencia: string,
+  contexto?: ContextoAcompanhamentoMeta,
 ): Promise<AcompanhamentoMeta> {
-  const colaborador = await getColaborador(colaboradorId);
+  const [colaborador, meta] = contexto
+    ? [contexto.colaborador, contexto.meta]
+    : await Promise.all([
+        getColaborador(colaboradorId),
+        getMeta(colaboradorId, mesReferencia),
+      ]);
   if (!colaborador) {
     throw new Error("Colaborador não encontrado");
   }
-
-  const meta = await getMeta(colaboradorId, mesReferencia);
 
   const metaMensal =
     meta?.unidade === "VALOR"
@@ -153,12 +175,18 @@ export async function getAcompanhamentoMeta(
         : 0;
 
   // Realizado (META-04): fonte única por papel, nunca reimplementada aqui.
+  // Quando `contexto` é fornecido (batch), reagrupa os dados já buscados em
+  // vez de rebuscar — a mesma fonte única, só sem repetir a query/agregação.
   let realizadoMes = 0;
   if (colaborador.papel === "CLOSER") {
-    const recebido = await recebidoNoMes(mesReferencia);
+    const recebido = contexto
+      ? contexto.recebidoNoMes
+      : await recebidoNoMes(mesReferencia);
     realizadoMes = recebido.porCloser[colaboradorId] ?? 0;
   } else if (colaborador.papel === "SDR" || colaborador.papel === "SS") {
-    realizadoMes = await contarCallsRealizadas(colaboradorId, mesReferencia);
+    realizadoMes = contexto
+      ? contarCallsRealizadasPuro(contexto.agendamentosDoMes, colaboradorId, mesReferencia)
+      : await contarCallsRealizadas(colaboradorId, mesReferencia);
   }
 
   const semanasBase =

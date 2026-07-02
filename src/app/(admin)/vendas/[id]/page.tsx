@@ -64,15 +64,14 @@ export default async function VendaDetalhePage({
 
   const { id } = await params;
 
-  const venda = await getVenda(id);
-  if (!venda) {
-    notFound();
-  }
-
-  const [produtos, colaboradores] = await Promise.all([
+  const [venda, produtos, colaboradores] = await Promise.all([
+    getVenda(id),
     listarProdutos(),
     listarColaboradores(),
   ]);
+  if (!venda) {
+    notFound();
+  }
 
   const produtosAtivos = produtos.filter((p) => p.ativo);
   const closers = colaboradores.filter((c) => c.ativo && c.papel === "CLOSER");
