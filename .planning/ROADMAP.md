@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Vendas e Parcelas** - Admin cadastra uma venda e o sistema gera as parcelas automaticamente
 - [x] **Phase 4: Recebimentos** - Marcar parcelas como pagas alimenta o "valor recebido no mês" sem dupla contagem
 - [x] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
-- [ ] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
+- [x] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
 - [x] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
 - [ ] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
 - [ ] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
@@ -144,7 +144,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. A meta mensal aparece quebrada em metas semanais acumuladas proporcionais, validadas contra semanas reais das planilhas antigas
   3. Para a semana corrente, o sistema mostra realizado, meta proporcional, % atingido, % esperado e saldo
   4. O realizado do closer soma vendas à vista + mensalistas efetivamente recebidos; o do SDR/SS soma agendamentos realizados
-**Plans**: TBD
+**Plans**: Executado em uma única sessão direta (modo lean — ver 06-SUMMARY.md)
+- [x] Módulo puro `proracaoSemanal` (semanas seg-dom, proração por dias corridos, meta acumulada fechando 100% na última semana) via TDD, 7 testes
+- [x] Migração Meta (colaboradorId, mesReferencia @db.Date, unidade VALOR/AGENDAMENTOS XOR-checada) + repo/service (definirMeta, getAcompanhamentoMeta) + actions gated (ADMIN define, requireSelfOrAdmin lê)
+- [x] UI /metas: tabela de metas por colaborador com dialog definir/editar, seção de acompanhamento semanal reutilizável (mesma função que alimentará o painel da Fase 8)
+
+**Fase 6 encerrada** (2026-07-02): todos os requisitos (META-01..04) completos. `getAcompanhamentoMeta` junta a proração pura com o realizado das fontes ÚNICAS já existentes (`recebidoNoMes` para closer, `contarCallsRealizadas` para SDR/SS) — verificado via smoke test próprio contra o Neon real (CLOSER com meta R$8.000 e venda paga de R$4.000 batendo 50% do mês; SDR com meta 12 agendamentos e 3 REALIZADO batendo o realizado real; última semana de todo mês testado fecha exatamente 100% da meta). tsc/vitest(98)/next build limpos. Dados de teste removidos ao final.
 
 ### Phase 7: Agendamentos SDR/SS
 **Goal**: SDR/SS registra agendamentos por dia da semana com status, e essa mesma fonte de dados alimenta tanto a comissão por calls quanto o painel de meta — sem contadores duplicados.
@@ -208,7 +213,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Vendas e Parcelas | 4/4 | Complete | 2026-07-01 |
 | 4. Recebimentos | 3/3 | Complete | 2026-07-02 |
 | 5. Motor de Comissão e Apuração | 4/4 | Complete | 2026-07-02 |
-| 6. Metas e Proração Semanal | 0/TBD | Not started | - |
+| 6. Metas e Proração Semanal | 1/1 | Complete | 2026-07-02 |
 | 7. Agendamentos SDR/SS | 3/3 | Complete | 2026-07-02 |
 | 8. Painel Self-Service do Colaborador | 0/TBD | Not started | - |
 | 9. Dashboard do Gestor | 0/TBD | Not started | - |

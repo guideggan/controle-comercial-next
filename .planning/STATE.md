@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phase 7 concluída (fora de ordem, antes da Phase 6) — próxima: Phase 6 (Metas e Proração Semanal), pendente antes da Phase 8
+**Current focus:** Phases 5, 6 e 7 completas — Phase 8 (Painel Self-Service do Colaborador) desbloqueada
 
 ## Current Position
 
-**Current Phase:** 07
-**Current Phase Name:** agendamentos-sdr-ss
+**Current Phase:** 06
+**Current Phase Name:** metas-e-proracao-semanal
 **Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 3 de 3 (fase completa)
-**Total Plans in Phase:** 3
-**Status:** Fase 7 completa — Fase 6 (Metas e Proração Semanal) ainda não iniciada; Fase 8 depende de 5+6+7
+**Current Plan:** 1 de 1 (fase completa)
+**Total Plans in Phase:** 1
+**Status:** Fase 6 completa — Fases 5+6+7 completas, Fase 8 (Painel do Colaborador) desbloqueada
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Fase 7 (Agendamentos SDR/SS) construída e encerrada em uma única sessão lean, fora de ordem (Phase 6 ainda pendente, mas Phase 7 só depende da Phase 2): módulo puro `src/domain/agendamentos/agregacao.ts` (contarCallsRealizadas + agregarPorDiaDaSemana, 7 testes) é a FONTE ÚNICA de contagem de calls realizadas; migração `Agendamento` (colaboradorId, data @db.Date, StatusAgendamento) aplicada ao Neon; repo/service/actions gated por requireSelfOrAdmin; `apuracao.service.ts` (por_calls) agora chama `contarCallsRealizadas` real em vez do placeholder 0; UI `/agendamentos` (grupo de rotas (colaborador), acessível a ADMIN e SDR/SS) com formulário de registro, grid semanal seg-sáb, lista do mês com status inline, seletor de colaborador para ADMIN. Verificado via smoke test próprio contra o Neon real: SDR com plano por_calls R$15/call + 3 agendamentos REALIZADO em julho/2026 → apurarComissao calculou R$45,00 batendo ao centavo; dados de teste removidos ao final. AGEND-01..03 completos. tsc/vitest(91)/next build limpos. Próximo: Phase 6 (Metas e Proração Semanal) — Phase 8 (Painel do Colaborador) só pode iniciar depois que 6 também estiver completa.
+**Last Activity Description:** Fase 6 (Metas e Proração Semanal) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): módulo puro `src/domain/metas/proracao.ts` (proracaoSemanal, 7 testes) quebra a meta mensal em semanas SEGUNDA-DOMINGO, proração por dias corridos dentro do mês, meta proporcional ACUMULADA sempre fechando 100% na última semana (regra decidida e documentada contra o Pitfall 8, validada em jul/2026 início-parcial, jun/2026 início-limpo, fev/2026 não-bissexto); migração `Meta` (colaboradorId, mesReferencia @db.Date, unidade VALOR/AGENDAMENTOS XOR-checada por CHECK bruto) aplicada ao Neon; `meta.service.ts` deriva a unidade SEMPRE do papel real do colaborador (nunca do client) e expõe `getAcompanhamentoMeta(colaboradorId, mesReferencia)` juntando a proração pura com o realizado das fontes ÚNICAS já existentes (`recebidoNoMes` para closer, `contarCallsRealizadas` para SDR/SS — nunca reimplementadas), já pronta para o painel da Fase 8 sem refatoração esperada; UI `/metas` (admin) com tabela de metas por colaborador + dialog definir/editar + seção de acompanhamento semanal reutilizável. Verificado via smoke test próprio contra o Neon real: CLOSER com meta R$8.000 + venda à vista de R$4.000 paga → realizadoMes=4000 batendo com recebidoNoMes real, última semana fecha metaProporcionalAcumulada=8000 (100%); SDR com meta 12 agendamentos + 3 REALIZADO → realizadoMes=3 batendo com contarCallsRealizadas real; página /metas renderizada com sessão admin real (200 OK); dados de teste removidos ao final. META-01..04 completos. tsc/vitest(98)/next build limpos. Próximo: Phase 8 (Painel Self-Service do Colaborador) — agora desbloqueada (depende de 5+6+7, todas completas).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
-- Average duration: 17.6 min
-- Total execution time: 7.62 hours
+- Total plans completed: 24
+- Average duration: 17.9 min
+- Total execution time: 8.54 hours
 
 **By Phase:**
 
@@ -36,11 +36,12 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 03 | 4 | 61 | 15.25 |
 | 04 | 3 | 45 | 15 |
 | 05 | 4 | 71 | 17.75 |
+| 06 | 1 | 55 | 55 |
 | 07 | 3 | 70 | 23.3 |
 
 **Recent Trend:**
-- Last 5 plans: 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado), 14min (05-02), 12min (05-01), 25min (04-03)
-- Trend: Fase 7 construída fora de ordem (antes da Fase 6) em uma única sessão direta, sem planner separado — módulo puro + migração + server layer + UI + wiring real de apuração, tudo verificado via smoke test próprio contra o Neon real (por_calls batendo ao centavo)
+- Last 5 plans: 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado), 14min (05-02), 12min (05-01)
+- Trend: Fase 6 construída em uma única sessão direta a partir do roadmap/requisitos — domínio puro (TDD) + migração + server layer + UI, verificado via smoke test próprio contra o Neon real (recebido/agendamentos reais batendo com a meta proporcional). Padrão de "planejar+construir na mesma sessão, sem PLAN.md formal" já usado nas Fases 6 e 7 mostra-se consistente para fases médias/pequenas quando os padrões do codebase já estão bem estabelecidos.
 
 **Plan Metrics:**
 
@@ -60,6 +61,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 05 P02 | 14 | 2 tasks | 2 files |
 | Phase 05 P03+P04 | 45 | 6 tasks (3 auto + 2 auto + 1 checkpoint auto-aprovado/self-verify) | 15 files |
 | Phase 07 (única sessão) | 70 | domínio+migração+server+UI+wiring+smoke-verify | 17 files |
+| Phase 06 (única sessão) | 55 | domínio(TDD)+migração+server+UI+smoke-verify | 15 files |
 
 *Updated after each plan completion*
 
@@ -70,8 +72,12 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Phase 07]: Fase 7 (Agendamentos) construída fora de ordem, antes da Fase 6 (Metas) — dependência declarada no roadmap é só Phase 2, então Phase 7 não bloqueava em Phase 6. Phase 6 continua pendente e Phase 8 (Painel do Colaborador) só pode iniciar quando 5+6+7 estiverem completas.
-- [Phase 07]: `contarCallsRealizadas` (src/domain/agendamentos/agregacao.ts) é a ÚNICA função de contagem de calls realizadas no mês — apuracao.service (por_calls) e o futuro painel de meta (Fase 6/8) SEMPRE chamam esta função, nunca reimplementam a soma (AGEND-02).
+- [Phase 06]: Regra de proração semanal (Pitfall 8) decidida e documentada em src/domain/metas/proracao.ts: semanas SEGUNDA-DOMINGO, proração por DIAS CORRIDOS (não dias úteis) dentro do mês, meta proporcional ACUMULADA — garante que a última semana de qualquer mês sempre fecha em exatamente 100% da meta mensal, validado contra jul/2026 (início parcial), jun/2026 (início limpo) e fev/2026 (não-bissexto, exatas 4 semanas).
+- [Phase 06]: Meta não é versionada por vigência como plano_comissao — é upsert simples por (colaboradorId, mesReferencia); redefinir sobrescreve, mais simples de corrigir do que reabrir/fechar vigência, e apropriado porque meta é um alvo (não um cálculo histórico a preservar).
+- [Phase 06]: Unidade da meta (VALOR/AGENDAMENTOS) é SEMPRE derivada do papel real do colaborador dentro de meta.service.ts, nunca aceita do formulário/client.
+- [Phase 06]: getAcompanhamentoMeta(colaboradorId, mesReferencia) exposta como função de service standalone, já consumida pela UI /metas exatamente como o painel do colaborador (Fase 8) vai consumir — nenhuma refatoração esperada quando a Fase 8 iniciar.
+- [Phase 06]: Fase 6 (Metas) construída depois da Fase 7 (Agendamentos), completando a dependência de Fase 8 (Painel do Colaborador), que exige 5+6+7 — todas completas agora.
+- [Phase 07]: `contarCallsRealizadas` (src/domain/agendamentos/agregacao.ts) é a ÚNICA função de contagem de calls realizadas no mês — apuracao.service (por_calls) e o painel de meta (Fase 6, agora completo) SEMPRE chamam esta função, nunca reimplementam a soma (AGEND-02).
 - [Phase 07]: Página /agendamentos vive no grupo de rotas (colaborador) em vez de (admin), porque o layout (colaborador) usa requireUser (qualquer papel autenticado) enquanto (admin) exige ADMIN e redirecionaria SDR/SS para /login — o mesmo layout compartilhado atende ADMIN e SDR/SS numa única rota.
 - Roadmap: Motor de comissão isolado como fase própria (Phase 5), separado do CRUD de venda/parcela, para permitir testes unitários dedicados contra números reais das planilhas antes de qualquer painel consumir o resultado.
 - Roadmap: Importação do histórico (Phase 10) sequenciada por último, depois inclusive do Dashboard do Gestor (Phase 9), para que os caminhos de entrada de dados ao vivo (venda, pagamento, comissão, metas, agendamentos) já estejam provados corretos antes de reutilizá-los na carga em massa do histórico.
@@ -125,16 +131,16 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4 nem Fase 5 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 completa: 4/4 planos (05-01 motor puro, 05-02 migração comissao_apurada+audit_log, 05-03 apuracao.service + audit wiring, 05-04 UI /comissoes + extrato), COMIS-01..07 e AUDIT-01 completos e verificados via smoke test próprio contra o Neon real (recebido R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo). Próximo: Phase 6 (Metas e Proração Semanal).
+Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6 nem Fase 7 — Fase 1: 5/5 planos, todos os requisitos (AUTH-01..05, COLAB-07) completos. Fase 1.1: app shell + restyle das 4 telas da Fase 1 completos, critérios de aceite do DESIGN-SPEC.md verificados com sessões reais (ADMIN e SDR). Fase 2: 3/3 planos completos, todos os requisitos (COLAB-01..06) completos e verificados via UI real (checkpoint humano aprovado). Fase 3: 4/4 planos completos, todos os requisitos (VENDA-01..05) completos e verificados via smoke test próprio contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 4 completa: 3/3 planos (04-01 agregação pura, 04-02 camada de servidor, 04-03 UI de marcar-pago/reverter), PGTO-01/02/03 completos e verificados via smoke test ponta a ponta contra o Neon real (checkpoint auto-aprovado em modo yolo). Fase 5 completa: 4/4 planos (05-01 motor puro, 05-02 migração comissao_apurada+audit_log, 05-03 apuracao.service + audit wiring, 05-04 UI /comissoes + extrato), COMIS-01..07 e AUDIT-01 completos e verificados via smoke test próprio contra o Neon real (recebido R$ 3.000,00 × 3% = R$ 90,00 batendo ao centavo). Fase 7 completa: módulo puro de agregação de agendamentos + migração + server layer + UI /agendamentos + wiring real em apuracao.service (por_calls), AGEND-01..03 completos e verificados via smoke test próprio (R$45,00 batendo ao centavo). Fase 6 completa: módulo puro de proração semanal (TDD) + migração Meta + server layer (definirMeta, getAcompanhamentoMeta) + UI /metas, META-01..04 completos e verificados via smoke test próprio contra o Neon real (CLOSER R$8.000/realizado R$4.000, SDR 12 agendamentos/realizado 3, última semana sempre fechando 100% da meta). Próximo: Phase 8 (Painel Self-Service do Colaborador) — desbloqueada agora que 5+6+7 estão completas.
 
 ### Blockers/Concerns
 
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
-- Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas novas rotas de placeholder da Fase 1.1 (`/inicio`, `/comissoes`, `/metas`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
+- Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas rotas reais adicionadas desde então (`/inicio`, `/comissoes`, `/metas`, `/agendamentos`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
 - **Bug em produção (descoberto na Fase 3, não corrigido — fora de escopo):** `plano-comissao.repo.ts` (Fase 2) tem o mesmo bug de datas corrigido em `venda.repo.ts` neste plano — `definirPlanoComissaoAction` está quebrada contra o banco real hoje (COLAB-02..05). Ver `.planning/phases/03-vendas-e-parcelas/deferred-items.md`. Recomendado priorizar correção antes/no início da Fase 4.
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T00:51:04.400Z
-**Stopped At:** Completed 05-02-PLAN.md
+**Last session:** 2026-07-02T01:44:20Z
+**Stopped At:** Completed Phase 6 (Metas e Proração Semanal) — single lean session, see 06-SUMMARY.md
 **Resume File:** None

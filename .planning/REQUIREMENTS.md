@@ -51,10 +51,10 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Metas e Proração Semanal (META)
 
-- [ ] **META-01**: Admin define a meta de cada colaborador por mês (valor em R$ para closer; nº de agendamentos para SDR/SS)
-- [ ] **META-02**: O sistema quebra a meta mensal em metas semanais proporcionais acumuladas
-- [ ] **META-03**: Para cada semana o sistema mostra realizado, meta proporcional, % atingido, % esperado e saldo
-- [ ] **META-04**: O realizado do closer soma vendas à vista + mensalistas recebidos; o do SDR/SS soma agendamentos
+- [x] **META-01**: Admin define a meta de cada colaborador por mês (valor em R$ para closer; nº de agendamentos para SDR/SS)
+- [x] **META-02**: O sistema quebra a meta mensal em metas semanais proporcionais acumuladas
+- [x] **META-03**: Para cada semana o sistema mostra realizado, meta proporcional, % atingido, % esperado e saldo
+- [x] **META-04**: O realizado do closer soma vendas à vista + mensalistas recebidos; o do SDR/SS soma agendamentos
 
 ### Agendamentos SDR/SS (AGEND)
 
@@ -152,10 +152,10 @@ Explicitamente excluído para evitar aumento de escopo.
 | COMIS-06 | Phase 5 | Complete |
 | COMIS-07 | Phase 5 | Complete |
 | AUDIT-01 | Phase 5 | Complete |
-| META-01 | Phase 6 | Pending |
-| META-02 | Phase 6 | Pending |
-| META-03 | Phase 6 | Pending |
-| META-04 | Phase 6 | Pending |
+| META-01 | Phase 6 | Complete |
+| META-02 | Phase 6 | Complete |
+| META-03 | Phase 6 | Complete |
+| META-04 | Phase 6 | Complete |
 | AGEND-01 | Phase 7 | Complete |
 | AGEND-02 | Phase 7 | Complete |
 | AGEND-03 | Phase 7 | Complete |
