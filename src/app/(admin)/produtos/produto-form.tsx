@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CategoriaProduto } from "@prisma/client";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -31,13 +32,32 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ProdutoValues = z.infer<typeof produtoSchema>;
+
+// Rótulos legíveis das categorias do catálogo v1.1 — a UI completa de
+// gestão de produtos por categoria fica para o agente de UI de follow-up;
+// aqui só o mínimo para o formulário existente continuar funcionando com o
+// campo agora obrigatório.
+const CATEGORIA_LABEL: Record<CategoriaProduto, string> = {
+  ACELERACAO_MENTORIA: "Aceleração / Mentoria",
+  IMERSAO_PRESENCIAL: "Imersão presencial",
+  EVENTO_PRESENCIAL: "Evento presencial",
+};
+const CATEGORIAS = Object.values(CategoriaProduto);
 
 type ProdutoExistente = {
   id: string;
   nome: string;
   ativo: boolean;
+  categoria?: CategoriaProduto | null;
 };
 
 type ProdutoFormProps =
@@ -56,7 +76,10 @@ export function ProdutoForm(props: ProdutoFormProps) {
 
   const form = useForm<ProdutoValues>({
     resolver: zodResolver(produtoSchema),
-    defaultValues: { nome: produto?.nome ?? "" },
+    defaultValues: {
+      nome: produto?.nome ?? "",
+      categoria: produto?.categoria ?? undefined,
+    },
   });
 
   async function onSubmit(values: ProdutoValues) {
@@ -70,7 +93,10 @@ export function ProdutoForm(props: ProdutoFormProps) {
         toast.success("Produto atualizado com sucesso");
       }
       setOpen(false);
-      form.reset({ nome: mode === "editar" ? values.nome : "" });
+      form.reset({
+        nome: mode === "editar" ? values.nome : "",
+        categoria: mode === "editar" ? values.categoria : undefined,
+      });
       router.refresh();
     } catch {
       toast.error("Não foi possível salvar o produto");
@@ -140,11 +166,38 @@ export function ProdutoForm(props: ProdutoFormProps) {
                     <FormControl
                       render={
                         <Input
-                          placeholder="Ex.: START, PRO, MASTER, PADRAO, Elite"
+                          placeholder="Ex.: Mentoria Elite, Next Track, Next Experience"
                           {...field}
                         />
                       }
                     />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="categoria"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoria</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl
+                        render={
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione a categoria" />
+                          </SelectTrigger>
+                        }
+                      />
+                      <SelectContent>
+                        {CATEGORIAS.map((categoria) => (
+                          <SelectItem key={categoria} value={categoria}>
+                            {CATEGORIA_LABEL[categoria]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

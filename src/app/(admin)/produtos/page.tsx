@@ -68,6 +68,7 @@ export default async function ProdutosPage() {
                         id: produto.id,
                         nome: produto.nome,
                         ativo: produto.ativo,
+                        categoria: produto.categoria,
                       }}
                     />
                   </TableCell>
