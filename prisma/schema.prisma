@@ -166,6 +166,13 @@ model Colaborador {
   nome      String
   email     String   @unique
   papel     Papel
+  // `ativo=false` é o mecanismo de arquivamento (v1.1): soft-delete que
+  // preserva todas as FKs históricas (vendas/parcelas/apurações/metas/
+  // agendamentos) intactas. Reusa o flag já existente em vez de introduzir um
+  // `arquivado` duplicado — listagens/selects de novas vendas filtram
+  // `ativo=true` por padrão (arquivarColaborador em colaboradores.actions.ts);
+  // exclusão real (`excluirColaborador`) só é permitida quando o colaborador
+  // não tem NENHUM registro histórico vinculado.
   ativo     Boolean  @default(true)
   telefone  String?
   pix       String?
@@ -179,6 +186,8 @@ model Colaborador {
 
   vendasComoCloser Venda[] @relation("VendaCloser")
   vendasComoSdr    Venda[] @relation("VendaSdr")
+  vendasAprovadas  Venda[] @relation("VendaAprovadaPor")
+  vendasCriadas    Venda[] @relation("VendaCriadaPor")
 
   comissoesApuradas ComissaoApurada[] @relation("ComissaoColaborador")
 
@@ -230,12 +239,26 @@ model PlanoComissao {
   @@map("plano_comissao")
 }
 
+// Categorias do catálogo v1.1 (ajustes pós-teste 2026-07): agrupam os
+// produtos em programas de aceleração/mentoria, imersão presencial e
+// eventos presenciais — usado hoje só como rótulo/filtro (sem lógica de
+// comissão dependente da categoria). Nullable no schema para não quebrar
+// produtos históricos importados sem categoria (Fase 10); os produtos
+// recriados pelo reset de dados (scripts/reset-dados-2026-07.ts) sempre
+// gravam a categoria.
+enum CategoriaProduto {
+  ACELERACAO_MENTORIA
+  IMERSAO_PRESENCIAL
+  EVENTO_PRESENCIAL
+}
+
 model Produto {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   nome      String // START / PRO / MASTER / PADRAO / Elite
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now()) @db.Timestamptz
-  updatedAt DateTime @updatedAt @db.Timestamptz
+  categoria CategoriaProduto? // nullable: produtos históricos (Fase 10) não têm categoria
+  ativo     Boolean           @default(true)
+  createdAt DateTime          @default(now()) @db.Timestamptz
+  updatedAt DateTime          @updatedAt @db.Timestamptz
 
   vendas Venda[]
 
@@ -251,6 +274,19 @@ model Produto {
 //
 // `fechado` é um placeholder da trava de edição da Fase 5 (apuração
 // fechada bloqueia edição da venda) — nasce sempre false nesta fase.
+
+// Fluxo de aprovação v1.1 (ajustes pós-teste 2026-07): vendas cadastradas por
+// um ADMIN nascem já APROVADA (não muda o comportamento anterior nem o
+// histórico importado — Fase 10 grava tudo como APROVADA). Vendas cadastradas
+// por um CLOSER nascem PENDENTE_APROVACAO e só entram nas agregações de
+// receita/comissão/dashboard depois que um ADMIN aprova (aprovarVenda/
+// rejeitarVenda em vendas.actions.ts) — REJEITADA nunca conta, mas também
+// nunca é apagada (fica visível na listagem para auditoria).
+enum StatusAprovacao {
+  PENDENTE_APROVACAO
+  APROVADA
+  REJEITADA
+}
 
 model Venda {
   id String @id @default(cuid())
@@ -283,6 +319,16 @@ model Venda {
 
   observacao String?
 
+  // Aprovação (v1.1): default APROVADA preserva o comportamento de todas as
+  // vendas existentes/importadas/criadas por ADMIN sem exigir backfill.
+  statusAprovacao StatusAprovacao @default(APROVADA)
+  aprovadaPorId   String? // Colaborador do ADMIN que aprovou/rejeitou (nullable até a decisão)
+  aprovadaPor     Colaborador?    @relation("VendaAprovadaPor", fields: [aprovadaPorId], references: [id])
+  aprovadaEm      DateTime?       @db.Timestamptz
+  criadaPorId     String? // Colaborador de quem criou a venda (nullable: histórico importado não tem)
+  criadaPor       Colaborador?    @relation("VendaCriadaPor", fields: [criadaPorId], references: [id])
+  linkCrm         String? // obrigatório (Zod) quando a venda é criada por um CLOSER
+
   fechado Boolean @default(false) // placeholder da trava de edição (Fase 5 integra com a apuração fechada)
 
   createdAt DateTime @default(now()) @db.Timestamptz
@@ -293,6 +339,7 @@ model Venda {
   @@index([closerId])
   @@index([sdrId])
   @@index([mesReferencia])
+  @@index([statusAprovacao])
   @@map("venda")
 }
 
@@ -364,6 +411,11 @@ model ComissaoApurada {
 
   inputSnapshot Json // ComissaoInput completo usado — auditoria/replay (COMIS-05, AUDIT-01)
 
+  // Observação livre editável no fechamento (v1.1) — anotação humana por
+  // pessoa/mês (ex.: ajuste combinado, justificativa de divergência), nunca
+  // usada no CÁLCULO (o motor puro nunca lê este campo).
+  observacao String?
+
   status StatusApuracao @default(ABERTA)
 
   calculadoEm  DateTime  @default(now()) @db.Timestamptz
@@ -392,6 +444,10 @@ enum AcaoAudit {
   REABRIR_APURACAO
   APURAR_COMISSAO
   DEFINIR_META
+  APROVAR_VENDA
+  REJEITAR_VENDA
+  ARQUIVAR_COLABORADOR
+  EXCLUIR_COLABORADOR
 }
 
 // ============================================================
@@ -456,9 +512,9 @@ model Meta {
 
   mesReferencia DateTime @db.Date // 1º dia do mês (competência)
 
-  unidade           MetaUnidade
-  valorMeta         Decimal?    @db.Decimal(14, 2) // usado quando unidade = VALOR (closer, R$)
-  metaAgendamentos  Int? // usado quando unidade = AGENDAMENTOS (SDR/SS, nº de calls)
+  unidade          MetaUnidade
+  valorMeta        Decimal?    @db.Decimal(14, 2) // usado quando unidade = VALOR (closer, R$)
+  metaAgendamentos Int? // usado quando unidade = AGENDAMENTOS (SDR/SS, nº de calls)
 
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
