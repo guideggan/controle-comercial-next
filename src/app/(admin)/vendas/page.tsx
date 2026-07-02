@@ -17,8 +17,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { VendaForm } from "@/app/(admin)/vendas/venda-form";
 import { VendasFiltros } from "@/app/(admin)/vendas/vendas-filtros";
+
+// Rótulos/variantes do status de aprovação (v1.1, VENDA-11) — vendas
+// criadas por ADMIN nascem APROVADA (default do banco, zero regressão);
+// vendas criadas por CLOSER nascem PENDENTE_APROVACAO até um ADMIN decidir
+// na fila (/vendas/pendentes).
+const STATUS_APROVACAO_LABEL: Record<string, string> = {
+  PENDENTE_APROVACAO: "Pendente de aprovação",
+  APROVADA: "Aprovada",
+  REJEITADA: "Rejeitada",
+};
+
+function statusAprovacaoVariant(
+  status: string,
+): "default" | "secondary" | "destructive" {
+  if (status === "APROVADA") return "default";
+  if (status === "REJEITADA") return "destructive";
+  return "secondary";
+}
 
 // Tela admin de vendas (VENDA-01/VENDA-05). Gated por requireRole("ADMIN") —
 // mesma fronteira real de autorização das demais telas admin (nunca confiar
@@ -72,12 +91,19 @@ export default async function VendasPage({
         title="Vendas"
         subtitle="Cadastro único de venda — as parcelas são geradas automaticamente."
         actions={
-          <VendaForm
-            mode="criar"
-            produtos={produtosAtivos}
-            closers={closers}
-            sdrs={sdrs}
-          />
+          <div className="flex items-center gap-2">
+            <Link href="/vendas/pendentes">
+              <Button type="button" variant="outline" size="sm">
+                Fila de aprovação
+              </Button>
+            </Link>
+            <VendaForm
+              mode="criar"
+              produtos={produtosAtivos}
+              closers={closers}
+              sdrs={sdrs}
+            />
+          </div>
         }
       />
 
@@ -95,13 +121,14 @@ export default async function VendasPage({
                 <TableHead>Closer</TableHead>
                 <TableHead>Mês de referência</TableHead>
                 <TableHead>Parcelas</TableHead>
+                <TableHead>Aprovação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {vendas.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center text-muted-foreground"
                   >
                     Nenhuma venda encontrada.
@@ -137,6 +164,12 @@ export default async function VendasPage({
                       {totalParcelas > 0
                         ? `${totalParcelas} parcela${totalParcelas > 1 ? "s" : ""}`
                         : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusAprovacaoVariant(venda.statusAprovacao)}>
+                        {STATUS_APROVACAO_LABEL[venda.statusAprovacao] ??
+                          venda.statusAprovacao}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 );

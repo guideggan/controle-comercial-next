@@ -23,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { ObservacaoApuracaoForm } from "@/app/(admin)/comissoes/[colaboradorId]/observacao-apuracao-form";
+
 // Extrato de comissão por pessoa/mês (COMIS-07) — caminho ADMIN, que aceita
 // um colaboradorId vindo da URL: requireRole("ADMIN") PRIMEIRO é obrigatório
 // aqui (Anti-Pattern 3/Pitfall 10). O caminho self-service do colaborador
@@ -278,6 +280,21 @@ export default async function ExtratoComissaoPage({
                   Number(apuracao.valorComissao),
                 )}
               </span>
+            </CardContent>
+          </Card>
+        )}
+
+        {apuracao && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Observação</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ObservacaoApuracaoForm
+                colaboradorId={colaboradorId}
+                mesReferencia={mes}
+                observacaoAtual={apuracao.observacao}
+              />
             </CardContent>
           </Card>
         )}

@@ -3,11 +3,17 @@ import { getNavSections } from "@/components/shell/nav-config";
 import { AppSidebarNav } from "@/components/shell/app-sidebar-nav";
 import { UserMenu } from "@/components/shell/user-menu";
 import { Separator } from "@/components/ui/separator";
+import { listarVendasPendentesAprovacao } from "@/server/services/venda.service";
 
 // Sidebar fixa da aplicação, compartilhada pelos shells admin e
 // colaborador. As seções de navegação são derivadas do papel da sessão
 // (nunca de input do cliente) — ver getNavSections em nav-config.ts.
-export function AppSidebar({
+//
+// v1.1 (VENDA-11): ADMIN vê a contagem de vendas pendentes de aprovação
+// como badge no item "Vendas" — busca aqui (Server Component, já dentro do
+// shell autenticado) em vez de em cada page, para o número aparecer em
+// qualquer rota do admin, não só em /vendas.
+export async function AppSidebar({
   role,
   nome,
 }: {
@@ -15,6 +21,8 @@ export function AppSidebar({
   nome: string;
 }) {
   const sections = getNavSections(role);
+  const vendasPendentes =
+    role === "ADMIN" ? (await listarVendasPendentesAprovacao()).length : 0;
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground md:flex">
@@ -35,7 +43,10 @@ export function AppSidebar({
       <Separator />
 
       <div className="flex-1 overflow-y-auto py-4">
-        <AppSidebarNav sections={sections} />
+        <AppSidebarNav
+          sections={sections}
+          counts={{ vendasPendentes }}
+        />
       </div>
 
       <Separator />

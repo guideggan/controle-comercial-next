@@ -137,7 +137,7 @@ export function MetaForm({
                   <FormLabel>
                     {unidade === "VALOR"
                       ? "Meta mensal (R$)"
-                      : "Meta mensal (nº de agendamentos)"}
+                      : "Meta mensal (nº de reuniões realizadas)"}
                   </FormLabel>
                   <FormControl
                     render={

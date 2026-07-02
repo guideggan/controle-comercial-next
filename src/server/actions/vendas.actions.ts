@@ -94,3 +94,17 @@ export async function listarVendasAction(filtros?: ListarVendasFiltros) {
 
   return listarVendas(filtros);
 }
+
+// "Minhas vendas" do CLOSER (v1.1, VENDA-11): SEMPRE força closerId = o
+// colaboradorId da própria sessão — nunca aceita um closerId vindo do
+// client, mesmo que o chamador tentasse passar um filtro (Pitfall 1/IDOR).
+// Único papel autorizado aqui é CLOSER (ADMIN usa listarVendasAction /
+// listarVendas diretamente na page, que já veem tudo).
+export async function listarMinhasVendasAction() {
+  const user = await requireUser();
+  if (user.role !== "CLOSER") {
+    throw new Error("Forbidden: apenas CLOSER acessa a própria listagem de vendas");
+  }
+
+  return listarVendas({ closerId: user.colaboradorId });
+}

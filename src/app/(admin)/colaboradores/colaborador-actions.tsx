@@ -9,8 +9,9 @@ import type { z } from "zod";
 
 import { redefinirSenhaSchema } from "@/server/actions/colaboradores.schemas";
 import {
-  desativarColaborador,
   redefinirSenha,
+  arquivarColaborador,
+  excluirColaborador,
 } from "@/server/actions/colaboradores.actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,27 +60,15 @@ export function ColaboradorActions({
   colaborador: ColaboradorLinha;
 }) {
   const router = useRouter();
-  const [isDeactivating, setIsDeactivating] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<RedefinirSenhaValues>({
     resolver: zodResolver(redefinirSenhaSchema),
     defaultValues: { novaSenha: "" },
   });
-
-  async function onDesativar() {
-    setIsDeactivating(true);
-    try {
-      await desativarColaborador(colaborador.id);
-      toast.success("Colaborador desativado");
-      router.refresh();
-    } catch {
-      toast.error("Não foi possível desativar o colaborador");
-    } finally {
-      setIsDeactivating(false);
-    }
-  }
 
   async function onRedefinirSenha(values: RedefinirSenhaValues) {
     setIsResetting(true);
@@ -93,6 +82,46 @@ export function ColaboradorActions({
       toast.error("Não foi possível redefinir a senha");
     } finally {
       setIsResetting(false);
+    }
+  }
+
+  // Arquivar (v1.1): mesmo mecanismo de desativar (ativo=false + revoga
+  // sessões), mas com AuditLog e semântica de "removido da lista ativa sem
+  // perder histórico" — caminho primário de "remover" alguém no v1.1.
+  async function onArquivar() {
+    setIsArchiving(true);
+    try {
+      await arquivarColaborador(colaborador.id);
+      toast.success("Colaborador arquivado");
+      router.refresh();
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível arquivar o colaborador";
+      toast.error(mensagem);
+    } finally {
+      setIsArchiving(false);
+    }
+  }
+
+  // Excluir (v1.1): hard-delete só quando não há NENHUM histórico vinculado
+  // — a action já lança um erro amigável instruindo a arquivar em vez de
+  // excluir; o toast de erro repassa essa mensagem tal qual.
+  async function onExcluir() {
+    setIsDeleting(true);
+    try {
+      await excluirColaborador(colaborador.id);
+      toast.success("Colaborador excluído");
+      router.refresh();
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : "Não foi possível excluir o colaborador";
+      toast.error(mensagem);
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -151,6 +180,42 @@ export function ColaboradorActions({
         </DialogContent>
       </Dialog>
 
+      {/* v1.1: "Arquivar" é o caminho primário de "remover" alguém da lista
+          ativa (ativo=false + revoga sessões + AuditLog) — substitui o
+          antigo botão "Desativar" nesta lista (mesmo mecanismo de dados,
+          nome/registro mais alinhado ao fluxo de gestão de equipe atual). */}
+      <AlertDialog>
+        <AlertDialogTrigger
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!colaborador.ativo || isArchiving}
+            />
+          }
+        >
+          Arquivar
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Arquivar colaborador?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {colaborador.nome} perderá acesso imediatamente (a sessão
+              logada será encerrada) e sairá das listas/seletores ativos.
+              O histórico vinculado (vendas, comissões, metas) é
+              preservado — nada é apagado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={onArquivar} disabled={isArchiving}>
+              {isArchiving ? "Arquivando..." : "Arquivar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog>
         <AlertDialogTrigger
           render={
@@ -158,26 +223,26 @@ export function ColaboradorActions({
               type="button"
               variant="destructive"
               size="sm"
-              disabled={!colaborador.ativo || isDeactivating}
+              disabled={isDeleting}
             />
           }
         >
-          Desativar
+          Excluir
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Desativar colaborador?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
             <AlertDialogDescription>
-              {colaborador.nome} perderá acesso imediatamente (a sessão
-              logada será encerrada). Esta ação pode ser revertida
-              redefinindo a senha e reativando a conta depois, se
-              necessário.
+              Exclusão definitiva de {colaborador.nome} — só é permitida
+              quando não há NENHUM histórico vinculado (vendas, planos,
+              apurações, metas, agendamentos). Se houver histórico, use
+              &quot;Arquivar&quot; em vez de excluir.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={onDesativar} disabled={isDeactivating}>
-              {isDeactivating ? "Desativando..." : "Desativar"}
+            <AlertDialogAction onClick={onExcluir} disabled={isDeleting}>
+              {isDeleting ? "Excluindo..." : "Excluir"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

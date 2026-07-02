@@ -2,7 +2,7 @@
 
 Conjunto de mudanças pedido pelo usuário após testar o app. Executar APÓS a passada de performance (evitar conflito de arquivos). Sequência: (A) migrações de schema, (B) config/dados, (C) features.
 
-**Status (2026-07-02): BACKEND + DADOS completos** (migração aplicada no Neon, serviços/actions implementados, reset de dados rodado e validado idempotente). **UI ainda pendente** — telas novas (fila de aprovação do admin, "Nova venda" do closer, seletor de categoria de produto na listagem, gestão de arquivar/excluir colaborador, campo de observação na apuração) ficam para um agente de follow-up dedicado à UI. O formulário existente de produto (`produto-form.tsx`) recebeu o campo de categoria (mínimo, para não quebrar o CRUD já existente com o schema agora obrigatório) — não conta como a UI completa do item 7.
+**Status (2026-07-02): BACKEND + DADOS + UI completos.** Migração aplicada no Neon, serviços/actions implementados, reset de dados rodado e validado idempotente, e todas as telas pendentes construídas: fila de aprovação do admin (`/vendas/pendentes` + badge de contagem no nav), "Nova venda"/"Minhas vendas" do closer (`/minhas-vendas`, `/minhas-vendas/nova`), rótulo "reuniões realizadas" nas telas de meta/painel, arquivar/excluir na listagem de colaboradores (com toggle de exibição de arquivados), observação editável na apuração, e agrupamento/filtro por categoria em produtos. Smoke-testado fim-a-fim contra o Neon real (colaborador CLOSER throwaway criado, login, cadastro de venda sem linkCrm rejeitado, com linkCrm nasceu PENDENTE_APROVACAO, aprovado pelo admin, tudo limpo ao final — zero dado de smoke-test remanescente). tsc/vitest(164)/next build limpos.
 
 ## Decisões confirmadas
 - Limpar vendas: **apenas mês de referência Julho** (manter histórico Jan–Jun importado).
@@ -34,9 +34,9 @@ Migração aplicada: `prisma/migrations/20260702122236_v1_1_aprovacao_categoria_
 8. [x] **Limpar vendas de Julho** (e parcelas/apurações vinculadas) — 1 venda + 1 apuração de Julho/2026 removidas; Jan–Jun (260 vendas) intactas.
 
 ## C. Features / comportamento (backend)
-9. [x] **Meta de SDR/SS = reuniões REALIZADAS**: já garantido pelo cálculo (`contarCallsRealizadas` só soma `status=REALIZADO`, nunca `AGENDADO`) — comentário de terminologia atualizado em `meta.service.ts`; o enum `MetaUnidade.AGENDAMENTOS` foi mantido estável de propósito (é o valor persistido). **Rótulo na UI ("reuniões realizadas" em vez de "agendamentos") fica para o agente de UI.**
-10. [x] **Excluir/arquivar colaborador**: `arquivarColaborador(id)` (reusa `ativo=false` + revoga sessões + AuditLog) e `excluirColaborador(id)` (hard-delete só quando `contarReferenciasColaborador` = 0) em `colaboradores.actions.ts`. **Botões na tela de colaboradores ficam para o agente de UI.**
-11. [x] **Closer cadastra venda com aprovação do admin**: `criarVendaAction` aceita ADMIN ou CLOSER (role real da sessão, nunca do client); CLOSER → `PENDENTE_APROVACAO` + `criadaPorId`; ADMIN → `APROVADA` (zero regressão). `aprovarVendaAction`/`rejeitarVendaAction` (ADMIN) + `listarVendasPendentesAprovacaoAction`. Só `APROVADA` conta em receita/comissão/dashboard (gate em `listarRecebimentosDoMes`). **Telas ("Nova venda" do closer, fila de aprovação do admin) ficam para o agente de UI.**
+9. [x] **Meta de SDR/SS = reuniões REALIZADAS**: já garantido pelo cálculo (`contarCallsRealizadas` só soma `status=REALIZADO`, nunca `AGENDADO`) — comentário de terminologia atualizado em `meta.service.ts`; o enum `MetaUnidade.AGENDAMENTOS` foi mantido estável de propósito (é o valor persistido). Rótulo na UI ("reuniões realizadas" em vez de "agendamentos") aplicado em `/metas`, `meta-form.tsx`, `acompanhamento-semanal.tsx` e `/painel`.
+10. [x] **Excluir/arquivar colaborador**: `arquivarColaborador(id)` (reusa `ativo=false` + revoga sessões + AuditLog) e `excluirColaborador(id)` (hard-delete só quando `contarReferenciasColaborador` = 0) em `colaboradores.actions.ts`. Botões "Arquivar"/"Excluir" (com confirmação) na tela de colaboradores; arquivados ficam ocultos por padrão, com toggle "Mostrar arquivados (N)" via querystring.
+11. [x] **Closer cadastra venda com aprovação do admin**: `criarVendaAction` aceita ADMIN ou CLOSER (role real da sessão, nunca do client); CLOSER → `PENDENTE_APROVACAO` + `criadaPorId`; ADMIN → `APROVADA` (zero regressão). `aprovarVendaAction`/`rejeitarVendaAction` (ADMIN) + `listarVendasPendentesAprovacaoAction`. Só `APROVADA` conta em receita/comissão/dashboard (gate em `listarRecebimentosDoMes`). Telas: `/vendas/pendentes` (fila de aprovação, badge de contagem no nav admin) e `/minhas-vendas` + `/minhas-vendas/nova` (cadastro/listagem do closer, `listarMinhasVendasAction` força `closerId` da sessão).
 12. [x] **Link do CRM obrigatório** na venda criada pelo closer: `vendaSchemaParaCloser` (Zod) exige `linkCrm` não-vazio quando `criador.role === "CLOSER"`; ADMIN continua com `linkCrm` opcional.
 13. [ ] **Comissão editável por colaborador**: já suportado (plano por pessoa, versionado, Fase 3) — nenhuma mudança necessária nesta rodada. Usuário vai passar as condições específicas de cada um depois (pendência dele, não técnica).
 
@@ -44,11 +44,13 @@ Migração aplicada: `prisma/migrations/20260702122236_v1_1_aprovacao_categoria_
 - Meta da Paola.
 - Condições de pagamento/comissão específicas de cada colaborador.
 
-## Pendente (UI — agente de follow-up)
-- Fila de aprovação do admin (`/vendas/pendentes` ou similar) consumindo `listarVendasPendentesAprovacaoAction`/`aprovarVendaAction`/`rejeitarVendaAction`.
-- Formulário "Nova venda" do closer (campo `linkCrm` obrigatório) reusando `criarVendaAction`.
-- Rótulo "reuniões realizadas" (não "agendamentos") nas telas de meta/painel do SDR/SS.
-- Botões de arquivar/excluir na listagem de colaboradores (`arquivarColaborador`/`excluirColaborador`).
-- Campo de observação editável na tela de apuração/comissão (`definirObservacaoApuracaoAction`).
-- Filtro/exibição de categoria na listagem de produtos (o form de criar/editar já pede a categoria; falta o filtro/agrupamento visual).
-- Exibição do `statusAprovacao` na listagem de vendas do admin (`listarVendasAction` já retorna o campo).
+## UI (2026-07-02) — completo
+- [x] Fila de aprovação do admin (`/vendas/pendentes`) consumindo `listarVendasPendentesAprovacaoAction`/`aprovarVendaAction`/`rejeitarVendaAction`, com badge de contagem no item "Vendas" do nav admin.
+- [x] Formulário "Nova venda" do closer (`/minhas-vendas/nova`, campo `linkCrm` obrigatório) reusando `criarVendaAction` + listagem "Minhas vendas" (`/minhas-vendas`, escopada à sessão via `listarMinhasVendasAction`). Itens de nav "Nova venda"/"Minhas vendas" adicionados ao shell enxuto do CLOSER.
+- [x] Rótulo "reuniões realizadas" (não "agendamentos") nas telas de meta/painel do SDR/SS.
+- [x] Botões de arquivar/excluir na listagem de colaboradores (`arquivarColaborador`/`excluirColaborador`), com toggle para mostrar/ocultar arquivados.
+- [x] Campo de observação editável na tela de apuração/comissão (`definirObservacaoApuracaoAction`) em `/comissoes/[colaboradorId]`.
+- [x] Filtro/agrupamento por categoria na listagem de produtos (`/produtos`), com rótulos PT-BR e grupo separado para produtos históricos sem categoria.
+- [x] Exibição do `statusAprovacao` na listagem de vendas do admin (`/vendas`) e em "Minhas vendas" do closer.
+
+Smoke-testado fim-a-fim contra o Neon real (script temporário, removido ao final): colaborador CLOSER throwaway → login → tentativa de criar venda sem `linkCrm` rejeitada → criação com `linkCrm` nasceu `PENDENTE_APROVACAO` → aprovação pelo ADMIN mudou para `APROVADA` → todas as telas (fila, minhas-vendas, colaboradores, produtos, extrato de comissão, metas) verificadas via HTTP com sessão real, conteúdo renderizado conferido. Nenhum dado de smoke-test permanece no banco.

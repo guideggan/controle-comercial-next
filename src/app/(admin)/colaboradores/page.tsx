@@ -15,15 +15,34 @@ import {
 } from "@/components/ui/table";
 import { ColaboradorForm } from "@/app/(admin)/colaboradores/colaborador-form";
 import { ColaboradorActions } from "@/app/(admin)/colaboradores/colaborador-actions";
+import { MostrarArquivadosToggle } from "@/app/(admin)/colaboradores/mostrar-arquivados-toggle";
 
 // Tela admin de gestão de contas de colaborador (AUTH-05). Gated por
 // requireRole("ADMIN") — o layout (admin) já bloqueia não-admin, mas a
 // checagem aqui é a fronteira real de autorização de dados (nunca confiar
 // só no layout), mesmo padrão de produtos/page.tsx.
-export default async function ColaboradoresPage() {
+//
+// v1.1: colaboradores arquivados (ativo=false) ficam ESCONDIDOS por padrão
+// — só aparecem com ?arquivados=1 na URL (mesma convenção de filtro via
+// querystring do resto do app, ex.: vendas-filtros.tsx).
+export default async function ColaboradoresPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireRole("ADMIN");
 
-  const colaboradores = await listarColaboradores();
+  const params = await searchParams;
+  const arquivadosParam = Array.isArray(params.arquivados)
+    ? params.arquivados[0]
+    : params.arquivados;
+  const mostrarArquivados = arquivadosParam === "1";
+
+  const todosColaboradores = await listarColaboradores();
+  const colaboradores = mostrarArquivados
+    ? todosColaboradores
+    : todosColaboradores.filter((c) => c.ativo);
+  const totalArquivados = todosColaboradores.filter((c) => !c.ativo).length;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -34,7 +53,12 @@ export default async function ColaboradoresPage() {
         actions={<ColaboradorForm />}
       />
 
-      <div className="flex-1 px-6 py-6">
+      <div className="flex-1 space-y-4 px-6 py-6">
+        <MostrarArquivadosToggle
+          mostrarArquivados={mostrarArquivados}
+          totalArquivados={totalArquivados}
+        />
+
         <Card className="overflow-hidden py-0">
           <Table>
             <TableHeader>
@@ -75,7 +99,7 @@ export default async function ColaboradoresPage() {
                     <Badge
                       variant={colaborador.ativo ? "default" : "secondary"}
                     >
-                      {colaborador.ativo ? "Ativo" : "Inativo"}
+                      {colaborador.ativo ? "Ativo" : "Arquivado"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

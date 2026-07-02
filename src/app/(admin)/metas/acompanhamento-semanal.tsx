@@ -16,8 +16,13 @@ import type { AcompanhamentoMeta } from "@/server/services/meta.service";
 // qual pelo painel do colaborador na Fase 8 (mesma função de service, mesmo
 // componente de exibição).
 
+// Rótulo de exibição (v1.1): a meta de SDR/SS é sempre contada em REUNIÕES
+// REALIZADAS (nunca agendadas) — contarCallsRealizadas só soma
+// status=REALIZADO (AGEND-02). O enum MetaUnidade.AGENDAMENTOS é mantido
+// estável de propósito (valor persistido no banco); só o texto exibido
+// muda para refletir a semântica real do número.
 function formatarValor(valor: number, unidade: "VALOR" | "AGENDAMENTOS" | null) {
-  if (unidade === "AGENDAMENTOS") return `${valor} agend.`;
+  if (unidade === "AGENDAMENTOS") return `${valor} reuniões realizadas`;
   return formatarBRL(valor);
 }
 

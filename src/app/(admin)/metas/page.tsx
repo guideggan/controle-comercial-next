@@ -120,13 +120,13 @@ export default async function MetasPage({
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {unidade === "VALOR" ? "R$" : "Agendamentos"}
+                      {unidade === "VALOR" ? "R$" : "Reuniões realizadas"}
                     </TableCell>
                     <TableCell>
                       {metaAtual !== null
                         ? unidade === "VALOR"
                           ? formatarBRL(metaAtual)
-                          : `${metaAtual} agend.`
+                          : `${metaAtual} reuniões`
                         : "-"}
                     </TableCell>
                     <TableCell className="text-right">

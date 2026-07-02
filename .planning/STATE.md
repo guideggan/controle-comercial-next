@@ -5,19 +5,19 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Todas as 10 fases completas — v1 encerrado (47/47 requisitos completos)
+**Current focus:** v1 encerrado (47/47 requisitos) + v1.1 (ajustes pós-teste do usuário) completo — backend, dados e UI
 
 ## Current Position
 
-**Current Phase:** 10
-**Current Phase Name:** importacao-do-historico
-**Total Phases:** 10 (+ Phase 1.1 inserted)
-**Current Plan:** 1 de 1 (fase completa)
+**Current Phase:** 1.1 (v1.1 — ajustes pós-teste, fora da numeração de fases do v1)
+**Current Phase Name:** v1.1-ajustes-pos-testes-usuario
+**Total Phases:** 10 (+ Phase 1.1 inserted) + v1.1 (ad-hoc, sem numeração de fase própria)
+**Current Plan:** único (executado direto do roadmap de mudanças, sem PLAN.md formal)
 **Total Plans in Phase:** 1
-**Status:** Fase 10 completa — TODAS as fases (1 a 10, + 1.1) completas. v1 encerrado.
+**Status:** v1.1 completo (schema + dados + backend + UI). Ver .planning/CHANGES-2026-07.md.
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Fase 10 (Importação do Histórico) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): script standalone `import/importar-historico.ts` (tsx + SheetJS) importa o histórico real de "Comissões_Vendas - NEXT.xlsx" para o Neon de produção. Pipeline em 3 módulos puros testáveis (`import/normalizacao.ts` 38 testes, `import/reconciliacao.ts` 11 testes, `import/planilha.ts`) — parse (13 abas mensais reconhecidas, 5 fora de escopo listadas explicitamente) → validação/dry-run (relatório completo sem truncar) → carga idempotente por chave natural (aluno+data+valorTotal), com comissão SEMPRE recomputada a partir dos fatos brutos (valor recebido × % histórico da linha, nunca a coluna FÓRMULA/COMISSÃO da planilha — Pitfall 9). Achado real corrigido durante o --apply: a mesma venda aparece repetida em várias abas mensais (uma linha por mês com movimento de pagamento) — corrigido agrupando por chave natural antes de gravar, fundindo os fatos de pagamento de todo o grupo; validado rodando --apply duas vezes consecutivas com resultado idêntico (261 vendas, IMPORT-03 confirmado). Carregado no Neon real: 20 colaboradores, 14 produtos, 261 vendas, 1.454 parcelas (304 pagas), 58 apurações históricas. Reconciliação: 28/65 combinações (mês, pessoa, papel) batem exatamente; divergências majoritariamente explicadas por linhas "Pendente" da própria planilha que já carregavam comissão pré-calculada (achado documentado, não uma falha do importador). "Desempenho Time - NEXT (1).xlsx" (metas/agendamentos históricos) explicitamente descoped — layout de blocos livres não confiavelmente parseável no orçamento da fase; metas/agendamentos rastreados a partir de hoje (Fases 6/7). Nenhum dado de planilha nem relatório de reconciliação commitado (gitignored). Dados verificados fluindo pelas mesmas funções de service/repo usadas pela UI (listarVendas, recebidoNoMes, getApuracao). IMPORT-01..03 completos. tsc/vitest(156)/next build limpos. **v1 do produto encerrado: todos os 47 requisitos das 10 fases completos.**
+**Last Activity Description:** UI do v1.1 (ajustes pós-teste do usuário, ver .planning/CHANGES-2026-07.md) construída em sessão lean única, ligando a UI aos serviços/actions já existentes (backend/dados da rodada anterior): (1) fila de aprovação do admin `/vendas/pendentes` (aprovar/rejeitar) + badge de contagem no item "Vendas" do nav + coluna/badge de `statusAprovacao` na listagem principal de vendas; (2) cadastro "Nova venda" do CLOSER (`/minhas-vendas/nova`, linkCrm obrigatório via `vendaSchemaParaCloser`) + listagem "Minhas vendas" (`/minhas-vendas`, escopada à sessão via nova action `listarMinhasVendasAction` que força `closerId`) + itens de nav novos no shell enxuto do CLOSER; (3) rótulo "reuniões realizadas" (era "agendamentos") nas telas de meta/painel de SDR/SS — só texto de exibição, enum `MetaUnidade.AGENDAMENTOS` mantido estável; (4) botões Arquivar/Excluir na listagem de colaboradores (substituindo o antigo botão "Desativar" por "Arquivar", mesmo mecanismo de dados) + toggle "Mostrar arquivados (N)" via querystring (arquivados ocultos por padrão); (5) campo de observação editável (mesmo com mês fechado) em `/comissoes/[colaboradorId]`, wired a `definirObservacaoApuracaoAction`; (6) `/produtos` agrupado/filtrável por categoria (ACELERACAO_MENTORIA/IMERSAO_PRESENCIAL/EVENTO_PRESENCIAL), com grupo separado "Sem categoria" para os produtos históricos da Fase 10. Smoke-testado fim-a-fim contra o Neon real via um colaborador CLOSER throwaway (criado, autenticado via Better Auth server API, exercitado nos fluxos de criação de venda sem/com linkCrm e aprovação pelo admin real, depois inteiramente removido — zero dado de smoke-test remanescente no banco); todas as telas novas/alteradas também verificadas via requisição HTTP autenticada (admin real, credenciais do .env nunca impressas) checando o HTML renderizado. Nenhuma migração de schema nova (reusa a migração v1.1 já aplicada na rodada anterior). tsc/vitest(164)/next build limpos, zero regressão nos 164 testes existentes.
 
 ## Performance Metrics
 
@@ -78,6 +78,10 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.1 UI]: O cadastro/listagem de venda do CLOSER vive numa rota própria `/minhas-vendas` (+ `/minhas-vendas/nova`) dentro do grupo `(colaborador)`, em vez de reaproveitar `/vendas` (grupo `(admin)`) — mantém a fronteira de autorização por grupo de rota simples (nenhuma page em `(admin)` precisa ramificar comportamento por papel) e usa uma action dedicada (`listarMinhasVendasAction`) que força `closerId = sessão`, nunca aceitando esse filtro do client (mesmo padrão Pitfall 1/IDOR de `requireSelfOrAdmin`).
+- [v1.1 UI]: O formulário "Nova venda" do closer é um componente NOVO (`nova-venda-closer-form.tsx`), não um terceiro `mode` no `VendaForm` admin existente — evita ramificar ainda mais um componente já complexo (2 modes: criar/editar) e isola o uso de `vendaSchemaParaCloser` (linkCrm obrigatório) do schema padrão usado pelo admin.
+- [v1.1 UI]: Botão "Desativar" da lista de colaboradores substituído por "Arquivar" (mesmo mecanismo de dados: `ativo=false` + revoga sessões, agora via `arquivarColaborador` que também grava AuditLog) — v1.1 unifica em um único caminho de "remover alguém da lista ativa sem perder histórico", em vez de manter dois botões com o mesmo efeito prático e nomes divergentes.
+- [v1.1 UI]: Badge de contagem no nav (`vendasPendentes`) é buscado no `AppSidebar` (Server Component, uma vez por navegação autenticada), não em cada page — aparece em qualquer rota do admin, e a busca (`listarVendasPendentesAprovacao`) já teria authz redundante se movida para dentro do next-config; centralizado no único lugar que monta a sidebar.
 - [Phase 10]: Escopo de importação reduzido deliberadamente a "Comissões_Vendas - NEXT.xlsx" — "Desempenho Time - NEXT (1).xlsx" (metas/agendamentos históricos) tem layout de blocos livres não confiavelmente parseável no orçamento da fase; metas/agendamentos passam a ser rastreados só a partir de hoje (Fases 6/7 já funcionais), histórico dessas duas áreas não foi retroativamente carregado.
 - [Phase 10]: A mesma venda aparece repetida em várias abas mensais da planilha (uma linha por mês com movimento de pagamento, não vendas distintas) — achado real descoberto rodando `--apply` contra o Neon; o importador agrupa por chave natural (aluno+data+valorTotal) ANTES de gravar, fundindo os fatos de pagamento de todo o grupo num único cronograma de parcelas, para nunca perder meses pagos de linhas processadas anteriormente do mesmo grupo.
 - [Phase 10]: Comissão histórica SEMPRE recomputada (valorRecebidoNoMes × % histórico da própria linha, usando o mesmo helper de arredondamento do motor real) — nunca copiada da coluna COMISSÃO CLOSER/SDR/FÓRMULA da planilha (Pitfall 9); divergências viram entrada no relatório de reconciliação, nunca são silenciosamente aceitas como verdade.
@@ -157,6 +161,6 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6, Fas
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T03:10:00Z
-**Stopped At:** Completed Phase 10 (Importação do Histórico) — single lean session, see 10-SUMMARY.md. ALL 10 phases complete, v1 requirements (47/47) complete.
+**Last session:** 2026-07-02T13:10:00Z
+**Stopped At:** Completed v1.1 UI (ajustes pós-teste do usuário) — single lean session, see .planning/CHANGES-2026-07.md (all "Pendente (UI)" items checked off). v1.1 fully complete: schema + dados + backend + UI. tsc/vitest(164)/next build clean, dev server left running.
 **Resume File:** None

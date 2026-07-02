@@ -55,8 +55,10 @@ function mesCorrenteUTC(): string {
   return `${ano}-${mes}-01`;
 }
 
+// Mesma convenção de rótulo de acompanhamento-semanal.tsx (v1.1): a meta de
+// SDR/SS é sempre em REUNIÕES REALIZADAS, nunca "agendamentos".
 function formatarValor(valor: number, unidade: "VALOR" | "AGENDAMENTOS" | null) {
-  if (unidade === "AGENDAMENTOS") return `${valor} agend.`;
+  if (unidade === "AGENDAMENTOS") return `${valor} reuniões realizadas`;
   return formatarBRL(valor);
 }
 

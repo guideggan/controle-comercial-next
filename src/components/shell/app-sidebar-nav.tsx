@@ -30,11 +30,22 @@ const ICONS: Record<NavIconKey, LucideIcon> = {
   agendamentos: CalendarCheck,
 };
 
+export type NavCounts = {
+  vendasPendentes: number;
+};
+
 // Client component: precisa de usePathname() para destacar o item de
 // navegação ativo. Os dados de navegação (quais seções/itens existem)
 // continuam vindo do servidor via getNavSections(role) — este componente
-// só decide ESTILO, nunca acesso.
-export function AppSidebarNav({ sections }: { sections: NavSection[] }) {
+// só decide ESTILO, nunca acesso. `counts` (v1.1) é opcional: só o item com
+// `countKey` correspondente exibe o badge numérico.
+export function AppSidebarNav({
+  sections,
+  counts,
+}: {
+  sections: NavSection[];
+  counts?: Partial<NavCounts>;
+}) {
   const pathname = usePathname();
 
   return (
@@ -49,6 +60,7 @@ export function AppSidebarNav({ sections }: { sections: NavSection[] }) {
               const isActive =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = ICONS[item.icon];
+              const count = item.countKey ? counts?.[item.countKey] : undefined;
 
               return (
                 <li key={item.href}>
@@ -64,6 +76,18 @@ export function AppSidebarNav({ sections }: { sections: NavSection[] }) {
                   >
                     <Icon className="size-4 shrink-0" />
                     <span className="flex-1 truncate">{item.label}</span>
+                    {Boolean(count) && (
+                      <span
+                        className={cn(
+                          "flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1 text-[10px] font-semibold",
+                          isActive
+                            ? "bg-primary-foreground text-primary"
+                            : "bg-destructive text-white",
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
                     {item.placeholder && !isActive && (
                       <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
                         em breve

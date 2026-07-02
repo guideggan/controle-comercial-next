@@ -29,6 +29,11 @@ export type NavItem = {
   href: string;
   icon: NavIconKey;
   placeholder?: boolean;
+  // Chave usada pelo AppSidebar para injetar uma contagem dinâmica (ex.:
+  // vendas pendentes de aprovação) sem o nav-config precisar tocar em dados
+  // — só marca QUAL item pode ter badge; quem busca o número é o server
+  // component que monta a sidebar (v1.1, VENDA-11).
+  countKey?: "vendasPendentes";
 };
 
 export type NavSection = {
@@ -40,7 +45,12 @@ const OPERACAO: NavSection = {
   label: "Operação",
   items: [
     { label: "Início", href: "/inicio", icon: "dashboard" },
-    { label: "Vendas", href: "/vendas", icon: "vendas" },
+    {
+      label: "Vendas",
+      href: "/vendas",
+      icon: "vendas",
+      countKey: "vendasPendentes",
+    },
     { label: "Comissões", href: "/comissoes", icon: "comissoes" },
     { label: "Agendamentos", href: "/agendamentos", icon: "agendamentos" },
   ],
@@ -58,6 +68,19 @@ const ADMINISTRACAO: NavSection = {
 const COLABORADOR_ENXUTO: NavSection = {
   label: "Operação",
   items: [{ label: "Meu Painel", href: "/painel", icon: "dashboard" }],
+};
+
+// v1.1 (VENDA-11/12): CLOSER ganha "Nova venda" (cadastro, nasce
+// PENDENTE_APROVACAO) e "Minhas vendas" (só as próprias) no shell enxuto,
+// além do painel — mesmo padrão de COLABORADOR_ENXUTO_SDR_SS (papel-aware,
+// nunca uma flag vinda do client).
+const COLABORADOR_ENXUTO_CLOSER: NavSection = {
+  label: "Operação",
+  items: [
+    { label: "Meu Painel", href: "/painel", icon: "dashboard" },
+    { label: "Nova venda", href: "/minhas-vendas/nova", icon: "vendas" },
+    { label: "Minhas vendas", href: "/minhas-vendas", icon: "vendas" },
+  ],
 };
 
 // Fase 7 (AGEND-01): SDR/SS ganham o item "Agendamentos" no shell enxuto,
@@ -80,6 +103,9 @@ export function getNavSections(role: Papel): NavSection[] {
   }
   if (role === "SDR" || role === "SS") {
     return [COLABORADOR_ENXUTO_SDR_SS];
+  }
+  if (role === "CLOSER") {
+    return [COLABORADOR_ENXUTO_CLOSER];
   }
   return [COLABORADOR_ENXUTO];
 }
