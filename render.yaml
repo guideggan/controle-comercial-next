@@ -36,6 +36,18 @@ services:
           name: controle-comercial-next-db
           property: connectionString
 
+      # DIRECT_URL usado só pelo `prisma migrate deploy` (preDeployCommand).
+      # No Render (Postgres gerenciado pelo próprio Render, mesma região do
+      # web service) não existe um host "-pooler" separado como no Neon —
+      # a connectionString acima já é interna/rápida, então DIRECT_URL
+      # aponta para a mesma connectionString. Mantido para o schema.prisma
+      # funcionar igual em qualquer ambiente (Neon com pooler dedicado em
+      # dev/staging, Render sem um em produção).
+      - key: DIRECT_URL
+        fromDatabase:
+          name: controle-comercial-next-db
+          property: connectionString
+
       # Segredos e configuração de auth — preenchidos manualmente no
       # dashboard (Environment) do serviço, nunca neste arquivo.
       - key: BETTER_AUTH_SECRET

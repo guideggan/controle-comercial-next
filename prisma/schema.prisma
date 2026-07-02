@@ -20,8 +20,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled (pgbouncer) — usado em runtime pela aplicação. O Neon direto
+  // (us-east-1, sem pooling) cria uma conexão TCP+TLS nova por request,
+  // dominando o tempo de navegação; o pooler reaproveita conexões.
+  url       = env("DATABASE_URL")
+  // Direto (sem "-pooler") — usado só por `prisma migrate`/`db push`, que
+  // exigem uma conexão não-pooled para funcionar corretamente.
+  directUrl = env("DIRECT_URL")
 }
 
 enum Papel {
