@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ParcelaTipo } from "@prisma/client";
+import type { ParcelaTipo, Papel } from "@prisma/client";
 
 import { db } from "@/lib/db";
 import {
@@ -10,15 +10,18 @@ import {
   getVenda as getVendaRepo,
   atualizarVendaRow,
   listarVendas as listarVendasRepo,
+  listarVendasPendentesAprovacao as listarVendasPendentesAprovacaoRepo,
+  decidirVendaRow,
   type InserirParcelaData,
   type ListarVendasFiltros,
 } from "@/server/repositories/venda.repo";
-import { vendaSchema } from "@/server/actions/vendas.schemas";
+import { vendaSchema, vendaSchemaParaCloser } from "@/server/actions/vendas.schemas";
 import type { VendaInput } from "@/server/actions/vendas.schemas";
 import {
   gerarCronogramaParcelas,
   type ParcelaGerada,
 } from "@/domain/vendas/parcelas";
+import { registrarAudit } from "@/server/services/audit.service";
 
 // Coração da Fase 3 (VENDA-02): materializa a venda + o cronograma de
 // parcelas gerado pelo módulo puro de domínio (src/domain/vendas/parcelas.ts)
@@ -64,10 +67,26 @@ function paraTipoPagamentoDominio(
   return tipoPagamento === "A_VISTA" ? "a_vista" : "mensalista";
 }
 
-export async function criarVenda(input: VendaInput) {
+// Contexto de quem está criando a venda (v1.1, VENDA-11/12): ADMIN cria uma
+// venda já APROVADA (comportamento idêntico ao anterior a esta mudança,
+// zero regressão); CLOSER cria uma venda PENDENTE_APROVACAO, com linkCrm
+// OBRIGATÓRIO (validado por vendaSchemaParaCloser). Opcional para não
+// quebrar nenhum chamador existente (scripts, testes) — omitir `criador`
+// preserva o comportamento anterior (ADMIN implícito, sem criadaPorId).
+export type CriadorVenda = {
+  role: Papel;
+  colaboradorId: string;
+};
+
+export async function criarVenda(input: VendaInput, criador?: CriadorVenda) {
+  const ehCloser = criador?.role === "CLOSER";
+
   // Validação primeiro: input incompatível com as regras à vista/mensalista
-  // lança aqui, antes de abrir a transação — zero escritas em caso de erro.
-  const parsed = vendaSchema.parse(input);
+  // (ou, quando criado por closer, sem linkCrm) lança aqui, antes de abrir a
+  // transação — zero escritas em caso de erro.
+  const parsed = ehCloser
+    ? vendaSchemaParaCloser.parse(input)
+    : vendaSchema.parse(input);
 
   const cronograma = gerarCronogramaParcelas({
     tipoPagamento: paraTipoPagamentoDominio(parsed.tipoPagamento),
@@ -96,6 +115,9 @@ export async function criarVenda(input: VendaInput) {
       closerId: parsed.closerId,
       sdrId: parsed.sdrId,
       observacao: parsed.observacao,
+      statusAprovacao: ehCloser ? "PENDENTE_APROVACAO" : "APROVADA",
+      criadaPorId: criador?.colaboradorId ?? null,
+      linkCrm: parsed.linkCrm ?? null,
     });
 
     await inserirParcelas(tx, montarParcelasParaInsercao(venda.id, cronograma));
@@ -167,4 +189,49 @@ export function getVenda(id: string) {
 
 export function listarVendas(filtros?: ListarVendasFiltros) {
   return listarVendasRepo(filtros);
+}
+
+export function listarVendasPendentesAprovacao() {
+  return listarVendasPendentesAprovacaoRepo();
+}
+
+// Aprova/rejeita uma venda pendente (v1.1, VENDA-11): só passa a contar em
+// receita/comissão/dashboard depois de APROVADA (gate vive em
+// recebimento.repo.ts/listarRecebimentosDoMes). Idempotente por natureza —
+// decidir de novo simplesmente sobrescreve quem/quando decidiu; a ação fica
+// registrada em AuditLog para rastreabilidade (AUDIT-01).
+async function decidirVenda(
+  id: string,
+  status: "APROVADA" | "REJEITADA",
+  aprovadaPorId: string,
+) {
+  const vendaAtual = await getVendaRepo(id);
+  if (!vendaAtual) {
+    throw new Error("Venda não encontrada");
+  }
+  if (vendaAtual.statusAprovacao !== "PENDENTE_APROVACAO") {
+    throw new Error("Venda já foi decidida (aprovada ou rejeitada)");
+  }
+
+  const aprovadaEm = new Date();
+  const venda = await decidirVendaRow(id, { status, aprovadaPorId, aprovadaEm });
+
+  await registrarAudit({
+    acao: status === "APROVADA" ? "APROVAR_VENDA" : "REJEITAR_VENDA",
+    entidade: "venda",
+    entidadeId: id,
+    usuarioId: aprovadaPorId,
+    dadosAntes: { statusAprovacao: "PENDENTE_APROVACAO" },
+    dadosDepois: { statusAprovacao: status },
+  });
+
+  return venda;
+}
+
+export function aprovarVenda(id: string, aprovadaPorId: string) {
+  return decidirVenda(id, "APROVADA", aprovadaPorId);
+}
+
+export function rejeitarVenda(id: string, aprovadaPorId: string) {
+  return decidirVenda(id, "REJEITADA", aprovadaPorId);
 }

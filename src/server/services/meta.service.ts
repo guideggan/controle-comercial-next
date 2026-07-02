@@ -31,6 +31,16 @@ import { contarCallsRealizadas as contarCallsRealizadasPuro } from "@/domain/age
 // Detecta a unidade da meta a partir do papel do colaborador (META-01):
 // CLOSER comissiona em R$ recebido -> meta em VALOR; SDR/SS comissiona por
 // calls -> meta em AGENDAMENTOS. ADMIN não tem meta (papel de gestão).
+//
+// Nomenclatura (v1.1): o enum MetaUnidade.AGENDAMENTOS é mantido estável
+// (é o nome da coluna/valor persistido, trocar quebraria dados existentes),
+// mas o SIGNIFICADO de negócio — e todo texto voltado ao usuário — é
+// "reuniões REALIZADAS", nunca "agendadas". Isso já é garantido pelo
+// cálculo: `realizadoMes` para SDR/SS sempre vem de
+// contarCallsRealizadas/contarCallsRealizadasPuro (src/domain/agendamentos/
+// agregacao.ts), que soma exclusivamente status=REALIZADO — nunca AGENDADO.
+// A camada de UI (fora do escopo deste service) deve rotular esta unidade
+// como "reuniões realizadas", não "agendamentos".
 function unidadeParaPapel(papel: string): MetaUnidade {
   if (papel === "CLOSER") return "VALOR";
   if (papel === "SDR" || papel === "SS") return "AGENDAMENTOS";

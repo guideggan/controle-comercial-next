@@ -68,11 +68,18 @@ export function reverterParcelaPendenteRow(id: string) {
 // por PAGO já no banco é uma otimização segura — a agregação pura reforça
 // a regra de qualquer forma (PGTO-03), então nenhuma parcela pendente
 // jamais contribui, mesmo que este filtro fosse removido por engano.
+//
+// Gate de aprovação (v1.1): só parcelas de vendas com statusAprovacao=APROVADA
+// entram aqui — esta é a ÚNICA função que alimenta recebidoNoMes/apuração/
+// dashboard (PGTO-02/03), então o filtro aqui garante que uma venda
+// PENDENTE_APROVACAO ou REJEITADA nunca conta em receita/comissão, sem
+// precisar repetir a checagem em cada consumidor.
 export function listarRecebimentosDoMes(mesReferencia: string) {
   return db.parcela.findMany({
     where: {
       mesReferencia: paraDataUTC(mesReferencia),
       statusPagamento: "PAGO",
+      venda: { statusAprovacao: "APROVADA" },
     },
     include: {
       venda: {

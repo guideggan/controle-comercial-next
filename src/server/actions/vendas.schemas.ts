@@ -26,6 +26,12 @@ const mesReferenciaSchema = z
     "mesReferencia deve ser o primeiro dia do mês (YYYY-MM-01)",
   );
 
+// linkCrm (v1.1): texto livre (não estritamente uma URL — o closer pode
+// colar o "nome do card"/ID do CRM), obrigatório apenas quando `parsed` via
+// vendaSchemaParaCloser (a variante usada quando quem cria é um CLOSER,
+// VENDA-11/12). Vendas criadas por ADMIN continuam com linkCrm opcional.
+const linkCrmSchema = z.string().trim().optional().nullable();
+
 export const vendaSchema = z
   .object({
     dataVenda: dataSchema,
@@ -54,6 +60,7 @@ export const vendaSchema = z
     closerId: z.string().min(1, "Closer é obrigatório"),
     sdrId: z.string().optional().nullable(),
     observacao: z.string().optional(),
+    linkCrm: linkCrmSchema,
   })
   .refine(
     (data) =>
@@ -71,3 +78,19 @@ export const vendaSchema = z
   });
 
 export type VendaInput = z.infer<typeof vendaSchema>;
+
+// Variante usada quando quem está criando a venda é um CLOSER (VENDA-11/12):
+// mesmas regras de vendaSchema + linkCrm OBRIGATÓRIO (o closer precisa
+// linkar o card do CRM para o ADMIN conseguir conferir antes de aprovar).
+// Vendas criadas por ADMIN continuam usando vendaSchema (linkCrm opcional).
+export const vendaSchemaParaCloser = vendaSchema.check((ctx) => {
+  const linkCrm = ctx.value.linkCrm;
+  if (!linkCrm || linkCrm.trim().length === 0) {
+    ctx.issues.push({
+      code: "custom",
+      message: "Link do CRM é obrigatório quando a venda é criada por um closer",
+      path: ["linkCrm"],
+      input: ctx.value,
+    });
+  }
+});

@@ -123,6 +123,25 @@ export function reabrirMes(tx: ComissaoApuradaClient, mesReferencia: string) {
   });
 }
 
+// Grava a observação livre por pessoa/mês (v1.1) — coluna independente do
+// resultado calculado (não passa pelo motor, não afeta valorComissao). Update
+// simples (não upsert): só faz sentido anotar uma apuração que já existe.
+export function definirObservacaoApuracaoRow(
+  colaboradorId: string,
+  mesReferencia: string,
+  observacao: string | null,
+) {
+  return db.comissaoApurada.update({
+    where: {
+      colaboradorId_mesReferencia: {
+        colaboradorId,
+        mesReferencia: paraDataUTC(mesReferencia),
+      },
+    },
+    data: { observacao },
+  });
+}
+
 // Usado pelo guard de imutabilidade (COMIS-06): existe ao menos uma linha
 // FECHADA nessa competência? Uma única linha FECHADA já basta para recusar
 // nova apuração no mês (o fecho é sempre feito para o mês inteiro).

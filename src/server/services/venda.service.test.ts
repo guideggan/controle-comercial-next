@@ -10,6 +10,8 @@ const getVendaMock = vi.fn();
 const atualizarVendaRowMock = vi.fn();
 const setVendaFechadoMock = vi.fn();
 const listarVendasMock = vi.fn();
+const listarVendasPendentesAprovacaoMock = vi.fn();
+const decidirVendaRowMock = vi.fn();
 
 vi.mock("@/server/repositories/venda.repo", () => ({
   criarVendaRow: (...args: unknown[]) => criarVendaRowMock(...args),
@@ -20,6 +22,14 @@ vi.mock("@/server/repositories/venda.repo", () => ({
   atualizarVendaRow: (...args: unknown[]) => atualizarVendaRowMock(...args),
   setVendaFechado: (...args: unknown[]) => setVendaFechadoMock(...args),
   listarVendas: (...args: unknown[]) => listarVendasMock(...args),
+  listarVendasPendentesAprovacao: (...args: unknown[]) =>
+    listarVendasPendentesAprovacaoMock(...args),
+  decidirVendaRow: (...args: unknown[]) => decidirVendaRowMock(...args),
+}));
+
+const registrarAuditMock = vi.fn();
+vi.mock("@/server/services/audit.service", () => ({
+  registrarAudit: (...args: unknown[]) => registrarAuditMock(...args),
 }));
 
 // db.$transaction mockado para executar o callback recebendo um "tx" fake —
@@ -39,7 +49,7 @@ vi.mock("@/lib/db", () => ({
 
 // Importado DEPOIS dos vi.mock acima (hoisted), para que o service receba as
 // versões mockadas do repo/db.
-const { criarVenda, atualizarVenda, montarParcelasParaInsercao } =
+const { criarVenda, atualizarVenda, montarParcelasParaInsercao, aprovarVenda, rejeitarVenda } =
   await import("@/server/services/venda.service");
 
 const inputBase = {
@@ -183,6 +193,166 @@ describe("criarVenda — insere venda + parcelas atomicamente (VENDA-02)", () =>
     expect(transactionMock).not.toHaveBeenCalled();
     expect(criarVendaRowMock).not.toHaveBeenCalled();
     expect(inserirParcelasMock).not.toHaveBeenCalled();
+  });
+
+  it("sem `criador` (ou criador ADMIN), nasce APROVADA e sem criadaPorId (VENDA-11, zero regressão)", async () => {
+    criarVendaRowMock.mockResolvedValue({ id: "venda-3" });
+    inserirParcelasMock.mockResolvedValue({ count: 1 });
+
+    await criarVenda({
+      ...inputBase,
+      tipoPagamento: "A_VISTA",
+      valorTotal: 1000,
+      entrada: 0,
+      valorMensalidade: 0,
+      numeroParcelas: 1,
+    });
+
+    expect(criarVendaRowMock).toHaveBeenCalledWith(
+      expect.objectContaining({ __isTx: true }),
+      expect.objectContaining({
+        statusAprovacao: "APROVADA",
+        criadaPorId: null,
+      }),
+    );
+  });
+
+  it("criador ADMIN explícito também nasce APROVADA", async () => {
+    criarVendaRowMock.mockResolvedValue({ id: "venda-4" });
+    inserirParcelasMock.mockResolvedValue({ count: 1 });
+
+    await criarVenda(
+      {
+        ...inputBase,
+        tipoPagamento: "A_VISTA",
+        valorTotal: 1000,
+        entrada: 0,
+        valorMensalidade: 0,
+        numeroParcelas: 1,
+      },
+      { role: "ADMIN", colaboradorId: "admin-1" },
+    );
+
+    expect(criarVendaRowMock).toHaveBeenCalledWith(
+      expect.objectContaining({ __isTx: true }),
+      expect.objectContaining({
+        statusAprovacao: "APROVADA",
+        criadaPorId: "admin-1",
+      }),
+    );
+  });
+
+  it("criador CLOSER nasce PENDENTE_APROVACAO com criadaPorId (VENDA-11)", async () => {
+    criarVendaRowMock.mockResolvedValue({ id: "venda-5" });
+    inserirParcelasMock.mockResolvedValue({ count: 1 });
+
+    await criarVenda(
+      {
+        ...inputBase,
+        tipoPagamento: "A_VISTA",
+        valorTotal: 1000,
+        entrada: 0,
+        valorMensalidade: 0,
+        numeroParcelas: 1,
+        linkCrm: "https://crm.exemplo.com/card/123",
+      },
+      { role: "CLOSER", colaboradorId: "closer-1" },
+    );
+
+    expect(criarVendaRowMock).toHaveBeenCalledWith(
+      expect.objectContaining({ __isTx: true }),
+      expect.objectContaining({
+        statusAprovacao: "PENDENTE_APROVACAO",
+        criadaPorId: "closer-1",
+        linkCrm: "https://crm.exemplo.com/card/123",
+      }),
+    );
+  });
+
+  it("criador CLOSER sem linkCrm é rejeitado ANTES de abrir a transação (VENDA-12)", async () => {
+    await expect(
+      criarVenda(
+        {
+          ...inputBase,
+          tipoPagamento: "A_VISTA",
+          valorTotal: 1000,
+          entrada: 0,
+          valorMensalidade: 0,
+          numeroParcelas: 1,
+        },
+        { role: "CLOSER", colaboradorId: "closer-1" },
+      ),
+    ).rejects.toThrow(/link.*crm/i);
+
+    expect(transactionMock).not.toHaveBeenCalled();
+    expect(criarVendaRowMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("aprovarVenda / rejeitarVenda — decisão do ADMIN (VENDA-11)", () => {
+  beforeEach(() => {
+    getVendaMock.mockReset();
+    decidirVendaRowMock.mockReset();
+    registrarAuditMock.mockReset();
+  });
+
+  it("aprova uma venda PENDENTE_APROVACAO e registra auditoria", async () => {
+    getVendaMock.mockResolvedValue({
+      id: "venda-1",
+      statusAprovacao: "PENDENTE_APROVACAO",
+    });
+    decidirVendaRowMock.mockResolvedValue({
+      id: "venda-1",
+      statusAprovacao: "APROVADA",
+    });
+
+    const resultado = await aprovarVenda("venda-1", "admin-1");
+
+    expect(decidirVendaRowMock).toHaveBeenCalledWith(
+      "venda-1",
+      expect.objectContaining({ status: "APROVADA", aprovadaPorId: "admin-1" }),
+    );
+    expect(registrarAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ acao: "APROVAR_VENDA", entidadeId: "venda-1" }),
+    );
+    expect(resultado).toEqual({ id: "venda-1", statusAprovacao: "APROVADA" });
+  });
+
+  it("rejeita uma venda PENDENTE_APROVACAO e registra auditoria", async () => {
+    getVendaMock.mockResolvedValue({
+      id: "venda-2",
+      statusAprovacao: "PENDENTE_APROVACAO",
+    });
+    decidirVendaRowMock.mockResolvedValue({
+      id: "venda-2",
+      statusAprovacao: "REJEITADA",
+    });
+
+    await rejeitarVenda("venda-2", "admin-1");
+
+    expect(decidirVendaRowMock).toHaveBeenCalledWith(
+      "venda-2",
+      expect.objectContaining({ status: "REJEITADA", aprovadaPorId: "admin-1" }),
+    );
+    expect(registrarAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({ acao: "REJEITAR_VENDA", entidadeId: "venda-2" }),
+    );
+  });
+
+  it("recusa decidir uma venda que já não está mais pendente", async () => {
+    getVendaMock.mockResolvedValue({
+      id: "venda-3",
+      statusAprovacao: "APROVADA",
+    });
+
+    await expect(aprovarVenda("venda-3", "admin-1")).rejects.toThrow(/já foi decidida/i);
+    expect(decidirVendaRowMock).not.toHaveBeenCalled();
+  });
+
+  it("lança erro claro quando a venda não existe", async () => {
+    getVendaMock.mockResolvedValue(null);
+
+    await expect(aprovarVenda("inexistente", "admin-1")).rejects.toThrow(/não encontrada/i);
   });
 });
 

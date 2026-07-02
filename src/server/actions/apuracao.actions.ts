@@ -7,6 +7,7 @@ import {
   apurarMes,
   fecharApuracao,
   reabrirApuracao,
+  definirObservacaoApuracao,
 } from "@/server/services/apuracao.service";
 
 // Server actions de apuração (COMIS-04/05/06). Gated por requireRole("ADMIN")
@@ -43,6 +44,27 @@ export async function reabrirApuracaoAction(mesReferencia: string) {
 
   revalidatePath("/comissoes");
   revalidatePath("/vendas");
+
+  return resultado;
+}
+
+// Observação livre por pessoa/mês (v1.1) — editável no fechamento, mesmo com
+// o mês já FECHADO (é anotação, não recálculo).
+export async function definirObservacaoApuracaoAction(
+  colaboradorId: string,
+  mesReferencia: string,
+  observacao: string | null,
+) {
+  const user = await requireRole("ADMIN");
+
+  const resultado = await definirObservacaoApuracao(
+    colaboradorId,
+    mesReferencia,
+    observacao,
+    user.id,
+  );
+
+  revalidatePath("/comissoes");
 
   return resultado;
 }

@@ -12,6 +12,7 @@ import {
   fecharMes,
   reabrirMes,
   existeMesFechado,
+  definirObservacaoApuracaoRow,
 } from "@/server/repositories/comissao-apurada.repo";
 import { getPlanoVigente } from "@/server/services/plano-comissao.service";
 import { recebidoNoMes } from "@/server/services/recebimento.service";
@@ -236,6 +237,34 @@ export async function reabrirApuracao(
 function mesReferenciaParaDataUTC(mesReferencia: string): Date {
   const [ano, mes, dia] = mesReferencia.split("-").map(Number);
   return new Date(Date.UTC(ano, mes - 1, dia));
+}
+
+// Observação livre por pessoa/mês (v1.1) — editável mesmo com o mês
+// FECHADO (é uma anotação humana, não um valor calculado; COMIS-06 protege
+// valorComissao/valorBase/percentualAplicado, não este campo). Grava em
+// AuditLog para rastreabilidade (quem anotou o quê).
+export async function definirObservacaoApuracao(
+  colaboradorId: string,
+  mesReferencia: string,
+  observacao: string | null,
+  definidoPor?: string | null,
+) {
+  const apuracao = await definirObservacaoApuracaoRow(
+    colaboradorId,
+    mesReferencia,
+    observacao,
+  );
+
+  await registrarAudit({
+    acao: "APURAR_COMISSAO",
+    entidade: "comissao_apurada",
+    entidadeId: apuracao.id,
+    colaboradorId,
+    usuarioId: definidoPor ?? null,
+    dadosDepois: { mesReferencia, observacao },
+  });
+
+  return apuracao;
 }
 
 // Reexports finos p/ a UI ler o snapshot (COMIS-05) — nunca recalcula.

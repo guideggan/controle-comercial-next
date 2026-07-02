@@ -13,7 +13,7 @@ import { produtoSchema } from "@/server/actions/produtos.schemas";
 // Server actions do CRUD de Produto/tier (COLAB-07). Cada action começa com
 // requireRole("ADMIN") — nenhuma escrita acontece antes dessa checagem.
 
-export async function criarProduto(input: { nome: string }) {
+export async function criarProduto(input: { nome: string; categoria: string }) {
   await requireRole("ADMIN");
 
   const parsed = produtoSchema.parse(input);
@@ -24,7 +24,7 @@ export async function criarProduto(input: { nome: string }) {
 
 export async function atualizarProduto(
   id: string,
-  input: { nome: string },
+  input: { nome: string; categoria: string },
 ) {
   await requireRole("ADMIN");
 

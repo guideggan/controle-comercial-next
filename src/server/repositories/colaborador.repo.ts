@@ -52,6 +52,55 @@ export function setColaboradorAtivo(id: string, ativo: boolean) {
   });
 }
 
+// Conta toda FK histórica que aponta para este colaborador (v1.1) — usado
+// por excluirColaborador para decidir se o hard-delete é seguro. NÃO conta
+// vendasAprovadas/vendasCriadas (aprovadaPorId/criadaPorId são FKs
+// onDelete:SetNull, não bloqueiam exclusão) — só os vínculos que
+// efetivamente impedem a remoção (onDelete:RESTRICT/dados históricos que
+// perderiam sentido sem o colaborador).
+export async function contarReferenciasColaborador(id: string) {
+  const [vendasComoCloser, vendasComoSdr, planosComissao, comissoesApuradas, metas, agendamentos] =
+    await Promise.all([
+      db.venda.count({ where: { closerId: id } }),
+      db.venda.count({ where: { sdrId: id } }),
+      db.planoComissao.count({ where: { colaboradorId: id } }),
+      db.comissaoApurada.count({ where: { colaboradorId: id } }),
+      db.meta.count({ where: { colaboradorId: id } }),
+      db.agendamento.count({ where: { colaboradorId: id } }),
+    ]);
+
+  const total =
+    vendasComoCloser +
+    vendasComoSdr +
+    planosComissao +
+    comissoesApuradas +
+    metas +
+    agendamentos;
+
+  return {
+    total,
+    vendasComoCloser,
+    vendasComoSdr,
+    planosComissao,
+    comissoesApuradas,
+    metas,
+    agendamentos,
+  };
+}
+
+// Hard-delete real — só deve ser chamado pelo service depois de confirmar
+// (via contarReferenciasColaborador) que não há NENHUM registro histórico
+// vinculado. Deleta o User (Better Auth) vinculado primeiro, se existir,
+// para não deixar uma conta de login órfã apontando para um Colaborador
+// inexistente.
+export async function excluirColaboradorRow(id: string) {
+  const colaborador = await getColaborador(id);
+  if (colaborador?.user?.id) {
+    await db.user.delete({ where: { id: colaborador.user.id } });
+  }
+  return db.colaborador.delete({ where: { id } });
+}
+
 export type AtualizarColaboradorRowData = {
   nome: string;
   papel: Papel;

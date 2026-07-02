@@ -1,6 +1,11 @@
 import "server-only";
 
-import type { Prisma, ParcelaTipo, StatusPagamento } from "@prisma/client";
+import type {
+  Prisma,
+  ParcelaTipo,
+  StatusPagamento,
+  StatusAprovacao,
+} from "@prisma/client";
 
 import { db } from "@/lib/db";
 
@@ -48,6 +53,12 @@ export type CriarVendaRowData = {
   closerId: string;
   sdrId?: string | null;
   observacao?: string | null;
+  // Aprovação (v1.1): venda criada por ADMIN nasce APROVADA (default do
+  // banco); venda criada por CLOSER nasce PENDENTE_APROVACAO — decidido pelo
+  // service (venda.service.ts), nunca aceito do client.
+  statusAprovacao?: StatusAprovacao;
+  criadaPorId?: string | null;
+  linkCrm?: string | null;
 };
 
 export type InserirParcelaData = {
@@ -83,6 +94,7 @@ export type ListarVendasFiltros = {
   produtoId?: string;
   statusPagamento?: StatusPagamento;
   mesReferencia?: string; // "YYYY-MM-01"
+  statusAprovacao?: StatusAprovacao;
 };
 
 // Cria a linha da venda. Recebe `tx` como primeiro parâmetro para compor
@@ -106,6 +118,9 @@ export function criarVendaRow(tx: VendaClient, data: CriarVendaRowData) {
       closerId: data.closerId,
       sdrId: data.sdrId ?? null,
       observacao: data.observacao ?? null,
+      statusAprovacao: data.statusAprovacao ?? "APROVADA",
+      criadaPorId: data.criadaPorId ?? null,
+      linkCrm: data.linkCrm ?? null,
     },
   });
 }
@@ -189,6 +204,11 @@ export function setVendaFechado(id: string, fechado: boolean) {
 
 // Listagem com filtros opcionais (VENDA-05), consumida pela UI de
 // busca/filtro do plano 04. orderBy dataVenda desc (mais recente primeiro).
+//
+// Por padrão lista TODAS as vendas (qualquer statusAprovacao) — a listagem
+// administrativa precisa mostrar pendentes/rejeitadas com o status visível
+// (v1.1); quem precisa contar só o que é receita/comissão (dashboard) passa
+// `statusAprovacao: "APROVADA"` explicitamente.
 export function listarVendas(filtros: ListarVendasFiltros = {}) {
   const where: Prisma.VendaWhereInput = {};
 
@@ -207,10 +227,42 @@ export function listarVendas(filtros: ListarVendasFiltros = {}) {
   if (filtros.statusPagamento) {
     where.parcelas = { some: { statusPagamento: filtros.statusPagamento } };
   }
+  if (filtros.statusAprovacao) {
+    where.statusAprovacao = filtros.statusAprovacao;
+  }
 
   return db.venda.findMany({
     where,
     orderBy: { dataVenda: "desc" },
     include: { produto: true, closer: true, _count: { select: { parcelas: true } } },
+  });
+}
+
+// Fila de aprovação do ADMIN (v1.1): vendas criadas por um CLOSER, ainda não
+// decididas. orderBy dataVenda asc (mais antiga primeiro, FIFO da fila).
+export function listarVendasPendentesAprovacao() {
+  return db.venda.findMany({
+    where: { statusAprovacao: "PENDENTE_APROVACAO" },
+    orderBy: { dataVenda: "asc" },
+    include: { produto: true, closer: true, sdr: true, criadaPor: true },
+  });
+}
+
+export type DecidirVendaRowData = {
+  status: Extract<StatusAprovacao, "APROVADA" | "REJEITADA">;
+  aprovadaPorId: string;
+  aprovadaEm: Date;
+};
+
+// Grava a decisão (aprovar/rejeitar) de uma venda pendente — usada por
+// aprovarVenda/rejeitarVenda em vendas.actions.ts (requireRole ADMIN).
+export function decidirVendaRow(id: string, data: DecidirVendaRowData) {
+  return db.venda.update({
+    where: { id },
+    data: {
+      statusAprovacao: data.status,
+      aprovadaPorId: data.aprovadaPorId,
+      aprovadaEm: data.aprovadaEm,
+    },
   });
 }

@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { CategoriaProduto } from "@prisma/client";
+
 import { db } from "@/lib/db";
 
 // Repositório de acesso a dados de Produto — funções puras, sem authz.
@@ -8,10 +10,12 @@ import { db } from "@/lib/db";
 
 export type CriarProdutoData = {
   nome: string;
+  categoria: CategoriaProduto;
 };
 
 export type AtualizarProdutoData = {
   nome: string;
+  categoria: CategoriaProduto;
 };
 
 export function listarProdutos() {
@@ -24,6 +28,7 @@ export function criarProdutoRow(data: CriarProdutoData) {
   return db.produto.create({
     data: {
       nome: data.nome,
+      categoria: data.categoria,
     },
   });
 }
@@ -33,6 +38,7 @@ export function atualizarProdutoRow(id: string, data: AtualizarProdutoData) {
     where: { id },
     data: {
       nome: data.nome,
+      categoria: data.categoria,
     },
   });
 }

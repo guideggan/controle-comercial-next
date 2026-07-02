@@ -51,8 +51,11 @@ export async function getReceitaConsolidada(mesReferencia: string) {
 
 // GESTOR-02: contagem de vendas por produto/tier no mês — usa listarVendas
 // filtrado pela competência (mesReferencia da VENDA, não da parcela).
+// Gate de aprovação (v1.1): só APROVADA conta no dashboard — uma venda
+// PENDENTE_APROVACAO/REJEITADA de um closer não infla a contagem até o
+// ADMIN decidir.
 export async function getContagemPorProduto(mesReferencia: string) {
-  const vendas = await listarVendas({ mesReferencia });
+  const vendas = await listarVendas({ mesReferencia, statusAprovacao: "APROVADA" });
 
   const paraContagem: VendaParaContagem[] = vendas.map((v) => ({
     vendaId: v.id,
@@ -205,7 +208,7 @@ export async function getDashboardConsolidado(mesReferencia: string) {
       getComissaoPorColaborador(mesReferencia),
       getAtingimentoMetaTodos(mesReferencia),
       getReceitaUltimosMeses(mesReferencia),
-      listarVendas({ mesReferencia }),
+      listarVendas({ mesReferencia, statusAprovacao: "APROVADA" }),
     ]);
 
   return {

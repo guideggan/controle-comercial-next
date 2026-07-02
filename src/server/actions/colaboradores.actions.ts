@@ -11,12 +11,15 @@ import {
   criarColaboradorRow,
   getColaborador,
   setColaboradorAtivo,
+  contarReferenciasColaborador,
+  excluirColaboradorRow,
 } from "@/server/repositories/colaborador.repo";
 import {
   criarColaboradorSchema,
   editarColaboradorSchema,
   redefinirSenhaSchema,
 } from "@/server/actions/colaboradores.schemas";
+import { registrarAudit } from "@/server/services/audit.service";
 
 // Server actions da gestão administrativa de contas de colaborador (AUTH-05).
 // Cada action começa com requireRole("ADMIN") — nenhuma escrita acontece
@@ -149,6 +152,73 @@ export async function desativarColaborador(id: string) {
   if (colaborador.user?.id) {
     await db.session.deleteMany({ where: { userId: colaborador.user.id } });
   }
+
+  revalidatePath("/colaboradores");
+}
+
+// Arquivamento (v1.1): mesmo mecanismo de desativarColaborador (ativo=false
+// + revoga sessões) — nome dedicado porque na v1.1 este é o caminho
+// primário de "remover" alguém da lista/seletores ativos sem perder
+// histórico (equipe de ~8 pessoas, ver CHANGES-2026-07.md item 10). Grava em
+// AuditLog (desativarColaborador não gravava, pois nasceu como um toggle
+// simples; arquivar é uma ação deliberada de gestão de equipe que vale a
+// pena rastrear quem/quando).
+export async function arquivarColaborador(id: string) {
+  const user = await requireRole("ADMIN");
+
+  const colaborador = await getColaborador(id);
+  if (!colaborador) {
+    throw new Error("Colaborador não encontrado");
+  }
+
+  await setColaboradorAtivo(id, false);
+
+  if (colaborador.user?.id) {
+    await db.session.deleteMany({ where: { userId: colaborador.user.id } });
+  }
+
+  await registrarAudit({
+    acao: "ARQUIVAR_COLABORADOR",
+    entidade: "colaborador",
+    entidadeId: id,
+    colaboradorId: id,
+    usuarioId: user.colaboradorId,
+    dadosAntes: { ativo: true },
+    dadosDepois: { ativo: false },
+  });
+
+  revalidatePath("/colaboradores");
+}
+
+// Exclusão real (v1.1) — só permitida quando o colaborador NÃO tem nenhum
+// registro histórico vinculado (venda como closer/sdr, plano de comissão,
+// apuração, meta, agendamento). Caso contrário, lança um erro instruindo a
+// usar arquivarColaborador em vez de excluir — nunca apaga histórico
+// silenciosamente.
+export async function excluirColaborador(id: string) {
+  const user = await requireRole("ADMIN");
+
+  const colaborador = await getColaborador(id);
+  if (!colaborador) {
+    throw new Error("Colaborador não encontrado");
+  }
+
+  const referencias = await contarReferenciasColaborador(id);
+  if (referencias.total > 0) {
+    throw new Error(
+      "Colaborador possui histórico vinculado (vendas/planos/apurações/metas/agendamentos) e não pode ser excluído — use arquivar.",
+    );
+  }
+
+  await excluirColaboradorRow(id);
+
+  await registrarAudit({
+    acao: "EXCLUIR_COLABORADOR",
+    entidade: "colaborador",
+    entidadeId: id,
+    usuarioId: user.colaboradorId,
+    dadosAntes: { nome: colaborador.nome, email: colaborador.email, papel: colaborador.papel },
+  });
 
   revalidatePath("/colaboradores");
 }
