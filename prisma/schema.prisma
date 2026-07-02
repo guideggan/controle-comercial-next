@@ -385,6 +385,7 @@ enum AcaoAudit {
   FECHAR_APURACAO
   REABRIR_APURACAO
   APURAR_COMISSAO
+  DEFINIR_META
 }
 
 // ============================================================

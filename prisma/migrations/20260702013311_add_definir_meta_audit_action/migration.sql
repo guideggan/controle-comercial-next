@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "AcaoAudit" ADD VALUE 'DEFINIR_META';
