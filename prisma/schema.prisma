@@ -373,3 +373,33 @@ model ComissaoApurada {
   @@index([mesReferencia])
   @@map("comissao_apurada")
 }
+
+// Trilha de alterações que afetam comissão (AUDIT-01) — marcar parcela como
+// paga, editar venda, trocar plano, fechar/reabrir apuração e a própria
+// apuração ficam registradas aqui com quem/quando/antes/depois.
+enum AcaoAudit {
+  MARCAR_PAGO
+  REVERTER_PAGO
+  EDITAR_VENDA
+  TROCAR_PLANO
+  FECHAR_APURACAO
+  REABRIR_APURACAO
+  APURAR_COMISSAO
+}
+
+model AuditLog {
+  id            String    @id @default(cuid())
+  acao          AcaoAudit
+  entidade      String // nome da entidade afetada: "parcela" | "venda" | "plano_comissao" | "comissao_apurada"
+  entidadeId    String // id do registro afetado
+  colaboradorId String? // colaborador impactado (quando aplicável) — facilita filtrar o histórico por pessoa
+  usuarioId     String? // userId (better-auth) de quem executou; null p/ ações de sistema
+  dadosAntes    Json? // estado relevante antes (quando aplicável)
+  dadosDepois   Json? // estado relevante depois
+  criadoEm      DateTime  @default(now()) @db.Timestamptz
+
+  @@index([entidade, entidadeId])
+  @@index([colaboradorId])
+  @@index([criadoEm])
+  @@map("audit_log")
+}
