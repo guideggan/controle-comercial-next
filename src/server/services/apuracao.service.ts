@@ -18,6 +18,7 @@ import { recebidoNoMes } from "@/server/services/recebimento.service";
 import { listarRecebimentosDoMes } from "@/server/repositories/recebimento.repo";
 import { listarColaboradores } from "@/server/repositories/colaborador.repo";
 import { registrarAudit } from "@/server/services/audit.service";
+import { contarCallsRealizadas } from "@/server/services/agendamento.service";
 
 // Coração da Fase 5 (COMIS-04/05/06/07): liga o motor puro (05-01) ao banco
 // (05-02). Gera/atualiza o snapshot imutável por (colaborador, mês) — os
@@ -77,16 +78,27 @@ export async function apurarComissao(
 
   const planoConfig = { tipo: plano.tipo, config: plano.config } as PlanoConfig;
 
+  // Fase 7 (AGEND-02): numeroCallsRealizadas vem da MESMA fonte única usada
+  // pelo painel de meta (contarCallsRealizadas, agendamento.service.ts) —
+  // só busca no banco quando o plano é por_calls, evitando uma query extra
+  // desnecessária para os outros 3 formatos. opts.numeroCallsRealizadas
+  // continua aceito como override explícito (ex.: reapuração de meses
+  // históricos/Fase 10, ou testes), mas o caminho padrão agora é real.
+  const numeroCallsRealizadas =
+    opts.numeroCallsRealizadas ??
+    (plano.tipo === "por_calls"
+      ? await contarCallsRealizadas(colaboradorId, mesReferencia)
+      : 0);
+
   const input: ComissaoInput = {
     colaboradorId,
     mesReferencia,
     plano: planoConfig,
     valorRecebidoNoMes,
-    // Pontos de integração pluggable com Fase 6 (Metas) e Fase 7
-    // (Agendamentos), ainda não existentes — default 0 documentado em
-    // types.ts/engine.ts (05-01).
+    // Ponto de integração pluggable com Fase 6 (Metas), ainda não existente
+    // — default 0 documentado em types.ts/engine.ts (05-01).
     percentualAtingimento: opts.percentualAtingimento ?? 0,
-    numeroCallsRealizadas: opts.numeroCallsRealizadas ?? 0,
+    numeroCallsRealizadas,
   };
 
   const resultado = calcularComissao(input);

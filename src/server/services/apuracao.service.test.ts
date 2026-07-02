@@ -46,6 +46,12 @@ vi.mock("@/server/services/audit.service", () => ({
   registrarAudit: (...args: unknown[]) => registrarAuditMock(...args),
 }));
 
+const contarCallsRealizadasMock = vi.fn();
+vi.mock("@/server/services/agendamento.service", () => ({
+  contarCallsRealizadas: (...args: unknown[]) =>
+    contarCallsRealizadasMock(...args),
+}));
+
 const dbTransactionMock = vi.fn();
 vi.mock("@/lib/db", () => ({
   db: {
@@ -88,6 +94,7 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
     listarColaboradoresMock.mockReset();
     registrarAuditMock.mockReset();
     dbTransactionMock.mockReset();
+    contarCallsRealizadasMock.mockReset();
   });
 
   it("chama o motor puro com valorRecebidoNoMes (porCloser) e grava o snapshot com mesPagamento = mês+1", async () => {
@@ -143,6 +150,52 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
 
     expect(resultado).toBeNull();
     expect(upsertApuracaoMock).not.toHaveBeenCalled();
+  });
+
+  it("plano por_calls: busca numeroCallsRealizadas na fonte única (Fase 7/AGEND-02), não em recebidoNoMes", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-sdr",
+      tipo: "por_calls",
+      config: { valorPorCall: 15 },
+    });
+    recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    contarCallsRealizadasMock.mockResolvedValue(12);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-sdr" });
+
+    await apurarComissao("sdr-1", "2026-06-01");
+
+    expect(contarCallsRealizadasMock).toHaveBeenCalledWith(
+      "sdr-1",
+      "2026-06-01",
+    );
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        valorBase: 12,
+        percentualAplicado: null,
+        valorComissao: 180,
+      }),
+    );
+  });
+
+  it("plano diferente de por_calls: NÃO chama contarCallsRealizadas", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-1",
+      tipo: "percentual_fixo",
+      config: { percentual: 0.03 },
+    });
+    recebidoNoMesMock.mockResolvedValue({
+      total: 1000,
+      porCloser: { "colab-1": 1000 },
+      porSdr: {},
+    });
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-1" });
+
+    await apurarComissao("colab-1", "2026-06-01");
+
+    expect(contarCallsRealizadasMock).not.toHaveBeenCalled();
   });
 });
 
