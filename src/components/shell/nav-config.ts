@@ -51,7 +51,7 @@ const ADMINISTRACAO: NavSection = {
   items: [
     { label: "Colaboradores", href: "/colaboradores", icon: "colaboradores" },
     { label: "Produtos", href: "/produtos", icon: "produtos" },
-    { label: "Metas", href: "/metas", icon: "metas", placeholder: true },
+    { label: "Metas", href: "/metas", icon: "metas" },
   ],
 };
 
