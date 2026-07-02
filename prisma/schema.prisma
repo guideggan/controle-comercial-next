@@ -178,8 +178,7 @@ model Colaborador {
 
   agendamentos Agendamento[]
 
-  // Fases futuras conectam aqui sem alterar o shape desta tabela:
-  // metas Meta[]
+  metas Meta[]
 
   @@map("colaborador")
 }
@@ -421,6 +420,45 @@ model Agendamento {
 
   @@index([colaboradorId, data])
   @@map("agendamento")
+}
+
+// ============================================================
+// FASE 6 — metas mensais + proração semanal (META-01/02/03/04)
+// ============================================================
+// Meta é definida pelo ADMIN, uma linha por (colaborador, mesReferencia).
+// A UNIDADE é detectada pelo papel do colaborador no momento da definição
+// (CLOSER -> VALOR em R$; SDR/SS -> AGENDAMENTOS, nº de calls) — nunca
+// escolhida livremente pelo formulário, para não permitir um closer com
+// meta em "calls" por engano. `valorMeta` (Decimal, R$) e `metaAgendamentos`
+// (Int) são mutuamente exclusivos conforme `unidade` — reforçado por CHECK
+// no banco (mesmo padrão XOR do ARCHITECTURE.md) e por Zod na camada de
+// domínio. A proração semanal (META-02) é uma função PURA
+// (src/domain/metas/proracao.ts) recalculada em cada leitura a partir desta
+// linha — não há tabela de "meta semanal" persistida (ARCHITECTURE.md:
+// "recomputado no read, cheap, sem necessidade de snapshot histórico").
+
+enum MetaUnidade {
+  VALOR
+  AGENDAMENTOS
+}
+
+model Meta {
+  id            String      @id @default(cuid())
+  colaboradorId String
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id])
+
+  mesReferencia DateTime @db.Date // 1º dia do mês (competência)
+
+  unidade           MetaUnidade
+  valorMeta         Decimal?    @db.Decimal(14, 2) // usado quando unidade = VALOR (closer, R$)
+  metaAgendamentos  Int? // usado quando unidade = AGENDAMENTOS (SDR/SS, nº de calls)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([colaboradorId, mesReferencia])
+  @@index([mesReferencia])
+  @@map("meta")
 }
 
 model AuditLog {
