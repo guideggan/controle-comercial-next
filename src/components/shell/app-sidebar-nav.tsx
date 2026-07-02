@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Boxes,
+  CalendarCheck,
   LayoutDashboard,
   LineChart,
   Percent,
@@ -26,6 +27,7 @@ const ICONS: Record<NavIconKey, LucideIcon> = {
   colaboradores: Users,
   produtos: Boxes,
   metas: Target,
+  agendamentos: CalendarCheck,
 };
 
 // Client component: precisa de usePathname() para destacar o item de
