@@ -108,9 +108,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. Admin marca uma parcela como Paga informando valor efetivamente recebido e data do pagamento
   2. O "valor recebido no mês" soma entrada + mensalidades + vendas à vista pagas naquele mês, sem duplicar nenhum valor
   3. Uma parcela marcada como Pendente conta como zero em qualquer cálculo de comissão
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 - [x] 04-01-PLAN.md — (TDD) agregação pura do "recebido no mês" sem dupla contagem, pendente=zero (PGTO-02, PGTO-03)
-- [ ] 04-02-PLAN.md — camada servidor: repo + service marcar pago/reverter (trava mês fechado) + query recebidoNoMes + actions ADMIN (PGTO-01, PGTO-02, PGTO-03)
+- [x] 04-02-PLAN.md — camada servidor: repo + service marcar pago/reverter (trava mês fechado) + query recebidoNoMes + actions ADMIN (PGTO-01, PGTO-02, PGTO-03)
 - [ ] 04-03-PLAN.md — UI: diálogo marcar-pago/reverter na tabela de parcelas + colunas de recebimento + total recebido + checkpoint (PGTO-01, PGTO-02)
 
 ### Phase 5: Motor de Comissão e Apuração
