@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Motor de Comissão e Apuração** - O motor calcula a comissão de cada pessoa conforme seu plano e grava um snapshot imutável
 - [x] **Phase 6: Metas e Proração Semanal** - Metas mensais quebradas em metas semanais com % esperado vs atingido
 - [x] **Phase 7: Agendamentos SDR/SS** - Controle de agendadas x realizadas por dia, fonte única para comissão e painel
-- [ ] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
+- [x] **Phase 8: Painel Self-Service do Colaborador** - Cada colaborador vê sozinho sua meta, realizado e comissão
 - [ ] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
 - [ ] **Phase 10: Importação do Histórico** - Script carrega as duas planilhas antigas, recalcula e reconcilia com os totais originais
 
@@ -175,7 +175,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Colaborador vê a própria comissão prevista/apurada do mês corrente
   3. Colaborador vê o próprio extrato de comissão e consegue navegar para meses anteriores
   4. SDR/SS vê o próprio painel de agendadas x realizadas, e nenhum colaborador consegue ver o painel de outro trocando um parâmetro na URL
-**Plans**: TBD
+**Plans**: Executado em uma única sessão direta (modo lean — construído direto do roadmap/requisitos)
+- [x] Reescrita de `/painel`: cards meta/realizado/saldo/comissão do mês, gráfico Recharts real de progresso semanal (% esperado vs atingido), tabela de acompanhamento semanal reutilizada de `/metas`, grid agendadas x realizadas para SDR/SS reutilizando `getGridSemanaCorrente`, extrato linha a linha com seletor de mês — tudo lido via as fachadas de service já existentes (meta.service, apuracao.service, agendamento.service), nenhuma lógica de cálculo duplicada
+
+**Fase 8 encerrada** (2026-07-02): todos os requisitos (PAINEL-01..04) completos. `/painel` deriva o `colaboradorId` EXCLUSIVAMENTE de `user.colaboradorId` (sessão via `requireUser`/`requireSelfOrAdmin`) — a página não aceita nenhum parâmetro de URL que identifique colaborador, só `?mes=` (competência); ADMIN sem colaboradorId vinculado é direcionado ao dashboard consolidado (Fase 9) em vez de um painel vazio. Verificado via smoke test próprio contra o Neon real com sessões HTTP reais (login via `auth.api.signUpEmail`/`sign-in/email`, cookie de sessão real): CLOSER com meta R$8.000 e venda à vista de R$4.000 paga bateu 50% da meta e comissão apurada de R$120,00 (3%); SDR com meta 12 agendamentos e 3 REALIZADO bateu o realizado e comissão apurada de R$45,00 (R$15/call); painel do closer não vazou nenhum dado do SDR e vice-versa, inclusive ao tentar `?colaboradorId=<outro>` (ignorado, o painel sempre mostrou os PRÓPRIOS dados) — IDOR confirmado impossível. tsc/vitest(98)/next build limpos. Dados de teste removidos ao final.
 
 ### Phase 9: Dashboard do Gestor
 **Goal**: O gestor enxerga, em uma única visão consolidada por mês, receita, contagem por produto, comissão total por pessoa e atingimento de meta de todo o time — sem precisar reunir ninguém para saber o status.
@@ -215,7 +218,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Motor de Comissão e Apuração | 4/4 | Complete | 2026-07-02 |
 | 6. Metas e Proração Semanal | 1/1 | Complete | 2026-07-02 |
 | 7. Agendamentos SDR/SS | 3/3 | Complete | 2026-07-02 |
-| 8. Painel Self-Service do Colaborador | 0/TBD | Not started | - |
+| 8. Painel Self-Service do Colaborador | 1/1 | Complete | 2026-07-02 |
 | 9. Dashboard do Gestor | 0/TBD | Not started | - |
 | 10. Importação do Histórico | 0/TBD | Not started | - |
 

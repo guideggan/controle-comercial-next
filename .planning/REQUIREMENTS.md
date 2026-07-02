@@ -64,10 +64,10 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 
 ### Painel do Colaborador (PAINEL)
 
-- [ ] **PAINEL-01**: Colaborador vê o próprio acompanhamento de meta do mês (meta, realizado, meta proporcional, % esperado vs atingido, saldo)
-- [ ] **PAINEL-02**: Colaborador vê a própria comissão prevista/apurada do mês corrente
-- [ ] **PAINEL-03**: Colaborador vê o próprio extrato de comissão e histórico de meses anteriores
-- [ ] **PAINEL-04**: SDR/SS vê o próprio painel de agendadas × realizadas
+- [x] **PAINEL-01**: Colaborador vê o próprio acompanhamento de meta do mês (meta, realizado, meta proporcional, % esperado vs atingido, saldo)
+- [x] **PAINEL-02**: Colaborador vê a própria comissão prevista/apurada do mês corrente
+- [x] **PAINEL-03**: Colaborador vê o próprio extrato de comissão e histórico de meses anteriores
+- [x] **PAINEL-04**: SDR/SS vê o próprio painel de agendadas × realizadas
 
 ### Dashboard do Gestor (GESTOR)
 
@@ -159,10 +159,10 @@ Explicitamente excluído para evitar aumento de escopo.
 | AGEND-01 | Phase 7 | Complete |
 | AGEND-02 | Phase 7 | Complete |
 | AGEND-03 | Phase 7 | Complete |
-| PAINEL-01 | Phase 8 | Pending |
-| PAINEL-02 | Phase 8 | Pending |
-| PAINEL-03 | Phase 8 | Pending |
-| PAINEL-04 | Phase 8 | Pending |
+| PAINEL-01 | Phase 8 | Complete |
+| PAINEL-02 | Phase 8 | Complete |
+| PAINEL-03 | Phase 8 | Complete |
+| PAINEL-04 | Phase 8 | Complete |
 | GESTOR-01 | Phase 9 | Pending |
 | GESTOR-02 | Phase 9 | Pending |
 | GESTOR-03 | Phase 9 | Pending |

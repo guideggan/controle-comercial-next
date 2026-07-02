@@ -5,26 +5,26 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** Phases 5, 6 e 7 completas — Phase 8 (Painel Self-Service do Colaborador) desbloqueada
+**Current focus:** Phases 5, 6, 7 e 8 completas — Phase 9 (Dashboard do Gestor) desbloqueada
 
 ## Current Position
 
-**Current Phase:** 06
-**Current Phase Name:** metas-e-proracao-semanal
+**Current Phase:** 08
+**Current Phase Name:** painel-self-service-do-colaborador
 **Total Phases:** 10 (+ Phase 1.1 inserted)
 **Current Plan:** 1 de 1 (fase completa)
 **Total Plans in Phase:** 1
-**Status:** Fase 6 completa — Fases 5+6+7 completas, Fase 8 (Painel do Colaborador) desbloqueada
+**Status:** Fase 8 completa — Fases 5+6+7+8 completas, Fase 9 (Dashboard do Gestor) desbloqueada
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-02
-**Last Activity Description:** Fase 6 (Metas e Proração Semanal) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): módulo puro `src/domain/metas/proracao.ts` (proracaoSemanal, 7 testes) quebra a meta mensal em semanas SEGUNDA-DOMINGO, proração por dias corridos dentro do mês, meta proporcional ACUMULADA sempre fechando 100% na última semana (regra decidida e documentada contra o Pitfall 8, validada em jul/2026 início-parcial, jun/2026 início-limpo, fev/2026 não-bissexto); migração `Meta` (colaboradorId, mesReferencia @db.Date, unidade VALOR/AGENDAMENTOS XOR-checada por CHECK bruto) aplicada ao Neon; `meta.service.ts` deriva a unidade SEMPRE do papel real do colaborador (nunca do client) e expõe `getAcompanhamentoMeta(colaboradorId, mesReferencia)` juntando a proração pura com o realizado das fontes ÚNICAS já existentes (`recebidoNoMes` para closer, `contarCallsRealizadas` para SDR/SS — nunca reimplementadas), já pronta para o painel da Fase 8 sem refatoração esperada; UI `/metas` (admin) com tabela de metas por colaborador + dialog definir/editar + seção de acompanhamento semanal reutilizável. Verificado via smoke test próprio contra o Neon real: CLOSER com meta R$8.000 + venda à vista de R$4.000 paga → realizadoMes=4000 batendo com recebidoNoMes real, última semana fecha metaProporcionalAcumulada=8000 (100%); SDR com meta 12 agendamentos + 3 REALIZADO → realizadoMes=3 batendo com contarCallsRealizadas real; página /metas renderizada com sessão admin real (200 OK); dados de teste removidos ao final. META-01..04 completos. tsc/vitest(98)/next build limpos. Próximo: Phase 8 (Painel Self-Service do Colaborador) — agora desbloqueada (depende de 5+6+7, todas completas).
+**Last Activity Description:** Fase 8 (Painel Self-Service do Colaborador) construída e encerrada em uma única sessão lean, planejada diretamente do roadmap/requisitos (sem planner separado): reescrita de `/painel` como o dashboard real do colaborador — cards de meta/realizado/saldo/% e comissão prevista/apurada do mês, gráfico Recharts real de progresso semanal (% esperado vs % atingido, substituindo o gráfico de exemplo da Fase 1.1), tabela de acompanhamento semanal reutilizada de `/metas` (mesmo componente `AcompanhamentoSemanal`), grid agendadas x realizadas para SDR/SS reutilizando `getGridSemanaCorrente`, extrato de comissão linha a linha com seletor de mês (`?mes=`) — tudo lido via as fachadas de service já existentes (`meta.service`, `apuracao.service`, `agendamento.service`), nenhuma lógica de cálculo duplicada. Autorização: o `colaboradorId` usado em toda leitura vem EXCLUSIVAMENTE de `user.colaboradorId` (sessão via `requireUser`/`requireSelfOrAdmin`) — a página não aceita nenhum parâmetro de URL que identifique colaborador, só `?mes=`; ADMIN sem colaboradorId vinculado é direcionado ao dashboard consolidado (Fase 9) em vez de um painel vazio. Verificado via smoke test próprio contra o Neon real com sessões HTTP reais (signUpEmail + sign-in/email reais, cookie de sessão real batendo em `/painel`): CLOSER com meta R$8.000 e venda à vista de R$4.000 paga bateu 50% da meta e comissão apurada de R$120,00 (3%); SDR com meta 12 agendamentos e 3 REALIZADO bateu o realizado e comissão apurada de R$45,00 (R$15/call); painel do closer não vazou nenhum dado do SDR e vice-versa, inclusive tentando `?colaboradorId=<outro>` (ignorado — IDOR confirmado impossível); dados de teste removidos ao final. PAINEL-01..04 completos. tsc/vitest(98)/next build limpos. Próximo: Phase 9 (Dashboard do Gestor) — agora desbloqueada (depende de 5+6+7, todas completas).
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
-- Average duration: 17.9 min
-- Total execution time: 8.54 hours
+- Total plans completed: 25
+- Average duration: 17.6 min
+- Total execution time: 8.87 hours
 
 **By Phase:**
 
@@ -38,10 +38,11 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | 05 | 4 | 71 | 17.75 |
 | 06 | 1 | 55 | 55 |
 | 07 | 3 | 70 | 23.3 |
+| 08 | 1 | 20 | 20 |
 
 **Recent Trend:**
-- Last 5 plans: 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado), 14min (05-02), 12min (05-01)
-- Trend: Fase 6 construída em uma única sessão direta a partir do roadmap/requisitos — domínio puro (TDD) + migração + server layer + UI, verificado via smoke test próprio contra o Neon real (recebido/agendamentos reais batendo com a meta proporcional). Padrão de "planejar+construir na mesma sessão, sem PLAN.md formal" já usado nas Fases 6 e 7 mostra-se consistente para fases médias/pequenas quando os padrões do codebase já estão bem estabelecidos.
+- Last 5 plans: 20min (08, construído direto do roadmap/requisitos sem planner separado, reusando 100% das fachadas de service das Fases 5/6/7), 55min (06, planejado e construído direto do roadmap/requisitos sem planner separado), 70min (07, execução direta lean sem PLAN.md formal), 45min (05-03+05-04 combinado), 14min (05-02)
+- Trend: Fase 8 é a mais rápida até agora entre as fases construídas em sessão única — o painel do colaborador não precisou de nenhuma migração/domínio novo, só orquestrou getAcompanhamentoMeta/getApuracao/getExtrato/getGridSemanaCorrente (já prontos desde as Fases 5/6/7) atrás do guard requireUser/requireSelfOrAdmin já existente. Confirma a decisão de sequenciar Metas (6) e Agendamentos (7) antes do Painel (8): quando as fachadas de leitura já existem e já foram desenhadas pensando no consumidor seguinte, a fase de UI final vira composição pura, sem lógica nova.
 
 **Plan Metrics:**
 
@@ -62,6 +63,7 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 | Phase 05 P03+P04 | 45 | 6 tasks (3 auto + 2 auto + 1 checkpoint auto-aprovado/self-verify) | 15 files |
 | Phase 07 (única sessão) | 70 | domínio+migração+server+UI+wiring+smoke-verify | 17 files |
 | Phase 06 (única sessão) | 55 | domínio(TDD)+migração+server+UI+smoke-verify | 15 files |
+| Phase 08 (única sessão) | 20 | UI /painel (composição) + smoke-verify contra o Neon real | 6 files |
 
 *Updated after each plan completion*
 
@@ -72,6 +74,9 @@ See: .planning/PROJECT.md (updated 2026-07-01)
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Phase 08]: `/painel` deriva o colaboradorId EXCLUSIVAMENTE de `user.colaboradorId` (sessão) — a página não expõe nenhum parâmetro de URL que identifique um colaborador (só `?mes=`), tornando o vetor de IDOR "trocar parâmetro na URL" estruturalmente impossível em vez de apenas bloqueado por checagem (mesmo padrão defensivo de /agendamentos, mas mais estrito: nem ADMIN escolhe outro colaborador aqui).
+- [Phase 08]: ADMIN sem colaboradorId vinculado não recebe um painel self-service vazio — é direcionado para /inicio (dashboard consolidado da Fase 9); mantém a página simples sem branch de "admin vendo o painel de outro colaborador" (esse caminho já existe em /comissoes/[colaboradorId] e /metas).
+- [Phase 08]: Nenhuma migração ou módulo de domínio novo — o painel é pura composição das fachadas de service já existentes (getAcompanhamentoMeta, getApuracao/getExtrato, getGridSemanaCorrente), confirmando a aposta feita nas Fases 6/7 de desenhar essas funções já pensando neste consumidor.
 - [Phase 06]: Regra de proração semanal (Pitfall 8) decidida e documentada em src/domain/metas/proracao.ts: semanas SEGUNDA-DOMINGO, proração por DIAS CORRIDOS (não dias úteis) dentro do mês, meta proporcional ACUMULADA — garante que a última semana de qualquer mês sempre fecha em exatamente 100% da meta mensal, validado contra jul/2026 (início parcial), jun/2026 (início limpo) e fev/2026 (não-bissexto, exatas 4 semanas).
 - [Phase 06]: Meta não é versionada por vigência como plano_comissao — é upsert simples por (colaboradorId, mesReferencia); redefinir sobrescreve, mais simples de corrigir do que reabrir/fechar vigência, e apropriado porque meta é um alvo (não um cálculo histórico a preservar).
 - [Phase 06]: Unidade da meta (VALOR/AGENDAMENTOS) é SEMPRE derivada do papel real do colaborador dentro de meta.service.ts, nunca aceita do formulário/client.
