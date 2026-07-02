@@ -2,6 +2,10 @@
 *.xlsx
 *.xls
 
+# Relatório de validação/reconciliação da importação de histórico (Fase 10)
+# — contém nomes de alunos/colaboradores (PII), nunca versionar.
+import/.output/
+
 # Dependências
 node_modules/
 .pnp

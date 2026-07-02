@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "import": "tsx --conditions=react-server import/importar-historico.ts"
   },
   "prisma": {
     "seed": "tsx --conditions=react-server prisma/seed.ts"
@@ -33,6 +34,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "tw-animate-css": "^1.4.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -21,6 +21,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    // "import/**" cobre os testes de unidade do script de importação de
+    // histórico (Fase 10) — puros, sem @prisma/client/server-only, mesmo
+    // padrão dos módulos de domínio em src/.
+    include: ["src/**/*.test.ts", "import/**/*.test.ts"],
   },
 });
