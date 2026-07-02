@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { VendaForm } from "@/app/(admin)/vendas/venda-form";
+import { ParcelaPagamentoForm } from "@/app/(admin)/vendas/[id]/parcela-pagamento-form";
 
 // Data DATE pura vinda do Postgres (Prisma devolve `Date` em meia-noite
 // UTC) — formata SEMPRE via getters UTC (nunca locais), mesma convenção de
@@ -78,6 +79,14 @@ export default async function VendaDetalhePage({
   const sdrs = colaboradores.filter(
     (c) => c.ativo && (c.papel === "SDR" || c.papel === "SS"),
   );
+
+  // Total recebido nesta venda (PGTO-02 visível): soma simples das parcelas
+  // já PAGAS — uma linha por parcela, sem dupla contagem. Não é o mesmo que
+  // `recebidoNoMes` (que agrega entre vendas por competência, consumido nas
+  // Fases 5/9); aqui é só o total desta venda específica.
+  const totalRecebidoVenda = venda.parcelas
+    .filter((p) => p.statusPagamento === "PAGO")
+    .reduce((soma, p) => soma + Number(p.valorRecebido), 0);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -222,8 +231,16 @@ export default async function VendaDetalhePage({
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
             <CardTitle>Parcelas geradas</CardTitle>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">
+                Total recebido nesta venda
+              </p>
+              <p className="text-sm font-medium">
+                {formatarBRL(totalRecebidoVenda)}
+              </p>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -234,14 +251,17 @@ export default async function VendaDetalhePage({
                   <TableHead>Competência</TableHead>
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Valor previsto</TableHead>
+                  <TableHead>Valor recebido</TableHead>
+                  <TableHead>Pago em</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {venda.parcelas.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={9}
                       className="text-center text-muted-foreground"
                     >
                       Nenhuma parcela gerada.
@@ -264,6 +284,17 @@ export default async function VendaDetalhePage({
                       {formatarBRL(Number(parcela.valorPrevisto))}
                     </TableCell>
                     <TableCell>
+                      {parcela.statusPagamento === "PAGO"
+                        ? formatarBRL(Number(parcela.valorRecebido))
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {parcela.statusPagamento === "PAGO" &&
+                      parcela.dataPagamento
+                        ? formatarDataUTC(parcela.dataPagamento)
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant={
                           parcela.statusPagamento === "PAGO"
@@ -275,6 +306,14 @@ export default async function VendaDetalhePage({
                           ? "Pago"
                           : "Pendente"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <ParcelaPagamentoForm
+                        parcelaId={parcela.id}
+                        valorPrevisto={Number(parcela.valorPrevisto)}
+                        status={parcela.statusPagamento}
+                        bloqueado={venda.fechado}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
