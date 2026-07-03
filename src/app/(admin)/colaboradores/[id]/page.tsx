@@ -45,6 +45,14 @@ function resumoConfigVigente(
       return `${formatarBRL(config.valorFixo as number)} + ${formatarPercentual(config.percentualVariavel as number)}`;
     case "por_calls":
       return `${formatarBRL(config.valorPorCall as number)} por call`;
+    case "salario_bonus_atingimento": {
+      const salarioFixo = config.salarioFixo as number;
+      const faixas = config.faixas as { minAtingimento: number; bonus: number }[];
+      const faixasTexto = faixas
+        .map((faixa) => `${faixa.minAtingimento}%: ${formatarBRL(faixa.bonus)}`)
+        .join(" · ");
+      return `${formatarBRL(salarioFixo)} fixo + bônus (${faixasTexto})`;
+    }
     default:
       return "-";
   }
@@ -55,6 +63,7 @@ const LABEL_TIPO: Record<string, string> = {
   progressivo_atingimento: "Progressivo por atingimento",
   fixo_variavel: "Fixo + variável",
   por_calls: "Por calls",
+  salario_bonus_atingimento: "Salário fixo + bônus por atingimento",
 };
 
 // Tela admin de detalhe do colaborador (COLAB-01..06): dados/contato/PIX,

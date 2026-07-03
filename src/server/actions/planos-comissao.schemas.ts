@@ -57,6 +57,39 @@ export const configPorCallsSchema = z.object({
   valorPorCall: valorSchema,
 });
 
+// `salario_bonus_atingimento` (Closer Jr / OTE): salário fixo SEMPRE pago +
+// bônus por faixa de atingimento da meta (valor FIXO em R$, não percentual
+// sobre vendas). ATENÇÃO À ESCALA: `minAtingimento` é um PERCENTUAL inteiro
+// (71 = 71% da meta), diferente de `deAtingimento` de progressivo (fração,
+// 0.71) — ver comentário de escala em
+// src/domain/comissao/planos/salario-bonus-atingimento.ts.
+const faixaSalarioBonusSchema = z.object({
+  minAtingimento: z.number().min(0),
+  bonus: valorSchema,
+});
+
+export const configSalarioBonusAtingimentoSchema = z
+  .object({
+    salarioFixo: valorSchema,
+    faixas: z.array(faixaSalarioBonusSchema).min(1, "Informe ao menos uma faixa"),
+  })
+  .refine((data) => data.faixas[0]?.minAtingimento === 0, {
+    message: "A primeira faixa deve começar em 0% de atingimento",
+    path: ["faixas"],
+  })
+  .refine(
+    (data) =>
+      data.faixas.every(
+        (faixa, i) =>
+          i === 0 || faixa.minAtingimento > data.faixas[i - 1].minAtingimento,
+      ),
+    {
+      message:
+        "As faixas devem estar em ordem crescente de minAtingimento, sem duplicatas",
+      path: ["faixas"],
+    },
+  );
+
 // --- Discriminated union por tipo ------------------------------------
 //
 // Cada campo comum (colaboradorId, vigenciaInicio) é declarado em CADA
@@ -96,6 +129,12 @@ export const criarPlanoComissaoSchema = z.discriminatedUnion("tipo", [
     tipo: z.literal("por_calls"),
     config: configPorCallsSchema,
   }),
+  z.object({
+    colaboradorId: colaboradorIdSchema,
+    vigenciaInicio: vigenciaInicioSchema,
+    tipo: z.literal("salario_bonus_atingimento"),
+    config: configSalarioBonusAtingimentoSchema,
+  }),
 ]);
 
 // Union isolada de {tipo, config} (sem os campos comuns), útil para validar
@@ -109,6 +148,10 @@ export const planoConfigSchema = z.discriminatedUnion("tipo", [
   }),
   z.object({ tipo: z.literal("fixo_variavel"), config: configFixoVariavelSchema }),
   z.object({ tipo: z.literal("por_calls"), config: configPorCallsSchema }),
+  z.object({
+    tipo: z.literal("salario_bonus_atingimento"),
+    config: configSalarioBonusAtingimentoSchema,
+  }),
 ]);
 
 export type PlanoConfig = z.infer<typeof planoConfigSchema>;

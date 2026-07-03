@@ -37,14 +37,17 @@ enum Papel {
   SS
 }
 
-// Os 4 formatos de plano de comissão suportados pelo motor (Fase 5). A forma
-// da `config` (JSONB) de cada tipo é validada por Zod em
+// Os formatos de plano de comissão suportados pelo motor (Fase 5 + v1.2). A
+// forma da `config` (JSONB) de cada tipo é validada por Zod em
 // src/server/actions/planos-comissao.schemas.ts, nunca pelo Postgres.
 enum PlanoTipo {
   percentual_fixo
   progressivo_atingimento
   fixo_variavel
   por_calls
+  // v1.2: salário fixo + bônus por faixa de atingimento da meta (Closer Jr /
+  // OTE) — bônus é valor FIXO em R$ por faixa, não percentual sobre vendas.
+  salario_bonus_atingimento
 }
 
 // ============================================================
@@ -219,6 +222,17 @@ model Colaborador {
 //     ex.: { "valorFixo": 2000.00, "percentualVariavel": 0.01 }
 //   por_calls:                { valorPorCall: number }
 //     ex.: { "valorPorCall": 15.00 }
+//   salario_bonus_atingimento: { salarioFixo: number, faixas: [{ minAtingimento: number, bonus: number }] }
+//     ATENÇÃO: minAtingimento é PERCENTUAL inteiro (71 = 71%), não fração —
+//     diferente de deAtingimento (fração) do progressivo_atingimento acima.
+//     ex.: { "salarioFixo": 4000.00, "faixas": [
+//             { "minAtingimento": 0,   "bonus": 0 },
+//             { "minAtingimento": 71,  "bonus": 2000 },
+//             { "minAtingimento": 86,  "bonus": 3000 },
+//             { "minAtingimento": 100, "bonus": 4000 },
+//             { "minAtingimento": 120, "bonus": 5000 },
+//             { "minAtingimento": 150, "bonus": 8000 },
+//             { "minAtingimento": 200, "bonus": 12000 }] }
 model PlanoComissao {
   id             String      @id @default(cuid())
   colaboradorId  String

@@ -24,6 +24,11 @@ vi.mock("@/server/services/plano-comissao.service", () => ({
   getPlanoVigente: (...args: unknown[]) => getPlanoVigenteMock(...args),
 }));
 
+const getMetaMock = vi.fn();
+vi.mock("@/server/services/meta.service", () => ({
+  getMeta: (...args: unknown[]) => getMetaMock(...args),
+}));
+
 const recebidoNoMesMock = vi.fn();
 vi.mock("@/server/services/recebimento.service", () => ({
   recebidoNoMes: (...args: unknown[]) => recebidoNoMesMock(...args),
@@ -95,6 +100,7 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
     registrarAuditMock.mockReset();
     dbTransactionMock.mockReset();
     contarCallsRealizadasMock.mockReset();
+    getMetaMock.mockReset();
   });
 
   it("chama o motor puro com valorRecebidoNoMes (porCloser) e grava o snapshot com mesPagamento = mês+1", async () => {
@@ -196,6 +202,136 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
     await apurarComissao("colab-1", "2026-06-01");
 
     expect(contarCallsRealizadasMock).not.toHaveBeenCalled();
+  });
+
+  it("plano progressivo_atingimento: busca a meta VALOR e calcula percentualAtingimento = recebido/meta", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-progressivo",
+      tipo: "progressivo_atingimento",
+      config: {
+        faixas: [
+          { deAtingimento: 0, percentual: 0.005 },
+          { deAtingimento: 1.0, percentual: 0.0125 },
+        ],
+      },
+    });
+    recebidoNoMesMock.mockResolvedValue({
+      total: 100000,
+      porCloser: { "colab-1": 100000 },
+      porSdr: {},
+    });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "colab-1",
+      mesReferencia: "2026-06-01",
+      unidade: "VALOR",
+      valorMeta: 100000,
+      metaAgendamentos: null,
+    });
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-1" });
+
+    await apurarComissao("colab-1", "2026-06-01");
+
+    expect(getMetaMock).toHaveBeenCalledWith("colab-1", "2026-06-01");
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        // 100000/100000 = 1.00 (100%) -> faixa 1.00 (1.25%) -> 1250.00
+        percentualAplicado: 0.0125,
+        valorComissao: 1250.0,
+        inputSnapshot: expect.objectContaining({ percentualAtingimento: 1 }),
+      }),
+    );
+  });
+
+  it("plano progressivo_atingimento SEM meta definida: percentualAtingimento 0, nunca divide por zero", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-progressivo",
+      tipo: "progressivo_atingimento",
+      config: { faixas: [{ deAtingimento: 0, percentual: 0.005 }] },
+    });
+    recebidoNoMesMock.mockResolvedValue({
+      total: 5000,
+      porCloser: { "colab-1": 5000 },
+      porSdr: {},
+    });
+    getMetaMock.mockResolvedValue(null);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-1" });
+
+    await apurarComissao("colab-1", "2026-06-01");
+
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        inputSnapshot: expect.objectContaining({ percentualAtingimento: 0 }),
+      }),
+    );
+  });
+
+  it("plano salario_bonus_atingimento: busca a meta, calcula atingimento e grava salarioFixo/bonus/total no inputSnapshot.detalhamento", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-closer-jr",
+      tipo: "salario_bonus_atingimento",
+      config: {
+        salarioFixo: 4000,
+        faixas: [
+          { minAtingimento: 0, bonus: 0 },
+          { minAtingimento: 100, bonus: 4000 },
+        ],
+      },
+    });
+    recebidoNoMesMock.mockResolvedValue({
+      total: 233000,
+      porCloser: { "colab-1": 233000 },
+      porSdr: {},
+    });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "colab-1",
+      mesReferencia: "2026-06-01",
+      unidade: "VALOR",
+      valorMeta: 233000,
+      metaAgendamentos: null,
+    });
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-1" });
+
+    await apurarComissao("colab-1", "2026-06-01");
+
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        valorComissao: 8000.0,
+        percentualAplicado: null,
+        inputSnapshot: expect.objectContaining({
+          percentualAtingimento: 1,
+          detalhamento: expect.objectContaining({
+            salarioFixo: 4000,
+            bonus: 4000,
+            total: 8000,
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("plano percentual_fixo: NÃO chama getMeta (só progressivo/salario_bonus precisam de atingimento)", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-1",
+      tipo: "percentual_fixo",
+      config: { percentual: 0.03 },
+    });
+    recebidoNoMesMock.mockResolvedValue({
+      total: 1000,
+      porCloser: { "colab-1": 1000 },
+      porSdr: {},
+    });
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-1" });
+
+    await apurarComissao("colab-1", "2026-06-01");
+
+    expect(getMetaMock).not.toHaveBeenCalled();
   });
 });
 

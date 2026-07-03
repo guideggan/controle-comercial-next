@@ -15,6 +15,7 @@ import {
   definirObservacaoApuracaoRow,
 } from "@/server/repositories/comissao-apurada.repo";
 import { getPlanoVigente } from "@/server/services/plano-comissao.service";
+import { getMeta } from "@/server/services/meta.service";
 import { recebidoNoMes } from "@/server/services/recebimento.service";
 import { listarRecebimentosDoMes } from "@/server/repositories/recebimento.repo";
 import { listarColaboradores } from "@/server/repositories/colaborador.repo";
@@ -91,14 +92,34 @@ export async function apurarComissao(
       ? await contarCallsRealizadas(colaboradorId, mesReferencia)
       : 0);
 
+  // Fase v1.2: percentualAtingimento (fração, 1 = 100%) agora é REAL — busca
+  // a meta VALOR do colaborador na competência e divide o já apurado
+  // valorRecebidoNoMes por ela. Substituiu o placeholder(0) documentado em
+  // types.ts/engine.ts (05-01), que valia tanto para progressivo_atingimento
+  // (nunca tinha sido ligado à Fase 6/Metas) quanto para o novo tipo
+  // salario_bonus_atingimento. Sem meta definida (ou meta=0): atingimento 0,
+  // nunca divide por zero. opts.percentualAtingimento continua aceito como
+  // override explícito (ex.: reapuração histórica, testes).
+  let percentualAtingimento = opts.percentualAtingimento;
+  if (percentualAtingimento === undefined) {
+    const precisaAtingimento =
+      plano.tipo === "progressivo_atingimento" ||
+      plano.tipo === "salario_bonus_atingimento";
+    if (precisaAtingimento) {
+      const meta = await getMeta(colaboradorId, mesReferencia);
+      const metaValor = meta?.unidade === "VALOR" ? (meta.valorMeta ?? 0) : 0;
+      percentualAtingimento = metaValor > 0 ? valorRecebidoNoMes / metaValor : 0;
+    } else {
+      percentualAtingimento = 0;
+    }
+  }
+
   const input: ComissaoInput = {
     colaboradorId,
     mesReferencia,
     plano: planoConfig,
     valorRecebidoNoMes,
-    // Ponto de integração pluggable com Fase 6 (Metas), ainda não existente
-    // — default 0 documentado em types.ts/engine.ts (05-01).
-    percentualAtingimento: opts.percentualAtingimento ?? 0,
+    percentualAtingimento,
     numeroCallsRealizadas,
   };
 
@@ -116,7 +137,14 @@ export async function apurarComissao(
     // ComissaoInput é uma interface (sem index signature), então precisa de
     // um cast explícito para o tipo JSONB do Prisma — o shape em si já é
     // JSON-serializável (só primitivos/objeto plano), sem perda de dados.
-    inputSnapshot: input as unknown as Prisma.InputJsonValue,
+    // `detalhamento` (breakdown do motor — ex.: salarioFixo/bonus/total do
+    // Closer Jr, faixaEscolhida do progressivo) é anexado ao lado dos campos
+    // de ComissaoInput, para o extrato/UI exibir sem precisar de colunas
+    // novas em ComissaoApurada (COMIS-05: snapshot único de auditoria).
+    inputSnapshot: {
+      ...input,
+      detalhamento: resultado.detalhamento,
+    } as unknown as Prisma.InputJsonValue,
     calculadoPor: opts.calculadoPor ?? null,
   });
 

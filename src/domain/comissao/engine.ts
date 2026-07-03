@@ -12,6 +12,7 @@ import { calcularFixoVariavel } from "./planos/fixo-variavel";
 import { calcularPercentualFixo } from "./planos/percentual-fixo";
 import { calcularPorCalls } from "./planos/por-calls";
 import { calcularProgressivoAtingimento } from "./planos/progressivo-atingimento";
+import { calcularSalarioBonusAtingimento } from "./planos/salario-bonus-atingimento";
 import type { ComissaoInput, ComissaoResultado } from "./types";
 
 export function calcularComissao(input: ComissaoInput): ComissaoResultado {
@@ -42,6 +43,19 @@ export function calcularComissao(input: ComissaoInput): ComissaoResultado {
       return calcularPorCalls({
         numeroCallsRealizadas: input.numeroCallsRealizadas ?? 0,
         valorPorCall: plano.config.valorPorCall,
+      });
+
+    case "salario_bonus_atingimento":
+      // Conversão de escala fração -> percentual (única neste dispatch):
+      // ComissaoInput.percentualAtingimento é fração (1 = 100%, mesma
+      // convenção de progressivo_atingimento); o formato Closer Jr modela
+      // suas faixas em percentual inteiro (71, 86, 100...) — ver comentário
+      // de escala em planos/salario-bonus-atingimento.ts.
+      return calcularSalarioBonusAtingimento({
+        valorRecebido: valorRecebidoNoMes,
+        salarioFixo: plano.config.salarioFixo,
+        faixas: plano.config.faixas,
+        atingimentoPercent: (input.percentualAtingimento ?? 0) * 100,
       });
 
     default: {

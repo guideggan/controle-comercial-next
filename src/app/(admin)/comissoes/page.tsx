@@ -33,6 +33,7 @@ const LABEL_TIPO_PLANO: Record<string, string> = {
   progressivo_atingimento: "Progressivo por atingimento",
   fixo_variavel: "Fixo + variável",
   por_calls: "Por calls",
+  salario_bonus_atingimento: "Salário fixo + bônus por atingimento",
 };
 
 // Mês corrente como "YYYY-MM-01", timezone-safe (getters UTC do instante

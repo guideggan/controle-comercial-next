@@ -11,12 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Rótulos pt-BR dos 4 formatos — mesma fonte de tipo do plano-form.tsx.
+// Rótulos pt-BR dos formatos — mesma fonte de tipo do plano-form.tsx.
 const LABEL_TIPO: Record<PlanoComissao["tipo"], string> = {
   percentual_fixo: "% fixo",
   progressivo_atingimento: "Progressivo por atingimento",
   fixo_variavel: "Fixo + variável",
   por_calls: "Por calls",
+  salario_bonus_atingimento: "Salário fixo + bônus por atingimento",
 };
 
 // Formata a `config` (JSONB) de um plano em um resumo curto pt-BR, usando os
@@ -43,6 +44,14 @@ function resumoConfig(plano: PlanoComissao): string {
       return `${formatarBRL(config.valorFixo as number)} + ${formatarPercentual(config.percentualVariavel as number)}`;
     case "por_calls":
       return `${formatarBRL(config.valorPorCall as number)} por call`;
+    case "salario_bonus_atingimento": {
+      const salarioFixo = config.salarioFixo as number;
+      const faixas = config.faixas as { minAtingimento: number; bonus: number }[];
+      const faixasTexto = faixas
+        .map((faixa) => `${faixa.minAtingimento}%: ${formatarBRL(faixa.bonus)}`)
+        .join(" · ");
+      return `${formatarBRL(salarioFixo)} fixo + bônus (${faixasTexto})`;
+    }
     default:
       return "-";
   }

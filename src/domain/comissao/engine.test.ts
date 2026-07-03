@@ -197,6 +197,117 @@ describe("calcularComissao — por_calls", () => {
   });
 });
 
+describe("calcularComissao — salario_bonus_atingimento (Closer Jr / OTE)", () => {
+  // Faixas do modelo Closer Jr confirmado pelo usuário — minAtingimento em
+  // PERCENTUAL inteiro (71 = 71%), NÃO fração (ver comentário de escala em
+  // planos/salario-bonus-atingimento.ts).
+  const faixas = [
+    { minAtingimento: 0, bonus: 0 },
+    { minAtingimento: 71, bonus: 2000 },
+    { minAtingimento: 86, bonus: 3000 },
+    { minAtingimento: 100, bonus: 4000 },
+    { minAtingimento: 120, bonus: 5000 },
+    { minAtingimento: 150, bonus: 8000 },
+    { minAtingimento: 200, bonus: 12000 },
+  ];
+  const salarioFixo = 4000;
+
+  function inputComAtingimento(percentualAtingimento: number): ComissaoInput {
+    return {
+      colaboradorId: "closer-jr",
+      mesReferencia: "2026-01-01",
+      plano: {
+        tipo: "salario_bonus_atingimento",
+        config: { salarioFixo, faixas },
+      },
+      valorRecebidoNoMes: 100000,
+      // Convenção do motor: fração (1 = 100%) — 0.70 = 70% de atingimento.
+      percentualAtingimento,
+    };
+  }
+
+  it("70% de atingimento (abaixo de 71%): bônus 0 -> total 4000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(0.7));
+    expect(resultado.valorComissao).toBe(4000.0);
+    expect(resultado.percentualAplicado).toBeNull();
+    expect(resultado.detalhamento).toMatchObject({
+      salarioFixo: 4000,
+      bonus: 0,
+      total: 4000,
+    });
+  });
+
+  it("71% de atingimento: bônus 2000 -> total 6000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(0.71));
+    expect(resultado.valorComissao).toBe(6000.0);
+    expect(resultado.detalhamento).toMatchObject({ bonus: 2000, total: 6000 });
+  });
+
+  it("86% de atingimento: bônus 3000 -> total 7000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(0.86));
+    expect(resultado.valorComissao).toBe(7000.0);
+  });
+
+  it("99.99% de atingimento (abaixo de 100%): ainda na faixa 86% -> total 7000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(0.9999));
+    expect(resultado.valorComissao).toBe(7000.0);
+  });
+
+  it("100% de atingimento: bônus 4000 -> total 8000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(1.0));
+    expect(resultado.valorComissao).toBe(8000.0);
+  });
+
+  it("120% de atingimento: bônus 5000 -> total 9000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(1.2));
+    expect(resultado.valorComissao).toBe(9000.0);
+  });
+
+  it("150% de atingimento: bônus 8000 -> total 12000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(1.5));
+    expect(resultado.valorComissao).toBe(12000.0);
+  });
+
+  it("200% de atingimento: bônus 12000 -> total 16000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(2.0));
+    expect(resultado.valorComissao).toBe(16000.0);
+  });
+
+  it("300% de atingimento (acima da maior faixa): permanece na faixa 200% -> total 16000.00", () => {
+    const resultado = calcularComissao(inputComAtingimento(3.0));
+    expect(resultado.valorComissao).toBe(16000.0);
+  });
+
+  it("percentualAtingimento ausente usa default 0 -> faixa 0%, bônus 0 -> total 4000.00", () => {
+    const input: ComissaoInput = {
+      colaboradorId: "closer-jr",
+      mesReferencia: "2026-01-01",
+      plano: {
+        tipo: "salario_bonus_atingimento",
+        config: { salarioFixo, faixas },
+      },
+      valorRecebidoNoMes: 0,
+    };
+    expect(calcularComissao(input).valorComissao).toBe(4000.0);
+  });
+
+  it("salário fixo é pago mesmo com valorRecebidoNoMes 0 (não depende de vendas, só de atingimento)", () => {
+    const input: ComissaoInput = {
+      colaboradorId: "closer-jr",
+      mesReferencia: "2026-01-01",
+      plano: {
+        tipo: "salario_bonus_atingimento",
+        config: { salarioFixo, faixas },
+      },
+      valorRecebidoNoMes: 0,
+      percentualAtingimento: 0,
+    };
+    const resultado = calcularComissao(input);
+    expect(resultado.valorComissao).toBe(4000.0);
+    expect(resultado.valorBase).toBe(0);
+  });
+});
+
 describe("calcularComissao — dispatch por tipo desconhecido", () => {
   it("lança erro para um tipo de plano não suportado", () => {
     const input = {

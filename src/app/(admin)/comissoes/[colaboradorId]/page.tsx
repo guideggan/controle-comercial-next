@@ -42,7 +42,35 @@ const LABEL_TIPO_PLANO: Record<string, string> = {
   progressivo_atingimento: "Progressivo por atingimento",
   fixo_variavel: "Fixo + variável",
   por_calls: "Por calls",
+  salario_bonus_atingimento: "Salário fixo + bônus por atingimento",
 };
+
+// Breakdown salário fixo / bônus / total do formato salario_bonus_atingimento
+// (Closer Jr / OTE) — gravado por apuracao.service em
+// ComissaoApurada.inputSnapshot.detalhamento (nenhuma coluna nova, COMIS-05).
+// `atingimentoPercent`/`faixaEscolhida.minAtingimento` aqui são PERCENTUAL
+// inteiro (71 = 71%), NÃO fração — ver comentário de escala em
+// planos/salario-bonus-atingimento.ts.
+type DetalhamentoSalarioBonus = {
+  salarioFixo: number;
+  bonus: number;
+  total: number;
+  atingimentoPercent: number;
+  faixaEscolhida: { minAtingimento: number; bonus: number };
+};
+
+function extrairDetalhamentoSalarioBonus(
+  inputSnapshot: unknown,
+): DetalhamentoSalarioBonus | null {
+  if (!inputSnapshot || typeof inputSnapshot !== "object") return null;
+  const detalhamento = (inputSnapshot as Record<string, unknown>).detalhamento;
+  if (!detalhamento || typeof detalhamento !== "object") return null;
+  const d = detalhamento as Record<string, unknown>;
+  if (typeof d.salarioFixo !== "number" || typeof d.bonus !== "number") {
+    return null;
+  }
+  return d as DetalhamentoSalarioBonus;
+}
 
 function mesCorrenteUTC(): string {
   const agora = new Date();
@@ -80,10 +108,14 @@ function montarFormula(
   valorBase: number,
   percentualAplicado: number | null,
   valorComissao: number,
+  detalhamentoSalarioBonus: DetalhamentoSalarioBonus | null,
 ): string {
   if (tipoPlano === "por_calls") {
     const valorPorCall = valorBase > 0 ? valorComissao / valorBase : 0;
     return `${valorBase} calls × ${formatarBRL(valorPorCall)} = ${formatarBRL(valorComissao)}`;
+  }
+  if (tipoPlano === "salario_bonus_atingimento" && detalhamentoSalarioBonus) {
+    return `${formatarBRL(detalhamentoSalarioBonus.salarioFixo)} (fixo) + ${formatarBRL(detalhamentoSalarioBonus.bonus)} (bônus, ${detalhamentoSalarioBonus.atingimentoPercent.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}% de atingimento) = ${formatarBRL(detalhamentoSalarioBonus.total)}`;
   }
   if (percentualAplicado !== null) {
     return `${formatarBRL(valorBase)} × ${formatarPercentual(percentualAplicado)} = ${formatarBRL(valorComissao)}`;
@@ -114,6 +146,11 @@ export default async function ExtratoComissaoPage({
   }
 
   const totalLinhas = linhas.reduce((soma, l) => soma + l.valorRecebido, 0);
+
+  const detalhamentoSalarioBonus =
+    apuracao?.tipoPlano === "salario_bonus_atingimento"
+      ? extrairDetalhamentoSalarioBonus(apuracao.inputSnapshot)
+      : null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -208,6 +245,49 @@ export default async function ExtratoComissaoPage({
           </Card>
         )}
 
+        {detalhamentoSalarioBonus && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Salário fixo + bônus por atingimento</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Salário fixo</p>
+                <p className="text-sm font-medium">
+                  {formatarBRL(detalhamentoSalarioBonus.salarioFixo)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Atingimento da meta
+                </p>
+                <p className="text-sm font-medium">
+                  {detalhamentoSalarioBonus.atingimentoPercent.toLocaleString(
+                    "pt-BR",
+                    { maximumFractionDigits: 2 },
+                  )}
+                  % (faixa a partir de{" "}
+                  {detalhamentoSalarioBonus.faixaEscolhida.minAtingimento}%)
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Bônus</p>
+                <p className="text-sm font-medium">
+                  {formatarBRL(detalhamentoSalarioBonus.bonus)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Total (fixo + bônus)
+                </p>
+                <p className="text-sm font-semibold">
+                  {formatarBRL(detalhamentoSalarioBonus.total)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Linha a linha</CardTitle>
@@ -278,6 +358,7 @@ export default async function ExtratoComissaoPage({
                     ? Number(apuracao.percentualAplicado)
                     : null,
                   Number(apuracao.valorComissao),
+                  detalhamentoSalarioBonus,
                 )}
               </span>
             </CardContent>

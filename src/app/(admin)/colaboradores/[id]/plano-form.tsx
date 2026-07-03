@@ -44,6 +44,10 @@ const TIPOS_PLANO = [
   { value: "progressivo_atingimento", label: "Progressivo por atingimento" },
   { value: "fixo_variavel", label: "Fixo + variável" },
   { value: "por_calls", label: "Por calls realizadas" },
+  {
+    value: "salario_bonus_atingimento",
+    label: "Salário fixo + bônus por atingimento",
+  },
 ] as const;
 
 type FormValues = {
@@ -57,6 +61,11 @@ type FormValues = {
   valorFixo: string; // fixo_variavel
   percentualVariavel: string; // fixo_variavel — em %
   valorPorCall: string; // por_calls
+  salarioFixo: string; // salario_bonus_atingimento — em R$
+  // salario_bonus_atingimento — minAtingimento em % INTEIRO (ex. "71"), NÃO
+  // convertido para fração no submit (diferente de faixas.deAtingimento
+  // acima) — ver comentário de escala em planos-comissao.schemas.ts.
+  faixasBonus: { minAtingimento: string; bonus: string }[];
 };
 
 function valoresPadrao(): FormValues {
@@ -70,6 +79,16 @@ function valoresPadrao(): FormValues {
     valorFixo: "",
     percentualVariavel: "",
     valorPorCall: "",
+    salarioFixo: "",
+    faixasBonus: [
+      { minAtingimento: "0", bonus: "0" },
+      { minAtingimento: "71", bonus: "2000" },
+      { minAtingimento: "86", bonus: "3000" },
+      { minAtingimento: "100", bonus: "4000" },
+      { minAtingimento: "120", bonus: "5000" },
+      { minAtingimento: "150", bonus: "8000" },
+      { minAtingimento: "200", bonus: "12000" },
+    ],
   };
 }
 
@@ -98,6 +117,15 @@ export function PlanoForm({
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "faixas",
+  });
+
+  const {
+    fields: fieldsBonus,
+    append: appendBonus,
+    remove: removeBonus,
+  } = useFieldArray({
+    control: form.control,
+    name: "faixasBonus",
   });
 
   const tipoSelecionado = form.watch("tipo");
@@ -136,11 +164,25 @@ export function PlanoForm({
           percentualVariavel: Number(values.percentualVariavel) / 100,
         },
       };
-    } else {
+    } else if (values.tipo === "por_calls") {
       payload = {
         ...base,
         tipo: "por_calls",
         config: { valorPorCall: Number(values.valorPorCall) },
+      };
+    } else {
+      payload = {
+        ...base,
+        tipo: "salario_bonus_atingimento",
+        config: {
+          salarioFixo: Number(values.salarioFixo),
+          // minAtingimento fica em % INTEIRO (sem dividir por 100) —
+          // convenção diferente de progressivo_atingimento (ver schema).
+          faixas: values.faixasBonus.map((faixa) => ({
+            minAtingimento: Number(faixa.minAtingimento),
+            bonus: Number(faixa.bonus),
+          })),
+        },
       };
     }
 
@@ -412,6 +454,109 @@ export function PlanoForm({
                   </FormItem>
                 )}
               />
+            )}
+
+            {tipoSelecionado === "salario_bonus_atingimento" && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="salarioFixo"
+                  rules={{ required: "Informe o salário fixo" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Salário fixo (R$)</FormLabel>
+                      <FormControl
+                        render={
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Ex.: 4000"
+                            {...field}
+                          />
+                        }
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex flex-col gap-3">
+                  <FormLabel>Bônus por faixa de atingimento da meta</FormLabel>
+                  {fieldsBonus.map((item, index) => (
+                    <div key={item.id} className="flex items-end gap-2">
+                      <FormField
+                        control={form.control}
+                        name={`faixasBonus.${index}.minAtingimento`}
+                        rules={{ required: "Obrigatório" }}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs font-normal text-muted-foreground">
+                              A partir de (% da meta)
+                            </FormLabel>
+                            <FormControl
+                              render={
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="0"
+                                  placeholder="Ex.: 71"
+                                  {...field}
+                                />
+                              }
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`faixasBonus.${index}.bonus`}
+                        rules={{ required: "Obrigatório" }}
+                        render={({ field }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-xs font-normal text-muted-foreground">
+                              Bônus (R$)
+                            </FormLabel>
+                            <FormControl
+                              render={
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="Ex.: 2000"
+                                  {...field}
+                                />
+                              }
+                            />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={fieldsBonus.length <= 1}
+                        onClick={() => removeBonus(index)}
+                        aria-label="Remover faixa"
+                      >
+                        <Trash2Icon />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      appendBonus({ minAtingimento: "", bonus: "" })
+                    }
+                  >
+                    <PlusIcon /> Adicionar faixa
+                  </Button>
+                </div>
+              </>
             )}
 
             <DialogFooter>
