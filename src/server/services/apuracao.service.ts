@@ -92,23 +92,55 @@ export async function apurarComissao(
       ? await contarCallsRealizadas(colaboradorId, mesReferencia)
       : 0);
 
-  // Fase v1.2: percentualAtingimento (fração, 1 = 100%) agora é REAL — busca
-  // a meta VALOR do colaborador na competência e divide o já apurado
-  // valorRecebidoNoMes por ela. Substituiu o placeholder(0) documentado em
-  // types.ts/engine.ts (05-01), que valia tanto para progressivo_atingimento
-  // (nunca tinha sido ligado à Fase 6/Metas) quanto para o novo tipo
-  // salario_bonus_atingimento. Sem meta definida (ou meta=0): atingimento 0,
-  // nunca divide por zero. opts.percentualAtingimento continua aceito como
-  // override explícito (ex.: reapuração histórica, testes).
+  // Fase v1.2/v1.3: percentualAtingimento (fração, 1 = 100%) agora é REAL —
+  // busca a meta do colaborador na competência e divide o realizado pela
+  // meta, BRANCHING pela unidade da meta (nunca assume VALOR):
+  //   - unidade VALOR (closer): recebidoNoMes(colaborador) / valorMeta.
+  //   - unidade AGENDAMENTOS (SDR/SS): contarCallsRealizadas(colaborador,
+  //     mês) / metaAgendamentos — a MESMA fonte única de reuniões
+  //     REALIZADAS usada pelo painel de meta (Fase 6/7, AGEND-02). Antes da
+  //     v1.3 este branch não existia: SDR/SS sempre caíam no `else` de
+  //     unidade!=="VALOR" => metaValor=0 => atingimento sempre 0,
+  //     zerando bônus de qualquer plano por atingimento configurado para
+  //     SDR/SS. Sem meta definida (ou meta=0): atingimento 0, nunca divide
+  //     por zero. opts.percentualAtingimento continua aceito como override
+  //     explícito (ex.: reapuração histórica, testes).
   let percentualAtingimento = opts.percentualAtingimento;
+  let atingimentoDetalhe: {
+    unidade: "VALOR" | "AGENDAMENTOS";
+    numerador: number;
+    denominador: number;
+  } | null = null;
   if (percentualAtingimento === undefined) {
     const precisaAtingimento =
       plano.tipo === "progressivo_atingimento" ||
       plano.tipo === "salario_bonus_atingimento";
     if (precisaAtingimento) {
       const meta = await getMeta(colaboradorId, mesReferencia);
-      const metaValor = meta?.unidade === "VALOR" ? (meta.valorMeta ?? 0) : 0;
-      percentualAtingimento = metaValor > 0 ? valorRecebidoNoMes / metaValor : 0;
+      if (meta?.unidade === "VALOR") {
+        const metaValor = meta.valorMeta ?? 0;
+        percentualAtingimento = metaValor > 0 ? valorRecebidoNoMes / metaValor : 0;
+        atingimentoDetalhe = {
+          unidade: "VALOR",
+          numerador: valorRecebidoNoMes,
+          denominador: metaValor,
+        };
+      } else if (meta?.unidade === "AGENDAMENTOS") {
+        const metaReunioes = meta.metaAgendamentos ?? 0;
+        const reunioesRealizadas = await contarCallsRealizadas(
+          colaboradorId,
+          mesReferencia,
+        );
+        percentualAtingimento =
+          metaReunioes > 0 ? reunioesRealizadas / metaReunioes : 0;
+        atingimentoDetalhe = {
+          unidade: "AGENDAMENTOS",
+          numerador: reunioesRealizadas,
+          denominador: metaReunioes,
+        };
+      } else {
+        percentualAtingimento = 0;
+      }
     } else {
       percentualAtingimento = 0;
     }
@@ -141,9 +173,17 @@ export async function apurarComissao(
     // Closer Jr, faixaEscolhida do progressivo) é anexado ao lado dos campos
     // de ComissaoInput, para o extrato/UI exibir sem precisar de colunas
     // novas em ComissaoApurada (COMIS-05: snapshot único de auditoria).
+    // `atingimento` (v1.3): numerador/denominador/unidade que originaram
+    // percentualAtingimento — só presente quando o plano precisa de
+    // atingimento E há meta definida; permite ao extrato mostrar "30/45
+    // reuniões" (SDR/SS) ou "R$ recebido/meta" (closer) em vez de só a
+    // fração final.
     inputSnapshot: {
       ...input,
-      detalhamento: resultado.detalhamento,
+      detalhamento: {
+        ...resultado.detalhamento,
+        ...(atingimentoDetalhe ? { atingimento: atingimentoDetalhe } : {}),
+      },
     } as unknown as Prisma.InputJsonValue,
     calculadoPor: opts.calculadoPor ?? null,
   });

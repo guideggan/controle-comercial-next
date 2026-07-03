@@ -315,6 +315,172 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
     );
   });
 
+  it("SDR/SS (meta AGENDAMENTOS) + salario_bonus_atingimento: 40/40 realizadas = 100% -> faixa 100%", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-sdr-jr",
+      tipo: "salario_bonus_atingimento",
+      config: {
+        salarioFixo: 3000,
+        faixas: [
+          { minAtingimento: 0, bonus: 0 },
+          { minAtingimento: 71, bonus: 1500 },
+          { minAtingimento: 100, bonus: 3000 },
+        ],
+      },
+    });
+    // recebido não deve entrar no cálculo do bônus para SDR/SS — mantém um
+    // valor não-zero de propósito para provar que não é somado ao total.
+    recebidoNoMesMock.mockResolvedValue({
+      total: 500,
+      porCloser: {},
+      porSdr: { "sdr-1": 500 },
+    });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "sdr-1",
+      mesReferencia: "2026-07-01",
+      unidade: "AGENDAMENTOS",
+      valorMeta: null,
+      metaAgendamentos: 40,
+    });
+    contarCallsRealizadasMock.mockResolvedValue(40);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-sdr" });
+
+    await apurarComissao("sdr-1", "2026-07-01");
+
+    expect(contarCallsRealizadasMock).toHaveBeenCalledWith(
+      "sdr-1",
+      "2026-07-01",
+    );
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        // salário 3000 + bônus 3000 (faixa 100%) = 6000 — SEM somar o
+        // recebido (500) de porSdr, provando que não há dupla contagem.
+        valorComissao: 6000,
+        percentualAplicado: null,
+        inputSnapshot: expect.objectContaining({
+          percentualAtingimento: 1,
+          detalhamento: expect.objectContaining({
+            salarioFixo: 3000,
+            bonus: 3000,
+            total: 6000,
+            atingimento: {
+              unidade: "AGENDAMENTOS",
+              numerador: 40,
+              denominador: 40,
+            },
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("SDR/SS: 45/45 realizadas = 100% -> mesma faixa 100%", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-sdr-jr",
+      tipo: "salario_bonus_atingimento",
+      config: {
+        salarioFixo: 3000,
+        faixas: [
+          { minAtingimento: 0, bonus: 0 },
+          { minAtingimento: 100, bonus: 3000 },
+        ],
+      },
+    });
+    recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "sdr-2",
+      mesReferencia: "2026-07-01",
+      unidade: "AGENDAMENTOS",
+      valorMeta: null,
+      metaAgendamentos: 45,
+    });
+    contarCallsRealizadasMock.mockResolvedValue(45);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-sdr-2" });
+
+    await apurarComissao("sdr-2", "2026-07-01");
+
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        valorComissao: 6000,
+        inputSnapshot: expect.objectContaining({ percentualAtingimento: 1 }),
+      }),
+    );
+  });
+
+  it("SDR/SS: 30/45 realizadas ≈ 66,7% -> abaixo da faixa 71%, bônus 0", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-sdr-jr",
+      tipo: "salario_bonus_atingimento",
+      config: {
+        salarioFixo: 3000,
+        faixas: [
+          { minAtingimento: 0, bonus: 0 },
+          { minAtingimento: 71, bonus: 1500 },
+        ],
+      },
+    });
+    recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "sdr-3",
+      mesReferencia: "2026-07-01",
+      unidade: "AGENDAMENTOS",
+      valorMeta: null,
+      metaAgendamentos: 45,
+    });
+    contarCallsRealizadasMock.mockResolvedValue(30);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-sdr-3" });
+
+    await apurarComissao("sdr-3", "2026-07-01");
+
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        // salário 3000 + bônus 0 (30/45 ≈ 66,7% < 71%) = 3000
+        valorComissao: 3000,
+        inputSnapshot: expect.objectContaining({
+          detalhamento: expect.objectContaining({
+            atingimento: {
+              unidade: "AGENDAMENTOS",
+              numerador: 30,
+              denominador: 45,
+            },
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("SDR/SS sem meta definida: percentualAtingimento 0, NÃO chama contarCallsRealizadas", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-sdr-jr",
+      tipo: "salario_bonus_atingimento",
+      config: {
+        salarioFixo: 3000,
+        faixas: [{ minAtingimento: 0, bonus: 0 }],
+      },
+    });
+    recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    getMetaMock.mockResolvedValue(null);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-sdr-4" });
+
+    await apurarComissao("sdr-4", "2026-07-01");
+
+    expect(contarCallsRealizadasMock).not.toHaveBeenCalled();
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        valorComissao: 3000,
+        inputSnapshot: expect.objectContaining({ percentualAtingimento: 0 }),
+      }),
+    );
+  });
+
   it("plano percentual_fixo: NÃO chama getMeta (só progressivo/salario_bonus precisam de atingimento)", async () => {
     existeMesFechadoMock.mockResolvedValue(false);
     getPlanoVigenteMock.mockResolvedValue({
