@@ -41,9 +41,11 @@ vi.mock("@/server/repositories/recebimento.repo", () => ({
 }));
 
 const listarColaboradoresMock = vi.fn();
+const getColaboradorMock = vi.fn();
 vi.mock("@/server/repositories/colaborador.repo", () => ({
   listarColaboradores: (...args: unknown[]) =>
     listarColaboradoresMock(...args),
+  getColaborador: (...args: unknown[]) => getColaboradorMock(...args),
 }));
 
 const registrarAuditMock = vi.fn();
@@ -101,6 +103,11 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
     dbTransactionMock.mockReset();
     contarCallsRealizadasMock.mockReset();
     getMetaMock.mockReset();
+    getColaboradorMock.mockReset();
+    // Default: CLOSER — casa com o comportamento histórico (base por
+    // closerId) usado pela maioria dos testes abaixo; os testes SDR/SS
+    // sobrescrevem explicitamente com papel "SDR"/"SS".
+    getColaboradorMock.mockResolvedValue({ papel: "CLOSER" });
   });
 
   it("chama o motor puro com valorRecebidoNoMes (porCloser) e grava o snapshot com mesPagamento = mês+1", async () => {
@@ -336,6 +343,7 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
       porCloser: {},
       porSdr: { "sdr-1": 500 },
     });
+    getColaboradorMock.mockResolvedValue({ papel: "SDR" });
     getMetaMock.mockResolvedValue({
       colaboradorId: "sdr-1",
       mesReferencia: "2026-07-01",
@@ -360,11 +368,13 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
         valorComissao: 6000,
         percentualAplicado: null,
         inputSnapshot: expect.objectContaining({
+          valorRecebidoNoMes: 500,
           percentualAtingimento: 1,
           detalhamento: expect.objectContaining({
             salarioFixo: 3000,
             bonus: 3000,
             total: 6000,
+            baseRecebido: { papel: "SDR", origem: "sdrId" },
             atingimento: {
               unidade: "AGENDAMENTOS",
               numerador: 40,
@@ -390,6 +400,7 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
       },
     });
     recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    getColaboradorMock.mockResolvedValue({ papel: "SS" });
     getMetaMock.mockResolvedValue({
       colaboradorId: "sdr-2",
       mesReferencia: "2026-07-01",
@@ -425,6 +436,7 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
       },
     });
     recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    getColaboradorMock.mockResolvedValue({ papel: "SDR" });
     getMetaMock.mockResolvedValue({
       colaboradorId: "sdr-3",
       mesReferencia: "2026-07-01",
@@ -466,6 +478,7 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
       },
     });
     recebidoNoMesMock.mockResolvedValue({ total: 0, porCloser: {}, porSdr: {} });
+    getColaboradorMock.mockResolvedValue({ papel: "SDR" });
     getMetaMock.mockResolvedValue(null);
     upsertApuracaoMock.mockResolvedValue({ id: "apuracao-sdr-4" });
 
@@ -499,6 +512,102 @@ describe("apurarComissao — orquestração motor + snapshot", () => {
 
     expect(getMetaMock).not.toHaveBeenCalled();
   });
+
+  it("SDR em plano progressivo_atingimento: valorRecebidoNoMes vem de porSdr, NUNCA de porCloser (JP-01/v1.4)", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-jp",
+      tipo: "progressivo_atingimento",
+      config: {
+        faixas: [
+          { deAtingimento: 0, percentual: 0 },
+          { deAtingimento: 1.0, percentual: 0.015 },
+        ],
+      },
+    });
+    getColaboradorMock.mockResolvedValue({ papel: "SDR" });
+    // porCloser tem uma entrada "armadilha" para o mesmo id — se o código
+    // ainda usasse o fallback antigo (`porCloser ?? porSdr`), o resultado
+    // sairia errado (10000 em vez de 20000).
+    recebidoNoMesMock.mockResolvedValue({
+      total: 30000,
+      porCloser: { "jp-1": 10000 },
+      porSdr: { "jp-1": 20000 },
+    });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "jp-1",
+      mesReferencia: "2026-07-01",
+      unidade: "AGENDAMENTOS",
+      valorMeta: null,
+      metaAgendamentos: 50,
+    });
+    contarCallsRealizadasMock.mockResolvedValue(50);
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-jp" });
+
+    await apurarComissao("jp-1", "2026-07-01");
+
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        valorBase: 20000,
+        percentualAplicado: 0.015,
+        valorComissao: 300,
+        inputSnapshot: expect.objectContaining({
+          valorRecebidoNoMes: 20000,
+          percentualAtingimento: 1,
+          detalhamento: expect.objectContaining({
+            baseRecebido: { papel: "SDR", origem: "sdrId" },
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("closer em plano progressivo_atingimento: valorRecebidoNoMes continua vindo de porCloser, mesmo com entrada em porSdr (sem regressão)", async () => {
+    existeMesFechadoMock.mockResolvedValue(false);
+    getPlanoVigenteMock.mockResolvedValue({
+      id: "plano-yuri",
+      tipo: "progressivo_atingimento",
+      config: {
+        faixas: [
+          { deAtingimento: 0, percentual: 0.02 },
+          { deAtingimento: 1.0, percentual: 0.03 },
+        ],
+      },
+    });
+    getColaboradorMock.mockResolvedValue({ papel: "CLOSER" });
+    recebidoNoMesMock.mockResolvedValue({
+      total: 150000,
+      porCloser: { "closer-1": 100000 },
+      porSdr: { "closer-1": 50000 },
+    });
+    getMetaMock.mockResolvedValue({
+      colaboradorId: "closer-1",
+      mesReferencia: "2026-07-01",
+      unidade: "VALOR",
+      valorMeta: 100000,
+      metaAgendamentos: null,
+    });
+    upsertApuracaoMock.mockResolvedValue({ id: "apuracao-closer" });
+
+    await apurarComissao("closer-1", "2026-07-01");
+
+    expect(contarCallsRealizadasMock).not.toHaveBeenCalled();
+    expect(upsertApuracaoMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        valorBase: 100000,
+        percentualAplicado: 0.03,
+        valorComissao: 3000,
+        inputSnapshot: expect.objectContaining({
+          valorRecebidoNoMes: 100000,
+          detalhamento: expect.objectContaining({
+            baseRecebido: { papel: "CLOSER", origem: "closerId" },
+          }),
+        }),
+      }),
+    );
+  });
 });
 
 describe("apurarMes — apura todos os colaboradores ativos", () => {
@@ -509,6 +618,8 @@ describe("apurarMes — apura todos os colaboradores ativos", () => {
     upsertApuracaoMock.mockReset();
     listarColaboradoresMock.mockReset();
     registrarAuditMock.mockReset();
+    getColaboradorMock.mockReset();
+    getColaboradorMock.mockResolvedValue({ papel: "CLOSER" });
   });
 
   it("apura cada colaborador ativo com plano vigente e pula os sem plano", async () => {

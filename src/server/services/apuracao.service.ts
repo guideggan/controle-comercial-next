@@ -18,7 +18,7 @@ import { getPlanoVigente } from "@/server/services/plano-comissao.service";
 import { getMeta } from "@/server/services/meta.service";
 import { recebidoNoMes } from "@/server/services/recebimento.service";
 import { listarRecebimentosDoMes } from "@/server/repositories/recebimento.repo";
-import { listarColaboradores } from "@/server/repositories/colaborador.repo";
+import { listarColaboradores, getColaborador } from "@/server/repositories/colaborador.repo";
 import { registrarAudit } from "@/server/services/audit.service";
 import { contarCallsRealizadas } from "@/server/services/agendamento.service";
 
@@ -41,6 +41,33 @@ export function mesSeguinte(mesReferencia: string): string {
   const anoSeguinte = data.getUTCFullYear();
   const mesSeguinteStr = String(data.getUTCMonth() + 1).padStart(2, "0");
   return `${anoSeguinte}-${mesSeguinteStr}-01`;
+}
+
+// Base "recebido no mês" por PAPEL (v1.4/JP-01), consumida pelos 3 formatos
+// recebido-based (percentual_fixo, progressivo_atingimento, fixo_variavel) e
+// gravada como valorBase de auditoria nos 2 formatos fixos
+// (salario_bonus_atingimento, por_calls — que NÃO usam este valor no cálculo
+// do payout, só exibem):
+//   - CLOSER: recebido das vendas em que ele é o closer (closerId) — mesma
+//     fonte de sempre.
+//   - SDR/SS: recebido das vendas em que ele é o SDR de ORIGEM (sdrId) —
+//     ex.: João Pedro, cuja comissão v1.4 é um % sobre o recebido das
+//     vendas que ele originou como SDR.
+// ANTES da v1.4 o código fazia `porCloser[id] ?? porSdr[id] ?? 0`, que só
+// funcionava "por acaso" (um colaborador nunca aparecia nos dois mapas ao
+// mesmo tempo) — explicitar pelo papel remove essa suposição implícita.
+// Papel desconhecido/colaborador não encontrado cai no comportamento
+// histórico (porCloser), preservando qualquer chamador que ainda não tenha
+// um Colaborador resolvível.
+function valorRecebidoPorPapel(
+  papel: string | null | undefined,
+  colaboradorId: string,
+  recebido: { porCloser: Record<string, number>; porSdr: Record<string, number> },
+): number {
+  if (papel === "SDR" || papel === "SS") {
+    return recebido.porSdr[colaboradorId] ?? 0;
+  }
+  return recebido.porCloser[colaboradorId] ?? 0;
 }
 
 export type ApurarComissaoOpts = {
@@ -74,9 +101,21 @@ export async function apurarComissao(
     return null;
   }
 
+  const colaborador = await getColaborador(colaboradorId);
+
   const recebido = await recebidoNoMes(mesReferencia);
-  const valorRecebidoNoMes =
-    recebido.porCloser[colaboradorId] ?? recebido.porSdr[colaboradorId] ?? 0;
+  const valorRecebidoNoMes = valorRecebidoPorPapel(
+    colaborador?.papel,
+    colaboradorId,
+    recebido,
+  );
+  const baseRecebidoDetalhe = {
+    papel: colaborador?.papel ?? null,
+    origem:
+      colaborador?.papel === "SDR" || colaborador?.papel === "SS"
+        ? ("sdrId" as const)
+        : ("closerId" as const),
+  };
 
   const planoConfig = { tipo: plano.tipo, config: plano.config } as PlanoConfig;
 
@@ -178,10 +217,14 @@ export async function apurarComissao(
     // atingimento E há meta definida; permite ao extrato mostrar "30/45
     // reuniões" (SDR/SS) ou "R$ recebido/meta" (closer) em vez de só a
     // fração final.
+    // `baseRecebido` (v1.4): qual mapa (closerId/sdrId) originou
+    // valorRecebidoNoMes/valorBase — permite ao extrato mostrar "recebido
+    // como SDR" vs "recebido como closer" em vez de só o número final.
     inputSnapshot: {
       ...input,
       detalhamento: {
         ...resultado.detalhamento,
+        baseRecebido: baseRecebidoDetalhe,
         ...(atingimentoDetalhe ? { atingimento: atingimentoDetalhe } : {}),
       },
     } as unknown as Prisma.InputJsonValue,

@@ -5,19 +5,19 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** v1 encerrado (47/47 requisitos) + v1.1 (ajustes pós-teste do usuário) + v1.2 (plano Closer Jr / OTE) + v1.3 (atingimento correto SDR/SS + plano SDR Jr) completos
+**Current focus:** v1 encerrado (47/47 requisitos) + v1.1 (ajustes pós-teste do usuário) + v1.2 (plano Closer Jr / OTE) + v1.3 (atingimento correto SDR/SS + plano SDR Jr) + v1.4 (comissão especial João Pedro) completos
 
 ## Current Position
 
-**Current Phase:** 1.1 (v1.1/v1.2/v1.3 — ajustes pós-teste, fora da numeração de fases do v1)
+**Current Phase:** 1.1 (v1.1/v1.2/v1.3/v1.4 — ajustes pós-teste, fora da numeração de fases do v1)
 **Current Phase Name:** v1.1-ajustes-pos-testes-usuario
-**Total Phases:** 10 (+ Phase 1.1 inserted) + v1.1 + v1.2 + v1.3 (ad-hoc, sem numeração de fase própria)
+**Total Phases:** 10 (+ Phase 1.1 inserted) + v1.1 + v1.2 + v1.3 + v1.4 (ad-hoc, sem numeração de fase própria)
 **Current Plan:** único (executado direto do roadmap de mudanças, sem PLAN.md formal)
 **Total Plans in Phase:** 1
-**Status:** v1.3 completo (atingimento correto para SDR/SS na apuração + plano "SDR/Social Selling Jr - OTE" para José/Bruna/Time SS). Ver .planning/CHANGES-2026-07.md item E.
+**Status:** v1.4 completo (comissão especial de João Pedro: % sobre recebido-como-SDR por faixa de atingimento de agendamento). Ver .planning/CHANGES-2026-07.md item F.
 **Progress:** [██████████] 100%
 **Last Activity:** 2026-07-03
-**Last Activity Description:** v1.3 — corrigido um bug real: `percentualAtingimento` em `apuracao.service.ts` só calculava certo para meta VALOR (closer, recebido/meta); SDR/SS (meta AGENDAMENTOS = reuniões realizadas) sempre caíam no `else` e ficavam com atingimento 0, zerando qualquer bônus de plano por atingimento configurado para eles. Corrigido com branch explícito pela `unidade` da meta: VALOR→recebidoNoMes/valorMeta (sem regressão), AGENDAMENTOS→contarCallsRealizadas(colaborador,mês)/metaAgendamentos (mesma fonte única de reuniões REALIZADAS da Fase 6/7). `inputSnapshot.detalhamento.atingimento` passou a gravar `{unidade, numerador, denominador}` para o extrato. 4 testes novos em `apuracao.service.test.ts` cobrindo o caminho SDR/SS (100%, 100% por outro caminho, ~66,7%→faixa 0%, sem meta→0) + prova de que não há dupla contagem com o recebido. José, Bruna e Time SS configurados com o novo plano `salario_bonus_atingimento` (salário fixo R$3.000 + faixas 0/71/86/100/120/150%→R$0/1500/2250/3000/4500/6000) via `scripts/configurar-plano-sdr-jr.ts --apply` (idempotente, validado rodando 2x seguidas contra o Neon, guarda de papel SDR/SS). Metas (José=40, Bruna=45, Time SS=55) não alteradas; João Pedro e closers não tocados. Smoke-testado fim-a-fim contra o Neon real via `apurarComissao` de verdade (rodado com `npx tsx --conditions=react-server` para contornar o guard `server-only` fora do Next.js): José 40/40 reuniões → 6000 (3000 salário + 3000 bônus faixa 100%); Bruna 30/45 → 3000 (bônus 0); Pedro (CLOSER) reapurado no mesmo mês confirma que o caminho recebido/meta segue funcionando sem regressão. Tudo (agendamentos + apurações criados pelo smoke test) removido ao final, confirmado por reconsulta. tsc/vitest(183)/next build limpos, zero regressão nos 179 testes anteriores + 4 novos.
+**Last Activity Description:** v1.4 — corrigido um bug real em `apuracao.service.ts`: a base `valorRecebidoNoMes` (usada pelos 3 formatos recebido-based e como `valorBase` de auditoria dos 2 formatos fixos) era escolhida por `porCloser[id] ?? porSdr[id] ?? 0`, que só funcionava "por acaso" (nunca checava o papel real do colaborador). Agora resolvida explicitamente pelo papel (`getColaborador`): CLOSER→`porCloser` (closerId, sem regressão), SDR/SS→`porSdr` (sdrId — a base que João Pedro precisa, recebido das vendas que ele originou como SDR). Novo `inputSnapshot.detalhamento.baseRecebido={papel,origem}` gravado para o extrato. 2 testes novos provando a "armadilha" (mesmo colaboradorId com entradas nos dois mapas simultaneamente — SDR usa porSdr, closer usa porCloser); os 4 testes SDR/SS existentes passaram a mockar `getColaborador` com papel explícito. João Pedro configurado com plano `progressivo_atingimento` (faixas <70%→0% / 70%→0,5% / 80%→0,75% / 90%→1,0% / 100%+→1,5% sobre o recebido-como-SDR) via `scripts/configurar-plano-jp.ts --apply` (idempotente, validado rodando 2x seguidas contra o Neon, guarda de papel SDR; meta AGENDAMENTOS=50 já cadastrada, não alterada). Smoke-testado fim-a-fim contra o Neon real (`npx tsx --conditions=react-server`): venda real de R$10.000 recebidos com JP como SDR e Yuri (CLOSER real) como closer + 50 agendamentos REALIZADO → apuração real → 100% atingimento → 1,5%×10.000=R$150,00; reduzindo para 35/50 (70%) → 0,5%×10.000=R$50,00; Yuri (CLOSER, mesma venda) confirmado usando porCloser (R$10.000) sem regressão → 2%×10.000=R$200,00; José/Bruna (SS, zero atividade em julho) confirmados em R$3.000 (só salário, sem dupla contagem). Tudo (venda/parcela/agendamentos/apurações/audit_log criados pelo smoke test) removido ao final, confirmado por reconsulta; scripts temporários descartados. tsc/vitest(185)/next build limpos, zero regressão nos 183 testes anteriores + 2 novos.
 
 ## Performance Metrics
 
@@ -148,6 +148,7 @@ Recent decisions affecting current work:
 - [Phase 09]: Export usa CSV com separador `;` + BOM UTF-8 (não `.xlsx`) — abre nativamente no Excel pt-BR sem adicionar dependência nova ao projeto, mantendo o escopo lean pedido para a fase
 - [Phase 09]: `DropdownMenuLinkItem` adicionado a `src/components/ui/dropdown-menu.tsx` como wrapper de `Menu.LinkItem` do Base UI — item de menu que é literalmente um link `<a>` (para os 3 downloads de CSV), em vez de usar `render` prop em `DropdownMenuItem`/`DropdownMenuTrigger`
 - [Phase 09]: `src/domain/dashboard/agregacao.ts` segue exatamente o padrão de `src/domain/recebimentos/agregacao.ts` (módulo puro, sem `server-only`/Prisma) — receita à vista/mensalista sempre soma para o total (nenhuma dupla contagem), comissão por colaborador lida do snapshot já apurado (nunca recalculada)
+- [v1.4]: A base "recebido no mês" (`valorRecebidoNoMes`) da apuração é sempre resolvida pelo PAPEL do colaborador (`getColaborador`, mesma fonte de `meta.service.ts`), nunca por qual mapa "aconteceu" de ter uma entrada (`porCloser[id] ?? porSdr[id]`) — o fallback antigo só funcionava por coincidência de dados; explicitar pelo papel é obrigatório para qualquer plano recebido-based de um SDR/SS (ex.: João Pedro), que precisa do recebido das vendas em que ele é o SDR de origem, não das (inexistentes) vendas em que seria closer.
 
 ### Pending Todos
 
@@ -161,6 +162,6 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6, Fas
 
 ## Session Continuity
 
-**Last session:** 2026-07-02T13:10:00Z
-**Stopped At:** Completed v1.1 UI (ajustes pós-teste do usuário) — single lean session, see .planning/CHANGES-2026-07.md (all "Pendente (UI)" items checked off). v1.1 fully complete: schema + dados + backend + UI. tsc/vitest(164)/next build clean, dev server left running.
+**Last session:** 2026-07-03T16:30:00Z
+**Stopped At:** Completed v1.4 (comissão especial João Pedro — % sobre recebido-como-SDR por faixa de atingimento de agendamento). See .planning/CHANGES-2026-07.md item F. tsc/vitest(185)/next build clean, dev server left running.
 **Resume File:** None
