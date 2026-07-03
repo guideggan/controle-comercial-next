@@ -14,7 +14,7 @@ export default function Home() {
           continuar.
         </p>
       </div>
-      <Button render={<Link href="/login">Entrar</Link>} />
+      <Button nativeButton={false} render={<Link href="/login">Entrar</Link>} />
     </div>
   );
 }
