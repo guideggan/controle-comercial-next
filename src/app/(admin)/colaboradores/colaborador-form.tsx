@@ -135,7 +135,11 @@ export function ColaboradorForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Papel</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    items={PAPEIS.map((papel) => ({ value: papel, label: papel }))}
+                  >
                     <FormControl
                       render={
                         <SelectTrigger className="w-full">

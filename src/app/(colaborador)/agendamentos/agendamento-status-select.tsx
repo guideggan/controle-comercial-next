@@ -56,7 +56,12 @@ export function AgendamentoStatusSelect({
   }
 
   return (
-    <Select value={status} onValueChange={onChange} disabled={isSubmitting}>
+    <Select
+      value={status}
+      onValueChange={onChange}
+      disabled={isSubmitting}
+      items={STATUS_OPCOES}
+    >
       <SelectTrigger className="w-36">
         <SelectValue />
       </SelectTrigger>

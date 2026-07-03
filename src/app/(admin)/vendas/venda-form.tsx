@@ -301,6 +301,7 @@ export function VendaForm(props: VendaFormProps) {
                   value={field.value}
                   onValueChange={field.onChange}
                   disabled={bloqueado}
+                  items={PLATAFORMAS}
                 >
                   <FormControl
                     render={
@@ -332,6 +333,10 @@ export function VendaForm(props: VendaFormProps) {
                   value={field.value}
                   onValueChange={field.onChange}
                   disabled={bloqueado}
+                  items={produtos.map((produto) => ({
+                    value: produto.id,
+                    label: produto.nome,
+                  }))}
                 >
                   <FormControl
                     render={
@@ -363,6 +368,7 @@ export function VendaForm(props: VendaFormProps) {
                   value={field.value}
                   onValueChange={field.onChange}
                   disabled={bloqueado}
+                  items={TIPOS_PAGAMENTO}
                 >
                   <FormControl
                     render={
@@ -524,6 +530,10 @@ export function VendaForm(props: VendaFormProps) {
                   value={field.value}
                   onValueChange={field.onChange}
                   disabled={bloqueado}
+                  items={closers.map((closer) => ({
+                    value: closer.id,
+                    label: closer.nome,
+                  }))}
                 >
                   <FormControl
                     render={
@@ -557,6 +567,10 @@ export function VendaForm(props: VendaFormProps) {
                     field.onChange(value === "" ? undefined : value)
                   }
                   disabled={bloqueado}
+                  items={[
+                    { value: "", label: "Nenhum" },
+                    ...sdrs.map((sdr) => ({ value: sdr.id, label: sdr.nome })),
+                  ]}
                 >
                   <FormControl
                     render={

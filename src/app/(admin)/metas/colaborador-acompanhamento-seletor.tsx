@@ -36,6 +36,10 @@ export function ColaboradorAcompanhamentoSeletor({
         onValueChange={(value) => {
           router.push(`/metas?mes=${mes}&colaboradorId=${value}`);
         }}
+        items={colaboradores.map((c) => ({
+          value: c.id,
+          label: `${c.nome} (${c.papel})`,
+        }))}
       >
         <SelectTrigger className="w-64">
           <SelectValue placeholder="Selecione" />

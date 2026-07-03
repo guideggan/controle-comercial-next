@@ -258,7 +258,11 @@ export function PlanoForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Formato do plano</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    items={TIPOS_PLANO}
+                  >
                     <FormControl
                       render={
                         <SelectTrigger className="w-full">

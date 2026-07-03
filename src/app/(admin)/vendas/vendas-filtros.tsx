@@ -109,6 +109,10 @@ export function VendasFiltros({
             setCloserId(proximo);
             aplicarFiltros({ closerId: proximo });
           }}
+          items={[
+            { value: "TODOS", label: "Todos" },
+            ...closers.map((closer) => ({ value: closer.id, label: closer.nome })),
+          ]}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Todos" />
@@ -135,6 +139,10 @@ export function VendasFiltros({
             setProdutoId(proximo);
             aplicarFiltros({ produtoId: proximo });
           }}
+          items={[
+            { value: "TODOS", label: "Todos" },
+            ...produtos.map((produto) => ({ value: produto.id, label: produto.nome })),
+          ]}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Todos" />
@@ -161,6 +169,10 @@ export function VendasFiltros({
             setStatus(proximo);
             aplicarFiltros({ status: proximo });
           }}
+          items={[
+            { value: "TODOS", label: "Todos" },
+            ...STATUS_OPCOES.map((opcao) => ({ value: opcao.value, label: opcao.label })),
+          ]}
         >
           <SelectTrigger className="w-36">
             <SelectValue placeholder="Todos" />

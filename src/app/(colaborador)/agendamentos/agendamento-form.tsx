@@ -126,7 +126,11 @@ export function AgendamentoForm({ colaboradorId }: { colaboradorId: string }) {
               render={({ field }) => (
                 <FormItem className="w-40">
                   <FormLabel>Status</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    items={STATUS_OPCOES}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue />

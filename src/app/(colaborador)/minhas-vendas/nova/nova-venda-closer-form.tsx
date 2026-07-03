@@ -202,7 +202,11 @@ export function NovaVendaCloserForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Plataforma</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={PLATAFORMAS}
+                >
                   <FormControl
                     render={
                       <SelectTrigger className="w-full">
@@ -229,7 +233,14 @@ export function NovaVendaCloserForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Produto</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={produtos.map((produto) => ({
+                    value: produto.id,
+                    label: produto.nome,
+                  }))}
+                >
                   <FormControl
                     render={
                       <SelectTrigger className="w-full">
@@ -256,7 +267,11 @@ export function NovaVendaCloserForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo de pagamento</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  items={TIPOS_PAGAMENTO}
+                >
                   <FormControl
                     render={
                       <SelectTrigger className="w-full">
@@ -409,6 +424,10 @@ export function NovaVendaCloserForm({
                   onValueChange={(value) =>
                     field.onChange(value === "" ? undefined : value)
                   }
+                  items={[
+                    { value: "", label: "Nenhum" },
+                    ...sdrs.map((sdr) => ({ value: sdr.id, label: sdr.nome })),
+                  ]}
                 >
                   <FormControl
                     render={

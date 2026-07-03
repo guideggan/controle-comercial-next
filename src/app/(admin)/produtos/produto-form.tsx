@@ -182,7 +182,14 @@ export function ProdutoForm(props: ProdutoFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      items={CATEGORIAS.map((categoria) => ({
+                        value: categoria,
+                        label: CATEGORIA_LABEL[categoria],
+                      }))}
+                    >
                       <FormControl
                         render={
                           <SelectTrigger className="w-full">

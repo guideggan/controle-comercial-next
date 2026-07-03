@@ -43,6 +43,7 @@ export function ProdutoCategoriaFiltro({
         onValueChange={(value) => {
           router.push(value === "TODAS" ? "/produtos" : `/produtos?categoria=${value}`);
         }}
+        items={opcoes}
       >
         <SelectTrigger className="w-56">
           <SelectValue placeholder="Todas as categorias" />

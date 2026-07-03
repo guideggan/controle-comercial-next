@@ -37,6 +37,10 @@ export function ColaboradorSeletor({
         onValueChange={(value) => {
           router.push(`/agendamentos?colaboradorId=${value}`);
         }}
+        items={colaboradores.map((c) => ({
+          value: c.id,
+          label: `${c.nome} (${c.papel})`,
+        }))}
       >
         <SelectTrigger className="w-56">
           <SelectValue placeholder="Selecione" />
