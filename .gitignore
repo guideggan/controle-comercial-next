@@ -1,3 +1,7 @@
+# Material de análise (planilhas, relatórios de apuração, arquivos de
+# conferência) vive FORA do repo, na pasta irmã
+# "../Controle Comercial NEXT - Dados/". Nada disso deve voltar para cá.
+#
 # Planilhas de origem (contêm PII: nomes, CPF/CNPJ, pagadores) — nunca versionar
 *.xlsx
 *.xls

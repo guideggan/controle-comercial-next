@@ -60,7 +60,12 @@ import {
 
 const db = new PrismaClient();
 
-const ARQUIVO_PADRAO = "Comissões_Vendas - NEXT.xlsx";
+// As planilhas de origem contêm PII (nomes, pagadores) e vivem FORA do repo,
+// numa pasta irmã ("Controle Comercial NEXT - Dados/planilhas"). O caminho é
+// resolvido a partir do cwd (raiz do projeto); use --arquivo para apontar
+// para outro lugar.
+const ARQUIVO_PADRAO =
+  "../Controle Comercial NEXT - Dados/planilhas/Comissões_Vendas - NEXT.xlsx";
 
 type LinhaProcessada = {
   numeroLinha: number;

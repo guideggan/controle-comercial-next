@@ -99,6 +99,14 @@ Postgres gerenciado.
    Depois disso, `SEED_ADMIN_PASSWORD` pode ser removida/rotacionada do
    dashboard — o seed é idempotente e não recria o admin se ele já existir.
 
+## Dados e análises (fora do repo)
+
+Planilhas de origem, relatórios de apuração e arquivos de conferência **não
+ficam neste repositório** (contêm PII). Vivem na pasta irmã
+`../Controle Comercial NEXT - Dados/` (`planilhas/`, `apuracao/`,
+`julho-2026/`) — ver o README de lá. É de onde o importador de histórico lê
+sua planilha padrão.
+
 ## Estrutura do projeto (resumo)
 
 - `prisma/schema.prisma` — schema (enum `Papel`, tabelas do Better Auth,
