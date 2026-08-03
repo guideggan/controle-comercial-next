@@ -40,6 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ComponentesPagamentoField } from "@/app/(admin)/vendas/componentes-pagamento-field";
+import type { FormaPagamento } from "@/domain/vendas/componentes";
 
 // Formulário único de venda (VENDA-01): mesmo padrão de produto-form.tsx /
 // plano-form.tsx — react-hook-form + zodResolver(vendaSchema) + toast +
@@ -93,6 +95,19 @@ export type VendaExistente = {
   closerId: string;
   sdrId?: string | null;
   observacao?: string | null;
+  // Fase 11: componentes já persistidos, para o form de edição carregar o
+  // plano de pagamento existente em vez de recomeçar do zero. Ausente nas
+  // vendas ainda não convertidas (histórico) — nesse caso a lista abre vazia
+  // e a venda continua salvando pelo caminho escalar do v1.
+  componentes?: ComponenteExistente[];
+};
+
+export type ComponenteExistente = {
+  forma: FormaPagamento;
+  valor: number;
+  parcelas: number;
+  dataPrevista: string; // "YYYY-MM-DD"
+  descricao?: string | null;
 };
 
 type VendaFormProps = (
@@ -132,6 +147,7 @@ function valoresPadrao(venda?: VendaExistente): VendaFormValues {
       closerId: venda.closerId,
       sdrId: venda.sdrId ?? undefined,
       observacao: venda.observacao ?? undefined,
+      componentes: venda.componentes ?? [],
     };
   }
 
@@ -155,6 +171,10 @@ function valoresPadrao(venda?: VendaExistente): VendaFormValues {
     closerId: "",
     sdrId: undefined,
     observacao: undefined,
+    // Abre vazio: quem lança escolhe as formas de pagamento reais. Enquanto a
+    // lista estiver vazia, a venda cai no caminho escalar do v1 e não entra no
+    // valor presente — o próprio campo avisa isso na tela.
+    componentes: [],
   };
 }
 
@@ -593,6 +613,14 @@ export function VendaForm(props: VendaFormProps) {
             )}
           />
         </div>
+
+        {/* Fase 11: o plano de pagamento fica FORA do grid de 2 colunas — ele
+            é uma lista de tamanho variável e precisa da largura inteira. */}
+        <ComponentesPagamentoField
+          control={form.control}
+          watch={form.watch}
+          desabilitado={bloqueado}
+        />
 
         <FormField
           control={form.control}

@@ -139,6 +139,13 @@ export default async function VendaDetalhePage({
               closerId: venda.closerId,
               sdrId: venda.sdrId,
               observacao: venda.observacao,
+              componentes: componentes.map((c) => ({
+                forma: c.forma,
+                valor: Number(c.valor),
+                parcelas: c.parcelas,
+                dataPrevista: paraDataISO(c.dataPrevista),
+                descricao: c.descricao,
+              })),
             }}
             bloqueado={venda.fechado}
             produtos={produtosAtivos}

@@ -75,6 +75,7 @@ const {
   apurarComissao,
   apurarMes,
   fecharApuracao,
+  getExtrato,
 } = await import("@/server/services/apuracao.service");
 
 describe("mesSeguinte — regra pura +1 mês (Pitfall 2, timezone-safe)", () => {
@@ -673,5 +674,82 @@ describe("fecharApuracao — trava o mês e as vendas da competência (COMIS-06)
       expect.objectContaining({ acao: "FECHAR_APURACAO" }),
     );
     expect(resultado).toEqual({ vendasTravadas: 1 });
+  });
+});
+
+// ============================================================
+// getExtrato — o extrato tem que usar o MESMO critério de papel da base
+// ============================================================
+// Regressão de um bug real (corrigido em 2026-08-02): o extrato filtrava
+// `closerId === id || sdrId === id` (os dois lados), enquanto a base
+// (`valorRecebidoPorPapel`) usa só um dos mapas conforme o papel. Para quem
+// aparece nos dois papéis — e existem pessoas assim no banco de produção — o
+// extrato mostrava linhas que não entraram no valorBase, e a soma exibida não
+// fechava com o valor apurado (viola COMIS-07).
+describe("getExtrato — critério de papel igual ao da base (COMIS-07)", () => {
+  const parcelaComoCloser = {
+    id: "p-closer",
+    vendaId: "v-closer",
+    tipo: "AVISTA",
+    valorRecebido: 10_000,
+    dataPagamento: null,
+    venda: { closerId: "pessoa-1", sdrId: "outro-sdr", alunoNome: "Venda como closer" },
+  };
+  const parcelaComoSdr = {
+    id: "p-sdr",
+    vendaId: "v-sdr",
+    tipo: "AVISTA",
+    valorRecebido: 5_000,
+    dataPagamento: null,
+    venda: { closerId: "outro-closer", sdrId: "pessoa-1", alunoNome: "Venda como SDR" },
+  };
+
+  beforeEach(() => {
+    getApuracaoRepoMock.mockReset();
+    listarRecebimentosDoMesMock.mockReset();
+    getColaboradorMock.mockReset();
+    getApuracaoRepoMock.mockResolvedValue(null);
+    listarRecebimentosDoMesMock.mockResolvedValue([
+      parcelaComoCloser,
+      parcelaComoSdr,
+    ]);
+  });
+
+  it("CLOSER que também aparece como SDR vê SÓ as vendas em que é closer", async () => {
+    getColaboradorMock.mockResolvedValue({ papel: "CLOSER" });
+
+    const { linhas } = await getExtrato("pessoa-1", "2026-07-01");
+
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].parcelaId).toBe("p-closer");
+    // A soma do extrato tem que ser a mesma base que o motor usaria
+    // (porCloser), nunca closer + sdr somados.
+    expect(linhas.reduce((t, l) => t + l.valorRecebido, 0)).toBe(10_000);
+  });
+
+  it("SDR que também aparece como closer vê SÓ as vendas que originou como SDR", async () => {
+    getColaboradorMock.mockResolvedValue({ papel: "SDR" });
+
+    const { linhas } = await getExtrato("pessoa-1", "2026-07-01");
+
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].parcelaId).toBe("p-sdr");
+    expect(linhas.reduce((t, l) => t + l.valorRecebido, 0)).toBe(5_000);
+  });
+
+  it("SS segue a mesma regra de SDR", async () => {
+    getColaboradorMock.mockResolvedValue({ papel: "SS" });
+
+    const { linhas } = await getExtrato("pessoa-1", "2026-07-01");
+
+    expect(linhas.map((l) => l.parcelaId)).toEqual(["p-sdr"]);
+  });
+
+  it("colaborador não encontrado cai no comportamento de closer (mesmo default da base)", async () => {
+    getColaboradorMock.mockResolvedValue(null);
+
+    const { linhas } = await getExtrato("pessoa-1", "2026-07-01");
+
+    expect(linhas.map((l) => l.parcelaId)).toEqual(["p-closer"]);
   });
 });

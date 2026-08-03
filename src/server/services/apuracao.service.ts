@@ -398,17 +398,37 @@ export type ExtratoLinha = {
 };
 
 // Extrato linha a linha (COMIS-07): o snapshot já apurado + as parcelas
-// PAGAS da competência que pertencem a este colaborador (como closer OU
-// sdr), para exibir COMO o valorBase foi composto.
+// PAGAS da competência que compuseram o valorBase, para exibir COMO ele foi
+// formado.
+//
+// CORREÇÃO 2026-08-02 — o extrato precisa usar EXATAMENTE o mesmo critério da
+// base. Antes, ele filtrava `closerId === id || sdrId === id` (os dois lados),
+// enquanto `valorRecebidoPorPapel` usa só UM dos mapas conforme o papel:
+// CLOSER soma o que recebeu como closer, SDR/SS o que originou como SDR.
+//
+// Para quem aparece nos dois papéis — e há pessoas assim no banco: um mesmo
+// colaborador é closer em algumas vendas e SDR em outras — o extrato listava
+// linhas que NÃO entraram no valorBase, e a soma exibida não fechava com o
+// valor apurado. É uma violação direta de COMIS-07 ("o extrato mostra como o
+// valor foi calculado"), e o tipo de divergência que destrói a confiança de
+// quem confere o próprio pagamento.
+//
+// A fonte da decisão é a MESMA de apurarComissao (o papel real do
+// colaborador), nunca uma segunda regra paralela.
 export async function getExtrato(colaboradorId: string, mesReferencia: string) {
-  const [apuracao, linhasDoMes] = await Promise.all([
+  const [apuracao, linhasDoMes, colaborador] = await Promise.all([
     getApuracaoRepo(colaboradorId, mesReferencia),
     listarRecebimentosDoMes(mesReferencia),
+    getColaborador(colaboradorId),
   ]);
 
+  const ehSdr = colaborador?.papel === "SDR" || colaborador?.papel === "SS";
+
   const linhas: ExtratoLinha[] = linhasDoMes
-    .filter(
-      (p) => p.venda.closerId === colaboradorId || p.venda.sdrId === colaboradorId,
+    .filter((p) =>
+      ehSdr
+        ? p.venda.sdrId === colaboradorId
+        : p.venda.closerId === colaboradorId,
     )
     .map((p) => ({
       parcelaId: p.id,
