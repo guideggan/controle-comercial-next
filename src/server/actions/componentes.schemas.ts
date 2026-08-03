@@ -94,11 +94,11 @@ export function resolverComponentes(
  * de 50% de entrada mínima (PGMT-05).
  *
  * A validação de 50% NÃO está no `componenteSchema` individual porque é uma
- * regra sobre o CONJUNTO — Karen tem dois componentes de 72k, nenhum dos
+ * regra sobre o CONJUNTO — o Cliente A tem dois componentes de 72k, nenhum dos
  * quais é "50% de nada" sozinho, mas juntos são 100% de entrada.
  *
  * NÃO usar este schema para histórico/backfill: vendas anteriores à política
- * (ex.: Vanessa Militani, 100% recorrência em julho/2026) existem no banco e
+ * (ex.: 100% recorrência, em julho/2026) existem no banco e
  * precisam continuar existindo (PGMT-07).
  */
 export const componentesDeVendaNovaSchema = z

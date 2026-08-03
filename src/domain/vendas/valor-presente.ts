@@ -32,7 +32,7 @@
 //       mês da SUA dataPrevista, não no da venda.
 //   (4) venda 100% recorrência conta 1 parcela ... não precisa de regra: a
 //       primeira parcela, quando paga, entra pelo segundo termo da fórmula.
-//       (Vanessa Militani, julho/2026: R$ 3.833,33 — exatamente a parcela paga.)
+//       (julho/2026: R$ 3.833,33 — exatamente a parcela paga.)
 //
 // Nenhuma dessas ressalvas virou um `if` no código. Se alguma delas precisar
 // voltar como caso especial, é sinal de que a regra mudou — não de que a
@@ -108,8 +108,8 @@ export type FaturamentoDoMes = {
 
 export type CalcularFaturamentoInput = {
   /** Todos os componentes das vendas relevantes (inclusive de vendas de
-   * outros meses, que podem ter componentes datados NESTE mês — o caso da
-   * Patrícia, cujo segundo cartão cai no mês seguinte). */
+   * outros meses, que podem ter componentes datados NESTE mês — o caso de uma
+   * venda cujo segundo cartão cai no mês seguinte). */
   componentes: ComponenteParaFaturamento[];
   /** Parcelas PAGAS na competência (o caller já filtrou por status). */
   parcelasRecebidas: ParcelaParaFaturamento[];
@@ -169,7 +169,7 @@ export function calcularFaturamentoDoMes(
       vendasNovas += componente.valor;
     } else {
       // Componente que conta cheio de uma venda de outro mês — o caso da
-      // Patrícia (segundo cartão caindo no mês seguinte ao da venda). Não é
+      // venda com o segundo cartão caindo no mês seguinte. Não é
       // "recorrência da carteira" no sentido do relatório, mas também não é
       // venda nova deste mês; entra na carteira para o total fechar.
       recorrenciaCarteira += componente.valor;

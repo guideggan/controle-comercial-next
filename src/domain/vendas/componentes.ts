@@ -120,7 +120,7 @@ export function calcularEntradaGarantida(
 //
 // Consequência: a ressalva (4) do documento de apuração ("venda 100%
 // recorrência conta 1 parcela") vira regra apenas HISTÓRICA. Vendas antigas
-// que violam esta política (ex.: Vanessa Militani, julho/2026) continuam
+// que violam esta política (ex.: uma venda de julho/2026) continuam
 // válidas no banco — por isso a validação é aplicada no CADASTRO NOVO, nunca
 // na leitura nem no backfill.
 

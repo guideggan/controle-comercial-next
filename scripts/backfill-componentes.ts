@@ -18,8 +18,8 @@
 // componentes são puladas. Rodar duas vezes produz o mesmo estado.
 //
 // A POLÍTICA DE 50% NÃO É APLICADA AQUI (PGMT-05 vale só para venda nova):
-// vendas anteriores à política — como Vanessa Militani, 100% recorrência em
-// julho/2026 — precisam continuar existindo exatamente como estão.
+// vendas anteriores à política — 100% recorrência, existentes até julho/2026 —
+// precisam continuar existindo exatamente como estão.
 //
 // Uso:
 //   npx tsx scripts/backfill-componentes.ts            (dry-run, não grava)

@@ -160,12 +160,12 @@ Pagamento é 100% recorrência, sem entrada
 
 | Aluno | Forma de pagamento | G | H (TCV) | I | V |
 |---|---|---|---|---|---|
-| Karen Volpato | 72k PIX + 72k 12x cartão | À vista | 144.000 | 84 | **144.000** |
-| Tatiana Queiroz | 12x cartão | À vista | 60.000 | 84 | **60.000** |
-| Viviane Cruz | 50k entrada 12x + 46k recorrência 12x | Mensalista | 96.000 | 50.000 | **50.000** |
-| Vanessa Militani | 100% recorrência 12x | Mensalista | 46.000 | 3.833,33 | **3.833,33** |
-| Rafaela Silva | 5k sinal + 25k em 03/08 + 30k recorrência 6x | Mensalista | 60.000 | 5.000 | **5.000** |
-| Patrícia Ferreira | 50k em 3 cartões 12x (25k jun + 25k jul) + 46k boleto | Mensalista | 96.000 | 25.000 | **25.000** |
+| Cliente A | 72k PIX + 72k 12x cartão | À vista | 144.000 | 84 | **144.000** |
+| Cliente B | 12x cartão | À vista | 60.000 | 84 | **60.000** |
+| Cliente C | 50k entrada 12x + 46k recorrência 12x | Mensalista | 96.000 | 50.000 | **50.000** |
+| Cliente D | 100% recorrência 12x | Mensalista | 46.000 | 3.833,33 | **3.833,33** |
+| Cliente E | 5k sinal + 25k em 03/08 + 30k recorrência 6x | Mensalista | 60.000 | 5.000 | **5.000** |
+| Cliente F | 50k em 3 cartões 12x (25k jun + 25k jul) + 46k boleto | Mensalista | 96.000 | 25.000 | **25.000** |
 
 ---
 
@@ -231,8 +231,8 @@ Como a virada de mês funciona hoje, manualmente:
    - **zerar a coluna `V`** (o dinheiro delas já foi contado no mês anterior)
    - **trocar `I` de "entrada" para "valor da parcela"**
 
-   *Erro real encontrado:* em julho/2026, José Guilherme estava com `I = 40.000` (a
-   entrada PIX paga em junho) em vez de `4.666,66` (a parcela). Natalia Franz com
+   *Erro real encontrado:* em julho/2026, Cliente G estava com `I = 40.000` (a
+   entrada PIX paga em junho) em vez de `4.666,66` (a parcela). Cliente H com
    `I = 81.000` em vez de `1.250`. Se não corrigido, o mês conta R$ 115.083 de dinheiro
    que já entrou no mês anterior.
 
@@ -257,7 +257,7 @@ Como a virada de mês funciona hoje, manualmente:
 ```
 NEXT ECOMMERCE  *MASTER*
 
-Karen Volpato - Ecommhouse
+Cliente A - <empresa>
 
 SDR/SS - João Pedro
 Ciclo: 6 meses + 30 dias
@@ -270,7 +270,7 @@ Forma de Pagamento: *144k* = 72k PIX - 72k 12x CARTAO
 
 Depois, alguém posta a lista numerada acumulada do mês (`Fechamentos JULHO: 1) ... 2) ...`).
 
-> ⚠️ **A lista numerada não é confiável.** Em julho/2026 uma venda (Giselle, R$ 60.000)
+> ⚠️ **A lista numerada não é confiável.** Em julho/2026 uma venda (um cliente, R$ 60.000)
 > foi postada individualmente às 18h02 e ficou **fora** da lista consolidada postada às
 > 20h15. Sempre conferir contra os posts individuais.
 
@@ -306,7 +306,7 @@ conversam**.
 | Carteira de comissões | abas `<MÊS>PGTO <MÊS>` | ASAAS, PAGAR.ME | ~72 em julho/2026 |
 | Carteira financeira | abas `FINANCEIRO` | **Guru**, PAGAR.ME | outros alunos, mais antigos |
 
-Os nomes **não coincidem** (ex.: Monick Dutra, Wesley Ghidini, Gisielly Viana aparecem
+Os nomes **não coincidem** (ex.: três alunos aparecem
 só na financeira). A aba `FINANCEIRO - NÃO MEXER` tem colunas próprias
 (`Intermediador`, `Conciliação`) e usa outro formato de parcela (`PCLA 7/12`).
 

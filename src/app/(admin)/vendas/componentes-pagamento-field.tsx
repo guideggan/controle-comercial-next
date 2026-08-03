@@ -34,8 +34,8 @@ import {
 // PLANO DE PAGAMENTO — a regra de negócio na tela (Fase 11 / PGMT-01, 05)
 // ============================================================
 // Cada linha é um COMPONENTE da negociação. Uma venda pode ter vários:
-//   Karen ....... 72k PIX + 72k em 12x no cartão
-//   Rafaela ..... 5k de sinal + 25k em 03/08 + 30k de recorrência em 6x
+//   Cliente A .... 72k PIX + 72k em 12x no cartão
+//   Cliente E .... 5k de sinal + 25k em 03/08 + 30k de recorrência em 6x
 //
 // A UI mostra, em tempo real, o que a combinação escolhida significa: quanto
 // é entrada garantida, se atinge os 50% obrigatórios, e quanto conta no mês.

@@ -87,9 +87,11 @@ Requisitos da primeira entrega. Cada um mapeia para uma fase do roadmap.
 - [x] **IMPORT-02**: A importação recomputa a comissão a partir dos fatos brutos e reconcilia com os totais das planilhas, gerando um relatório de divergências (não copia a coluna FÓRMULA cegamente)
 - [x] **IMPORT-03**: A importação é idempotente (rodar de novo não duplica dados) e valida antes de carregar
 
-## v2 Requirements
+## Backlog reconhecido (sem fase atribuída)
 
-Reconhecidos, porém adiados.
+Ideias registradas no v1 e ainda não priorizadas. NÃO confundir com os
+requisitos v2 (plano de pagamento e valor presente), mais abaixo — aqueles
+estão mapeados para as fases 11 a 16.
 
 ### Planos e Regras (PLAN)
 
@@ -217,7 +219,7 @@ valor presente do mês = Σ componentes contaCheioNoMes com data no mês
 ```
 
 **2. Para o cartão parcelado, "pago" significa "venda aprovada"** — não "as 12
-parcelas caíram". É como a planilha já trata hoje (Tatiana: status `Pago`, coluna
+parcelas caíram". É como a planilha já trata hoje (Cliente B: status `Pago`, coluna
 V = 60.000, comissão sobre 60k em julho). Isso é o que concilia "só comissiona
 parcela paga" com "cartão 12x comissiona cheio no mês".
 
@@ -225,7 +227,7 @@ parcela paga" com "cartão 12x comissiona cheio no mês".
 100% recorrência. A entrada pode ser parcelada em 12x no cartão, desde que seja o
 modelo de pagamento completo do cartão, não assinatura. Consequência: a ressalva
 (4) do documento (100% recorrência conta 1 parcela) vira regra **apenas
-histórica** — Vanessa Militani, julho/2026, precisa continuar representável, mas
+histórica** — a venda 100% recorrência de julho/2026 precisa continuar representável, mas
 o formulário deve recusar cadastro novo abaixo de 50%.
 
 **4. Cada componente da negociação tem data e forma próprias, e precisa ser

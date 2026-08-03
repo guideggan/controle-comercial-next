@@ -61,7 +61,7 @@ describe("validarEntradaMinima (PGMT-05)", () => {
   });
 
   it("soma componentes de entrada separados antes de comparar com o mínimo", () => {
-    // Karen: 72k PIX + 72k cartão. Nenhum sozinho é 50% de nada, mas juntos
+    // Cliente A: 72k PIX + 72k cartão. Nenhum sozinho é 50% de nada, mas juntos
     // são 100% — a política é sobre a entrada TOTAL, não por componente.
     const componentes: ComponentePagamento[] = [
       { forma: "PIX", contaCheioNoMes: true, valor: 72_000, parcelas: 1, dataPrevista: "2026-07-30" },
@@ -117,7 +117,7 @@ describe("gerarCronogramaDeComponentes (PGMT-06)", () => {
   });
 
   it("dois componentes que contam cheio não colidem na unique [venda, tipo, numero]", () => {
-    // Karen: PIX + cartão no mesmo mês. No v1 isso era impossível de
+    // Cliente A: PIX + cartão no mesmo mês. No v1 isso era impossível de
     // representar; aqui gera duas parcelas com `numero` distinto.
     const parcelas = gerarCronogramaDeComponentes([
       { forma: "PIX", contaCheioNoMes: true, valor: 72_000, parcelas: 1, dataPrevista: "2026-07-30" },

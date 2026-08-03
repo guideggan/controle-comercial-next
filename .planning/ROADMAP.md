@@ -227,9 +227,9 @@ O v1 modelou corretamente a cadeia de CAIXA (venda → parcela → recebimento �
 **Success Criteria** (what must be TRUE):
   1. Uma venda com 3 formas de pagamento simultâneas (ex.: Rafaela — 5k sinal + 25k em 03/08 + 30k recorrência 6x) é cadastrada sem achatar nada, cada componente com sua data e sua explicação
   2. O valor presente de julho/2026 calculado pelo sistema é R$ 604.833,33, batendo ao centavo com a apuração manual
-  3. Os 6 casos da §3 do documento (Karen, Tatiana, Viviane, Vanessa, Rafaela, Patrícia) passam como teste automatizado do módulo puro
+  3. Os 6 casos da §3 do documento (Clientes A a F) passam como teste automatizado do módulo puro
   4. Um componente datado em agosto não aparece no valor presente de julho, e aparece no de agosto
-  5. Cadastrar uma venda nova com entrada abaixo de 50% do TCV é recusado com mensagem clara; a Vanessa Militani (100% recorrência, julho) continua existindo no banco sem erro
+  5. Cadastrar uma venda nova com entrada abaixo de 50% do TCV é recusado com mensagem clara; a venda 100% recorrência de julho continua existindo no banco sem erro
   6. Depois de converter as 261 vendas históricas para componentes, nenhuma apuração já FECHADA muda de valor (reconciliação linha a linha antes/depois)
 
 **Notas de implementação** (decididas no diagnóstico de 2026-08-02):

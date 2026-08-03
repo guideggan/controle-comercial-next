@@ -49,7 +49,7 @@ function vpDaVenda(
 }
 
 describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
-  it("Karen Volpato: 72k PIX + 72k em 12x no cartão → 144.000 (ressalva 1)", () => {
+  it("Cliente A: 72k PIX + 72k em 12x no cartão → 144.000 (ressalva 1)", () => {
     const componentes: ComponentePagamento[] = [
       { forma: "PIX", contaCheioNoMes: true, valor: 72_000, parcelas: 1, dataPrevista: "2026-07-30" },
       { forma: "CARTAO_PARCELADO", contaCheioNoMes: true, valor: 72_000, parcelas: 12, dataPrevista: "2026-07-30" },
@@ -59,7 +59,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, JULHO)).toBe(144_000);
   });
 
-  it("Tatiana Queiroz: 60k em 12x no cartão → 60.000 cheio no mês", () => {
+  it("Cliente B: 60k em 12x no cartão → 60.000 cheio no mês", () => {
     const componentes: ComponentePagamento[] = [
       { forma: "CARTAO_PARCELADO", contaCheioNoMes: true, valor: 60_000, parcelas: 12, dataPrevista: "2026-07-15" },
     ];
@@ -67,7 +67,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, JULHO)).toBe(60_000);
   });
 
-  it("Viviane Cruz: 50k de entrada + 46k de recorrência → só a entrada (ressalva 2)", () => {
+  it("Cliente C: 50k de entrada + 46k de recorrência → só a entrada (ressalva 2)", () => {
     const componentes: ComponentePagamento[] = [
       { forma: "CARTAO_PARCELADO", contaCheioNoMes: true, valor: 50_000, parcelas: 12, dataPrevista: "2026-07-10" },
       { forma: "RECORRENCIA", contaCheioNoMes: false, valor: 46_000, parcelas: 12, dataPrevista: "2026-08-10" },
@@ -77,7 +77,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, JULHO)).toBe(50_000);
   });
 
-  it("Vanessa Militani: 100% recorrência 12x → 3.833,33 (ressalva 4, sem regra especial)", () => {
+  it("Cliente D: 100% recorrência 12x → 3.833,33 (ressalva 4, sem regra especial)", () => {
     // A ressalva (4) NÃO é um caso especial no código: a primeira parcela da
     // recorrência entra porque foi PAGA, pelo segundo termo da fórmula.
     const componentes: ComponentePagamento[] = [
@@ -97,7 +97,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, JULHO, primeiraParcelaPaga)).toBe(3_833.33);
   });
 
-  it("Vanessa Militani: se a primeira parcela NÃO for paga, o mês fica zerado", () => {
+  it("Cliente D: se a primeira parcela NÃO for paga, o mês fica zerado", () => {
     // Documenta o limite da simplificação: a ressalva (4) do documento existia
     // para "não aparecer zerada". Com a política de 50% de entrada
     // (confirmada em 2026-08-02), venda 100% recorrência não acontece mais —
@@ -109,7 +109,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, JULHO)).toBe(0);
   });
 
-  it("Rafaela Silva: 5k de sinal + 25k em 03/08 + 30k de recorrência → 5.000 em julho (ressalva 3)", () => {
+  it("Cliente E: 5k de sinal + 25k em 03/08 + 30k de recorrência → 5.000 em julho (ressalva 3)", () => {
     const componentes: ComponentePagamento[] = [
       { forma: "SINAL", contaCheioNoMes: true, valor: 5_000, parcelas: 1, dataPrevista: "2026-07-31" },
       { forma: "PIX", contaCheioNoMes: true, valor: 25_000, parcelas: 1, dataPrevista: "2026-08-03" },
@@ -120,7 +120,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, JULHO)).toBe(5_000);
   });
 
-  it("Rafaela Silva: os 25k datados em 03/08 caem no valor presente de AGOSTO", () => {
+  it("Cliente E: os 25k datados em 03/08 caem no valor presente de AGOSTO", () => {
     const componentes: ComponentePagamento[] = [
       { forma: "SINAL", contaCheioNoMes: true, valor: 5_000, parcelas: 1, dataPrevista: "2026-07-31" },
       { forma: "PIX", contaCheioNoMes: true, valor: 25_000, parcelas: 1, dataPrevista: "2026-08-03" },
@@ -130,7 +130,7 @@ describe("valor presente — os 6 casos reais de julho/2026 (PGMT-08)", () => {
     expect(vpDaVenda(componentes, AGOSTO)).toBe(25_000);
   });
 
-  it("Patrícia Ferreira: 25k jun + 25k jul em cartão + 46k boleto → 25.000 em julho", () => {
+  it("Cliente F: 25k jun + 25k jul em cartão + 46k boleto → 25.000 em julho", () => {
     const componentes: ComponentePagamento[] = [
       { forma: "CARTAO_PARCELADO", contaCheioNoMes: true, valor: 25_000, parcelas: 12, dataPrevista: "2026-06-20" },
       { forma: "CARTAO_PARCELADO", contaCheioNoMes: true, valor: 25_000, parcelas: 12, dataPrevista: "2026-07-20" },
