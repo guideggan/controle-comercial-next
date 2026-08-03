@@ -99,6 +99,31 @@ Postgres gerenciado.
    Depois disso, `SEED_ADMIN_PASSWORD` pode ser removida/rotacionada do
    dashboard — o seed é idempotente e não recria o admin se ele já existir.
 
+## Regras do negócio — leia antes de mexer na apuração
+
+[`docs/APURACAO-COMERCIAL-NEXT.md`](docs/APURACAO-COMERCIAL-NEXT.md) é o
+documento de referência da apuração comercial real da Next, levantado em
+02/08/2026 a partir do fechamento de julho/2026 e **verificado contra dados
+reais** (o que é incerto está marcado como ⚠️ INCERTO). É o que este sistema
+precisa substituir.
+
+O que ele traz e o sistema tem que honrar:
+
+- a regra de faturamento **TCV × valor presente × caixa** com as 4 ressalvas
+  (cartão 12x conta cheio, entrada+recorrência conta só a entrada, pagamento
+  datado em outro mês não conta, venda 100% recorrência conta 1 parcela) —
+  **a meta mensal é de valor presente**;
+- a estrutura da planilha que hoje faz esse trabalho (blocos carteira ×
+  vendas novas, dicionário de colunas) e seus 10 problemas conhecidos, que
+  são requisitos implícitos;
+- o cálculo de comissão (base = valor recebido, só sobre status `Pago`, paga
+  no mês seguinte) e os marcadores especiais (`OTE`, `A definir`, …);
+- as regras de contagem de pré-vendas e os IDs do GHL usados na apuração;
+- o modelo de dados proposto para o hub (seção 9) — em especial o **plano de
+  pagamento**, o dado que hoje só existe como texto livre no WhatsApp;
+- os **números de julho/2026 (seção 10) como fixture** para validar qualquer
+  implementação do cálculo.
+
 ## Dados e análises (fora do repo)
 
 Planilhas de origem, relatórios de apuração e arquivos de conferência **não
