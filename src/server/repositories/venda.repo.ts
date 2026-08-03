@@ -68,6 +68,10 @@ export type InserirParcelaData = {
   mesReferencia: string; // "YYYY-MM-01", DATE puro
   dataVencimento: string; // "YYYY-MM-DD", DATE puro
   valorPrevisto: number;
+  // Fase 11: componente de origem. Null nas parcelas geradas pelo caminho
+  // escalar do v1 e em todo o histórico da Fase 10 — é o que permite ao
+  // cálculo de valor presente saber se esta parcela já foi contada cheia.
+  componenteId?: string | null;
 };
 
 export type AtualizarVendaRowData = {
@@ -137,6 +141,7 @@ export function inserirParcelas(tx: VendaClient, parcelas: InserirParcelaData[])
       mesReferencia: paraDataUTC(p.mesReferencia),
       dataVencimento: paraDataUTC(p.dataVencimento),
       valorPrevisto: p.valorPrevisto,
+      componenteId: p.componenteId ?? null,
     })),
   });
 }

@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+import { validarEntradaMinima } from "@/domain/vendas/componentes";
+import {
+  componenteSchema,
+  resolverComponentes,
+} from "@/server/actions/componentes.schemas";
+
 // Schema de validação da venda, isolado (sem "use server") pelo mesmo motivo
 // de produtos.schemas.ts/planos-comissao.schemas.ts: um arquivo "use server"
 // só pode exportar funções async. Este arquivo é a fonte única de validação
@@ -61,6 +67,14 @@ export const vendaSchema = z
     sdrId: z.string().optional().nullable(),
     observacao: z.string().optional(),
     linkCrm: linkCrmSchema,
+    // ---- Fase 11: plano de pagamento estruturado (PGMT-01) ----
+    // OPCIONAL de propósito, e vai continuar opcional até a UI de componentes
+    // substituir o formulário escalar. Enquanto for omitido, a venda usa o
+    // caminho do v1 (entrada/valorMensalidade/numeroParcelas) e nasce sem
+    // componentes — exatamente como as 261 vendas históricas, que o backfill
+    // converte depois. Isso mantém os scripts, testes e o importador da Fase
+    // 10 funcionando sem alteração.
+    componentes: z.array(componenteSchema).max(20).optional(),
   })
   .refine(
     (data) =>
@@ -75,6 +89,46 @@ export const vendaSchema = z
   .refine((data) => data.tipoPagamento !== "A_VISTA" || data.valorTotal > 0, {
     message: "Venda à vista exige valorTotal maior que zero",
     path: ["valorTotal"],
+  })
+  // PGMT-05: política de 50% de entrada mínima, confirmada com a gestão em
+  // 2026-08-02. Só é aplicada quando a venda vem COM componentes — vendas
+  // pelo caminho escalar do v1 não têm como declarar o que é entrada
+  // garantida, e o histórico anterior à política precisa continuar
+  // representável (PGMT-07).
+  .check((ctx) => {
+    const componentes = ctx.value.componentes;
+    if (!componentes || componentes.length === 0) return;
+
+    const resultado = validarEntradaMinima(resolverComponentes(componentes));
+    if (!resultado.valido) {
+      ctx.issues.push({
+        code: "custom",
+        message: resultado.motivo,
+        path: ["componentes"],
+        input: ctx.value,
+      });
+    }
+  })
+  // Coerência entre os dois mundos enquanto ambos coexistem: se a venda
+  // declara componentes, a soma deles é o TCV. Divergência aqui quase sempre
+  // é erro de digitação — e sem esta trava o dashboard mostraria um TCV e o
+  // valor presente sairia de outra base.
+  .check((ctx) => {
+    const componentes = ctx.value.componentes;
+    if (!componentes || componentes.length === 0) return;
+
+    const somaComponentes = componentes.reduce((total, c) => total + c.valor, 0);
+    // Tolerância de 1 centavo para arredondamento de divisão.
+    if (Math.abs(somaComponentes - ctx.value.valorTotal) > 0.01) {
+      ctx.issues.push({
+        code: "custom",
+        message:
+          `A soma dos componentes (${somaComponentes.toFixed(2)}) precisa ser igual ` +
+          `ao valor total da venda (${ctx.value.valorTotal.toFixed(2)}).`,
+        path: ["componentes"],
+        input: ctx.value,
+      });
+    }
   });
 
 export type VendaInput = z.infer<typeof vendaSchema>;

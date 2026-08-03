@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/table";
 import { VendaForm } from "@/app/(admin)/vendas/venda-form";
 import { ParcelaPagamentoForm } from "@/app/(admin)/vendas/[id]/parcela-pagamento-form";
+import { listarComponentesDaVenda } from "@/server/repositories/componente.repo";
+import { valorPresenteDaVenda } from "@/domain/vendas/valor-presente";
+import { ROTULO_FORMA } from "@/server/actions/componentes.schemas";
 
 // Data DATE pura vinda do Postgres (Prisma devolve `Date` em meia-noite
 // UTC) — formata SEMPRE via getters UTC (nunca locais), mesma convenção de
@@ -34,6 +37,14 @@ function formatarDataUTC(data: Date): string {
   const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
   const ano = data.getUTCFullYear();
   return `${dia}/${mes}/${ano}`;
+}
+
+// "YYYY-MM-01" a partir de um DATE do Postgres — mesma convenção de
+// competência do resto do projeto (Pitfall 2/6).
+function mesReferenciaParaString(data: Date): string {
+  const ano = data.getUTCFullYear();
+  const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
+  return `${ano}-${mes}-01`;
 }
 
 function formatarMesAnoUTC(data: Date): string {
@@ -64,14 +75,29 @@ export default async function VendaDetalhePage({
 
   const { id } = await params;
 
-  const [venda, produtos, colaboradores] = await Promise.all([
+  const [venda, produtos, colaboradores, componentes] = await Promise.all([
     getVenda(id),
     listarProdutos(),
     listarColaboradores(),
+    listarComponentesDaVenda(id),
   ]);
   if (!venda) {
     notFound();
   }
+
+  // Fase 11: valor presente desta venda na competência dela — a soma dos
+  // componentes que contam cheio e estão datados no mês da venda. Não inclui
+  // parcelas recebidas de recorrência (essas entram no faturamento do mês,
+  // não no "valor presente da venda").
+  const mesDaVenda = mesReferenciaParaString(venda.mesReferencia);
+  const valorPresenteDaVendaNoMes = valorPresenteDaVenda(
+    componentes.map((c) => ({
+      contaCheioNoMes: c.contaCheioNoMes,
+      valor: Number(c.valor),
+      mesPrevisto: mesReferenciaParaString(c.mesPrevisto),
+    })),
+    mesDaVenda,
+  );
 
   const produtosAtivos = produtos.filter((p) => p.ativo);
   const closers = colaboradores.filter((c) => c.ativo && c.papel === "CLOSER");
@@ -228,6 +254,64 @@ export default async function VendaDetalhePage({
             )}
           </CardContent>
         </Card>
+
+        {/* Fase 11: plano de pagamento estruturado. Só aparece para vendas
+            que já têm componentes — as históricas (e as criadas pelo
+            formulário escalar, enquanto ele existir) seguem sem esta seção
+            até o backfill rodar. */}
+        {componentes.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+              <CardTitle>Plano de pagamento</CardTitle>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">
+                  Valor presente no mês da venda
+                </p>
+                <p className="text-sm font-medium">
+                  {formatarBRL(valorPresenteDaVendaNoMes)}
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Forma</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Parcelas</TableHead>
+                    <TableHead>Data prevista</TableHead>
+                    <TableHead>Conta cheio no mês</TableHead>
+                    <TableHead>Observação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {componentes.map((componente) => (
+                    <TableRow key={componente.id}>
+                      <TableCell className="font-medium">
+                        {ROTULO_FORMA[componente.forma]}
+                      </TableCell>
+                      <TableCell>{formatarBRL(Number(componente.valor))}</TableCell>
+                      <TableCell>{componente.parcelas}x</TableCell>
+                      <TableCell>
+                        {formatarDataUTC(componente.dataPrevista)}
+                      </TableCell>
+                      <TableCell>
+                        {componente.contaCheioNoMes ? (
+                          <Badge>Sim — conta cheio</Badge>
+                        ) : (
+                          <Badge variant="secondary">Não — parcela a parcela</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="max-w-xs text-xs text-muted-foreground">
+                        {componente.descricao ?? "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4">

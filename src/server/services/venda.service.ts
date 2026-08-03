@@ -21,6 +21,15 @@ import {
   gerarCronogramaParcelas,
   type ParcelaGerada,
 } from "@/domain/vendas/parcelas";
+import {
+  gerarCronogramaDeComponentes,
+  type ComponentePagamento,
+} from "@/domain/vendas/componentes";
+import { resolverComponentes } from "@/server/actions/componentes.schemas";
+import {
+  inserirComponentes,
+  apagarComponentes,
+} from "@/server/repositories/componente.repo";
 import { registrarAudit } from "@/server/services/audit.service";
 
 // Coração da Fase 3 (VENDA-02): materializa a venda + o cronograma de
@@ -78,6 +87,70 @@ export type CriadorVenda = {
   colaboradorId: string;
 };
 
+// Fase 11 — DOIS CAMINHOS DE CRONOGRAMA, temporariamente coexistindo:
+//
+//   COM componentes  → gerarCronogramaDeComponentes (src/domain/vendas/componentes.ts)
+//                      é o caminho novo, e o único que permite calcular valor
+//                      presente. Cada parcela nasce ligada ao componente que
+//                      a originou.
+//   SEM componentes  → gerarCronogramaParcelas (src/domain/vendas/parcelas.ts)
+//                      é o caminho do v1, preservado byte a byte. Continua
+//                      atendendo o importador da Fase 10, os scripts e todo
+//                      chamador que ainda não passa componentes.
+//
+// A coexistência é deliberada e TEMPORÁRIA: quando a UI de componentes
+// substituir o formulário escalar e o backfill tiver convertido o histórico,
+// o caminho do v1 pode ser removido. Enquanto os dois existem, `componentes`
+// é a fonte de verdade quando presente — nunca os dois ao mesmo tempo.
+async function persistirCronograma(
+  tx: Parameters<Parameters<typeof db.$transaction>[0]>[0],
+  vendaId: string,
+  parsed: VendaInput,
+) {
+  const temComponentes = parsed.componentes && parsed.componentes.length > 0;
+
+  if (!temComponentes) {
+    const cronograma = gerarCronogramaParcelas({
+      tipoPagamento: paraTipoPagamentoDominio(parsed.tipoPagamento),
+      mesReferenciaInicial: parsed.mesReferencia,
+      diaVencimento: parsed.diaVencimento,
+      valorTotal: parsed.valorTotal,
+      entrada: parsed.entrada,
+      valorMensalidade: parsed.valorMensalidade,
+      numeroParcelas: parsed.numeroParcelas,
+    });
+    await inserirParcelas(tx, montarParcelasParaInsercao(vendaId, cronograma));
+    return;
+  }
+
+  const componentes: ComponentePagamento[] = resolverComponentes(
+    parsed.componentes!,
+  );
+
+  // Componentes primeiro: precisamos dos ids gerados para vincular cada
+  // parcela ao seu componente de origem. Tudo na mesma transação do caller.
+  const componenteIds = await inserirComponentes(
+    tx,
+    vendaId,
+    componentes.map((c, ordem) => ({ ...c, ordem })),
+  );
+
+  const cronograma = gerarCronogramaDeComponentes(componentes);
+
+  await inserirParcelas(
+    tx,
+    cronograma.map((p) => ({
+      vendaId,
+      tipo: mapearTipoParcela(p.tipo),
+      numero: p.numero,
+      mesReferencia: p.mesReferencia,
+      dataVencimento: p.dataVencimento,
+      valorPrevisto: p.valorPrevisto,
+      componenteId: componenteIds[p.componenteIndice] ?? null,
+    })),
+  );
+}
+
 export async function criarVenda(input: VendaInput, criador?: CriadorVenda) {
   const ehCloser = criador?.role === "CLOSER";
 
@@ -87,16 +160,6 @@ export async function criarVenda(input: VendaInput, criador?: CriadorVenda) {
   const parsed = ehCloser
     ? vendaSchemaParaCloser.parse(input)
     : vendaSchema.parse(input);
-
-  const cronograma = gerarCronogramaParcelas({
-    tipoPagamento: paraTipoPagamentoDominio(parsed.tipoPagamento),
-    mesReferenciaInicial: parsed.mesReferencia,
-    diaVencimento: parsed.diaVencimento,
-    valorTotal: parsed.valorTotal,
-    entrada: parsed.entrada,
-    valorMensalidade: parsed.valorMensalidade,
-    numeroParcelas: parsed.numeroParcelas,
-  });
 
   return db.$transaction(async (tx) => {
     const venda = await criarVendaRow(tx, {
@@ -120,7 +183,7 @@ export async function criarVenda(input: VendaInput, criador?: CriadorVenda) {
       linkCrm: parsed.linkCrm ?? null,
     });
 
-    await inserirParcelas(tx, montarParcelasParaInsercao(venda.id, cronograma));
+    await persistirCronograma(tx, venda.id, parsed);
 
     return venda;
   });
@@ -138,16 +201,6 @@ export async function atualizarVenda(id: string, input: VendaInput) {
   }
 
   const parsed = vendaSchema.parse(input);
-
-  const cronograma = gerarCronogramaParcelas({
-    tipoPagamento: paraTipoPagamentoDominio(parsed.tipoPagamento),
-    mesReferenciaInicial: parsed.mesReferencia,
-    diaVencimento: parsed.diaVencimento,
-    valorTotal: parsed.valorTotal,
-    entrada: parsed.entrada,
-    valorMensalidade: parsed.valorMensalidade,
-    numeroParcelas: parsed.numeroParcelas,
-  });
 
   return db.$transaction(async (tx) => {
     const venda = await atualizarVendaRow(tx, id, {
@@ -173,8 +226,23 @@ export async function atualizarVenda(id: string, input: VendaInput) {
     // preservando SEMPRE as parcelas já PAGAS (nunca tocadas). Isso vale
     // tanto para à vista (regenera a única parcela pendente) quanto para
     // mensalista (regenera entrada+mensalidades ainda não pagas).
+    //
+    // Fase 11: os componentes são substituídos junto (apagar + reinserir),
+    // pela mesma razão — eles descrevem o mesmo plano de pagamento que o
+    // cronograma materializa. As parcelas PAGAS que apontavam para um
+    // componente apagado ficam com `componenteId = NULL` (FK
+    // `onDelete: SetNull`), o que é o comportamento correto: a parcela paga é
+    // um fato consumado, o componente que a previa deixou de existir.
+    //
+    // ATENÇÃO (dívida conhecida, ver HANDOFF-DEV.md): uma parcela paga órfã
+    // de componente volta a ser tratada como `origemContaCheio: false` pelo
+    // cálculo de valor presente. Para venda com cartão parcelado editada
+    // depois de já ter recebimento, isso pode superestimar o valor presente
+    // do mês. A Fase 13 precisa resolver antes de a comissão passar a
+    // depender desse número.
     await apagarParcelasPendentes(tx, id);
-    await inserirParcelas(tx, montarParcelasParaInsercao(id, cronograma));
+    await apagarComponentes(tx, id);
+    await persistirCronograma(tx, id, parsed);
 
     return venda;
   });

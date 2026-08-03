@@ -88,3 +88,26 @@ export function listarRecebimentosDoMes(mesReferencia: string) {
     },
   });
 }
+
+// Fase 11: mesma query acima, trazendo também a competência da VENDA e o
+// componente de origem — o que o cálculo de valor presente precisa para
+// (a) separar venda nova de carteira e (b) NÃO somar de novo uma parcela cuja
+// origem já foi contada cheia (dupla contagem).
+//
+// Query separada em vez de ampliar o include de `listarRecebimentosDoMes` de
+// propósito: aquela função alimenta a comissão do v1 (recebidoNoMes), e
+// engordar o payload dela faria todo o caminho de apuração pagar por dados
+// que não usa.
+export function listarRecebimentosDoMesComOrigem(mesReferencia: string) {
+  return db.parcela.findMany({
+    where: {
+      mesReferencia: paraDataUTC(mesReferencia),
+      statusPagamento: "PAGO",
+      venda: { statusAprovacao: "APROVADA" },
+    },
+    include: {
+      venda: { select: { id: true, mesReferencia: true } },
+      componente: { select: { id: true, contaCheioNoMes: true, forma: true } },
+    },
+  });
+}

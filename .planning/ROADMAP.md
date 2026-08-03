@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 O v1 modelou corretamente a cadeia de CAIXA (venda → parcela → recebimento → comissão), mas a métrica que a gestão usa para meta e faturamento é o **valor presente**, que o sistema não conhece. O v2 introduz o plano de pagamento estruturado — o dado que hoje só existe como texto livre no WhatsApp — e faz valor presente, TCV e caixa passarem a ser três números distintos e visíveis.
 
-- [ ] **Phase 11: Plano de Pagamento e Valor Presente** - A venda passa a ter N componentes de pagamento e o sistema calcula valor presente sozinho
+- [~] **Phase 11: Plano de Pagamento e Valor Presente** - PARCIAL (2026-08-02): domínio puro, migração, camada server, backfill e exibição read-only prontos; **faltam o formulário de componentes e a aplicação do backfill** — ver `docs/HANDOFF-DEV.md` §6
 - [ ] **Phase 12: Os Três Números e a Meta da Empresa** - TCV, valor presente e caixa visíveis lado a lado; meta medida em valor presente
 - [ ] **Phase 13: Comissão sobre Valor Presente** - A base da comissão do closer deixa de ser caixa e passa a ser valor presente
 - [ ] **Phase 14: Cliente como Entidade** - Aluno e pagador deixam de ser texto livre e ganham ID
@@ -330,7 +330,7 @@ v2: 11 → 12 → 13 → 14 → 15, com 16 (GHL) livre para correr em paralelo a
 | 9. Dashboard do Gestor | 1/1 | Complete | 2026-07-02 |
 | 10. Importação do Histórico | 1/1 | Complete | 2026-07-02 |
 | **v2** | | | |
-| 11. Plano de Pagamento e Valor Presente | 0/? | Pending | — |
+| 11. Plano de Pagamento e Valor Presente | 5/7 | **Parcial** | — |
 | 12. Os Três Números e a Meta da Empresa | 0/? | Pending | — |
 | 13. Comissão sobre Valor Presente | 0/? | Pending | — |
 | 14. Cliente como Entidade | 0/? | Pending | — |

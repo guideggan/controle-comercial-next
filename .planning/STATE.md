@@ -162,7 +162,14 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6, Fas
 - **v1 em produção hoje conta caixa, não valor presente:** enquanto o v2 não roda, a meta do closer e a receita do dashboard estão medindo caixa recebido. Para uma venda em 12x no cartão, isso significa comissão sobre 1/12 do valor no mês do fechamento se o operador for fiel ao caixa, ou um caixa inflado se ele marcar o 12x como pago. Não há configuração hoje em que os dois números estejam certos ao mesmo tempo.
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
 - Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas rotas reais adicionadas desde então (`/inicio`, `/comissoes`, `/metas`, `/agendamentos`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
-- **Bug em produção (descoberto na Fase 3, não corrigido — fora de escopo):** `plano-comissao.repo.ts` (Fase 2) tem o mesmo bug de datas corrigido em `venda.repo.ts` neste plano — `definirPlanoComissaoAction` está quebrada contra o banco real hoje (COLAB-02..05). Ver `.planning/phases/03-vendas-e-parcelas/deferred-items.md`. Recomendado priorizar correção antes/no início da Fase 4.
+- ~~**Bug em produção:** `plano-comissao.repo.ts` com o bug de datas da Fase 3~~ — **RESOLVIDO** (verificado em 2026-08-02: `paraDataUTC` está presente e é usado em `criarPlanoRow`/`fecharVigencia`, linhas 21/46/63). Anotação estava desatualizada.
+- **Bugs reais encontrados na varredura de 2026-08-02** (detalhamento completo, com números medidos contra o banco de produção, em `docs/HANDOFF-DEV.md` §5):
+  - 🔴 **16 vendas com uma parcela a mais** que o contrato (R$ 44.349,99 previstos) — a importação da Fase 10 tratou a 1ª mensalidade como "entrada" E manteve as 12. Nenhuma paga ainda, então sem comissão indevida até agora.
+  - 🔴 **Extrato de comissão não bate com a base** (viola COMIS-07): `getExtrato` filtra `closerId || sdrId`, mas `valorRecebidoPorPapel` usa só um dos mapas. Afeta Yuri e KADU, que aparecem nos dois papéis.
+  - 🟠 **73 vendas (28%) com `valorTotal` incoerente** com entrada + mensalidade × parcelas — vem da planilha de origem; bloqueia a aplicação do backfill de componentes.
+  - 🟠 **7 grupos de nomes de aluno duplicados** por grafia (Leticia ×2, Angelica ×3, Patricia ×5...) — é o problema #7 da planilha, resolvido só pela Fase 14.
+  - 🟡 `SessionUser.colaboradorId` tipado como `string` sendo nullable no banco; `requireRole` lança erro genérico (500); middleware cobre só `/painel`; imutabilidade da apuração FECHADA depende só do service (`upsertApuracao` não filtra status no update).
+  - 🟢 `apurarMes` é N+1 (chama `recebidoNoMes` uma vez por colaborador); somas de dinheiro em float fora do motor de comissão.
 
 ## Session Continuity
 

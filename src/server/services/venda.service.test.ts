@@ -32,6 +32,17 @@ vi.mock("@/server/services/audit.service", () => ({
   registrarAudit: (...args: unknown[]) => registrarAuditMock(...args),
 }));
 
+// Fase 11: o service passou a orquestrar também os componentes do plano de
+// pagamento. Mockado no mesmo nível de venda.repo (o `fakeTx` abaixo é um
+// objeto vazio de propósito — provar que tudo roda na MESMA transação, sem
+// simular o Prisma Client inteiro).
+const inserirComponentesMock = vi.fn(async () => [] as string[]);
+const apagarComponentesMock = vi.fn();
+vi.mock("@/server/repositories/componente.repo", () => ({
+  inserirComponentes: (...args: unknown[]) => inserirComponentesMock(),
+  apagarComponentes: (...args: unknown[]) => apagarComponentesMock(...args),
+}));
+
 // db.$transaction mockado para executar o callback recebendo um "tx" fake —
 // suficiente para provar que a venda e as parcelas são inseridas dentro da
 // MESMA transação, sem tocar banco real.

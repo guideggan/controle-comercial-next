@@ -67,6 +67,39 @@ enum TipoPagamento {
   MENSALISTA
 }
 
+// ============================================================
+// FASE 11 — plano de pagamento estruturado (PGMT-01/02)
+// ============================================================
+// A forma de pagamento de cada COMPONENTE da negociação. Até a Fase 10 isso
+// só existia como texto livre (`Venda.observacao`, copiado do WhatsApp) — era
+// a maior fragilidade do processo e o que impedia calcular valor presente sem
+// interpretação humana.
+//
+// O que decide se o dinheiro conta cheio no mês NÃO é a forma em si, é a Next
+// já ter garantido o recebimento (regra confirmada com a gestão em
+// 2026-08-02). CARTAO_PARCELADO e RECORRENCIA são os dois lados dessa
+// distinção: um cartão parcelado em transação única foi aprovado inteiro pela
+// operadora (o cliente não cancela o que falta); uma assinatura recorrente o
+// cliente cancela quando quiser. Ver src/domain/vendas/componentes.ts.
+enum FormaPagamento {
+  PIX
+  SINAL
+  CARTAO_PARCELADO
+  BOLETO
+  RECORRENCIA
+}
+
+// De onde o registro veio. Reservado para as integrações (Asaas/GHL): um
+// agendamento sincronizado do GHL não deve ser editável à mão como um
+// lançamento manual, e um recebimento conciliado pelo Asaas precisa ser
+// distinguível de um "marcar pago" digitado pelo admin.
+enum OrigemRegistro {
+  MANUAL
+  GHL
+  ASAAS
+  IMPORTACAO
+}
+
 enum ParcelaTipo {
   ENTRADA
   MENSALIDADE
@@ -165,10 +198,10 @@ model Verification {
 // User.colaboradorId → Colaborador.id.
 
 model Colaborador {
-  id        String   @id @default(cuid())
-  nome      String
-  email     String   @unique
-  papel     Papel
+  id       String  @id @default(cuid())
+  nome     String
+  email    String  @unique
+  papel    Papel
   // `ativo=false` é o mecanismo de arquivamento (v1.1): soft-delete que
   // preserva todas as FKs históricas (vendas/parcelas/apurações/metas/
   // agendamentos) intactas. Reusa o flag já existente em vez de introduzir um
@@ -176,9 +209,17 @@ model Colaborador {
   // `ativo=true` por padrão (arquivarColaborador em colaboradores.actions.ts);
   // exclusão real (`excluirColaborador`) só é permitida quando o colaborador
   // não tem NENHUM registro histórico vinculado.
-  ativo     Boolean  @default(true)
-  telefone  String?
-  pix       String?
+  ativo    Boolean @default(true)
+  telefone String?
+  pix      String?
+
+  // ---- Espaço reservado: integração GHL (Fase 16) ----
+  // Id do usuário no GoHighLevel. É a chave que liga um agendamento do CRM à
+  // pessoa daqui: a atribuição de pré-venda usa `createdBy.userId` do GHL
+  // (NÃO `assignedUserId`, que é o closer dono do calendário — §8 do
+  // documento de apuração).
+  ghlUserId String? @unique
+
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
@@ -345,6 +386,23 @@ model Venda {
 
   fechado Boolean @default(false) // placeholder da trava de edição (Fase 5 integra com a apuração fechada)
 
+  // ---- Fase 11: plano de pagamento estruturado ----
+  // Os campos escalares acima (entrada/valorMensalidade/numeroParcelas) NÃO
+  // foram removidos: 261 vendas históricas dependem deles e o backfill
+  // (scripts/backfill-componentes.ts) os usa como fonte da conversão. Para
+  // vendas NOVAS eles passam a ser derivados dos componentes — a fonte de
+  // verdade do plano de pagamento é `componentes`, não mais os escalares.
+  componentes ComponentePagamento[]
+
+  origem OrigemRegistro @default(MANUAL)
+
+  // ---- Espaço reservado: integração GHL (Fase 16) ----
+  // Preenchidos pela sincronização de oportunidades ganhas. `@unique` no
+  // opportunityId torna o sync idempotente por construção (Postgres permite
+  // múltiplos NULLs numa coluna UNIQUE, então vendas manuais não colidem).
+  ghlOpportunityId String? @unique
+  ghlContactId     String?
+
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
@@ -354,7 +412,67 @@ model Venda {
   @@index([sdrId])
   @@index([mesReferencia])
   @@index([statusAprovacao])
+  @@index([ghlContactId])
   @@map("venda")
+}
+
+// Um componente do plano de pagamento de uma venda (PGMT-01). Uma venda tem N.
+//
+// É o dado que não existia estruturado em lugar nenhum antes da Fase 11 — o
+// que permite calcular valor presente sem ninguém interpretar texto livre.
+// Exemplos reais que exigem mais de um componente:
+//   Karen ....... 72k PIX + 72k em 12x no cartão
+//   Rafaela ..... 5k de sinal + 25k em 03/08 + 30k de recorrência em 6x
+//   Patrícia .... 25k cartão (jun) + 25k cartão (jul) + 46k em boleto
+//
+// `mesPrevisto` é gravado EXPLICITAMENTE (nunca derivado de `dataPrevista` no
+// read — Pitfall 2, mesma disciplina de Venda.mesReferencia), e é o que
+// implementa a ressalva 3 do documento de apuração: um componente datado em
+// agosto não entra no valor presente de julho, mesmo numa venda de julho.
+model ComponentePagamento {
+  id String @id @default(cuid())
+
+  vendaId String
+  venda   Venda  @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+
+  // Ordem de exibição/numeração dentro da venda (0-based). Faz parte da chave
+  // natural para o backfill ser idempotente.
+  ordem Int
+
+  forma FormaPagamento
+
+  // O discriminante da regra de valor presente. Derivado da `forma` por
+  // padrão (CONTA_CHEIO_POR_PADRAO em src/domain/vendas/componentes.ts), mas
+  // gravado explicitamente para permitir o caso raro que foge do padrão sem
+  // exigir migração nem uma forma nova.
+  contaCheioNoMes Boolean
+
+  valor    Decimal @db.Decimal(14, 2) // valor TOTAL do componente, não da parcela
+  parcelas Int     @default(1) // em quantas vezes é cobrado (1 = à vista)
+
+  dataPrevista DateTime @db.Date // a data DESTE componente
+  mesPrevisto  DateTime @db.Date // 1º dia do mês de dataPrevista, gravado explicitamente
+
+  // Texto livre explicando a negociação ("3 cartões diferentes", "boleto em
+  // aberto com o financeiro"). Negociações fora do padrão são comuns e
+  // precisam ser explicáveis — antes disso só existiam no WhatsApp.
+  descricao String?
+
+  // ---- Espaço reservado: integração Asaas (Fase 15) ----
+  // Id da cobrança/assinatura no gateway que representa ESTE componente
+  // (`pay_xxx` ou `sub_xxx` no Asaas). É por aqui que a conciliação encontra
+  // as parcelas reais de um cartão parcelado ou de uma recorrência.
+  gatewayChargeId String? @unique
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  parcelasGeradas Parcela[]
+
+  @@unique([vendaId, ordem])
+  @@index([mesPrevisto])
+  @@index([vendaId])
+  @@map("componente_pagamento")
 }
 
 // Colunas de recebimento (statusPagamento/valorRecebido/dataPagamento) já
@@ -379,12 +497,34 @@ model Parcela {
   valorRecebido   Decimal?        @db.Decimal(14, 2) // null até pago (Fase 4)
   dataPagamento   DateTime?       @db.Date // null até pago (Fase 4)
 
+  // ---- Fase 11: rastreabilidade até o componente de origem ----
+  // Nullable porque as 1.454 parcelas históricas (Fase 10) nasceram antes dos
+  // componentes existirem. NÃO faz parte da unique key: a numeração
+  // (`numero`) já é sequencial por tipo dentro da venda atravessando
+  // componentes, justamente para preservar `[vendaId, tipo, numero]` intacta.
+  //
+  // É o que permite ao cálculo de valor presente saber se esta parcela veio
+  // de um componente que já foi contado cheio (e portanto NÃO deve somar de
+  // novo — a dupla contagem do problema #5 da planilha).
+  componenteId String?
+  componente   ComponentePagamento? @relation(fields: [componenteId], references: [id], onDelete: SetNull)
+
+  origem OrigemRegistro @default(MANUAL)
+
+  // ---- Espaço reservado: integração Asaas/Pagar.me (Fase 15) ----
+  // CONCIL-01: conciliação por id de transação do gateway, nunca por nome de
+  // aluno (problema #7 da planilha). `@unique` garante que o mesmo pagamento
+  // não seja conciliado duas vezes, mesmo rodando o import repetido.
+  gatewayTransactionId  String?   @unique
+  gatewaySincronizadoEm DateTime? @db.Timestamptz
+
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
   @@unique([vendaId, tipo, numero])
   @@index([mesReferencia])
   @@index([statusPagamento])
+  @@index([componenteId])
   @@map("parcela")
 }
 
@@ -492,11 +632,82 @@ model Agendamento {
 
   observacao String?
 
+  origem OrigemRegistro @default(MANUAL)
+
+  // ---- Espaço reservado: integração GHL (Fase 16) ----
+  // GHL-01: "agendada" é 1x por lead, deduplicada por `contactId` —
+  // reagendamento NÃO reconta. Por isso o contactId é indexado: a dedup é uma
+  // query, não um pós-processamento em memória.
+  // `ghlAppointmentId` @unique torna o sync idempotente.
+  ghlAppointmentId String? @unique
+  ghlContactId     String?
+  ghlCalendarId    String?
+
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
   @@index([colaboradorId, data])
+  @@index([ghlContactId])
+  @@index([ghlCalendarId])
   @@map("agendamento")
+}
+
+// ============================================================
+// ESPAÇO RESERVADO PARA AS INTEGRAÇÕES (Fases 15 e 16)
+// ============================================================
+// Nenhuma das duas está implementada. Estas tabelas existem para que a
+// integração NÃO exija uma segunda migração destrutiva depois — mesma
+// disciplina já usada na Fase 3, que criou as colunas de recebimento da Fase
+// 4 antecipadamente.
+
+// GHL-02: quais calendários do GoHighLevel contam como pré-venda.
+// Não é constante no código porque muda sem deploy (a Next cria calendário
+// novo quando entra gente no time). Os ids reais estão na §8 de
+// docs/APURACAO-COMERCIAL-NEXT.md — D&F (reunião de proposta) e Pós-Vendas
+// NUNCA contam como agendamento de pré-venda.
+model CalendarioGhl {
+  id String @id @default(cuid())
+
+  ghlCalendarId String  @unique
+  nome          String
+  // false = existe no CRM mas não entra na apuração (D&F, Pós-Vendas)
+  apuravel      Boolean @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@map("calendario_ghl")
+}
+
+// Trilha de execução das sincronizações (Asaas e GHL).
+// CONCIL-03: divergência entre o extrato e as parcelas do sistema vira
+// relatório explícito, nunca é aceita em silêncio. `relatorio` (JSONB) guarda
+// o detalhamento do que não casou, no mesmo espírito de
+// ComissaoApurada.inputSnapshot — auditável depois, sem reprocessar.
+model SincronizacaoIntegracao {
+  id String @id @default(cuid())
+
+  // "ASAAS" | "PAGARME" | "GURU" | "GHL" — string livre em vez de enum para
+  // não exigir migração ao plugar um gateway novo.
+  sistema String
+
+  iniciadaEm  DateTime  @default(now()) @db.Timestamptz
+  concluidaEm DateTime? @db.Timestamptz
+
+  // "EM_ANDAMENTO" | "CONCLUIDA" | "FALHOU"
+  status String @default("EM_ANDAMENTO")
+
+  registrosLidos       Int @default(0)
+  registrosConciliados Int @default(0)
+  divergencias         Int @default(0)
+
+  relatorio Json?
+  erro      String?
+
+  executadaPor String? // userId (better-auth); null quando roda por cron
+
+  @@index([sistema, iniciadaEm])
+  @@map("sincronizacao_integracao")
 }
 
 // ============================================================
