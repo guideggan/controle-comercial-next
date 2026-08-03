@@ -1,0 +1,73 @@
+﻿LINHA	ALUNO	PARCELA HOJE		NOVA	OBSERVAÇÃO
+L 2	Ryam Carlo Júlio	09/12	->	10/12	
+L 3	Aline Pricila Hiert	05/12	->	06/12	
+L 4	Pâmela Brandão	12/12	->	12/12	CONTRATO ENCERRADO — remover da carteira
+L 5	Diego Guimarães	10/12	->	11/12	
+L 6	Fernanda Bogado	03/07	->	04/07	
+L 7	Gustavo Bueno Oliveira dos Santos	09/12	->	10/12	
+L 8	Lorena Miranda	09/12	->	10/12	
+L 9	Luana Montenegro	05/12	->	06/12	
+L10	Ana Kelly Gonçalves da Silva Santo	08/12	->	09/12	
+L11	Leticia A M dos Santos	09/12	->	10/12	
+L12	Thais Gouveia	02/12	->	03/12	
+L13	Kathleen Gonçalves	08/12	->	09/12	
+L14	Larissa Coimbra	08/12	->	09/12	
+L15	Patrícia Meen Kim	07/12	->	08/12	
+L16	Claudia Cavalcante	08/12	->	09/12	
+L17	Ellen Castro	04/10	->	05/10	
+L18	Maeli Galdino da Silva	06/10	->	07/10	
+L19	Ariane Pereira de Souza	06/12	->	07/12	
+L20	Ana Paula dos Santos	02/12	->	03/12	
+L21	Thaís Amaral Calicchio	06/12	->	07/12	
+L22	Bruna Alexia	03/12	->	04/12	
+L23	Eliany da Silva	04/10	->	05/10	
+L24	Fernanda Goulart	03/12	->	04/12	
+L25	Matheus da Silva	04/12	->	05/12	
+L26	Bianca Santos	06/09	->	07/09	
+L27	Thais Medeiros	02/12	->	03/12	
+L28	Matheus Vieira da Silva	05/12	->	06/12	
+L29	Angelica Marinho	05/12	->	06/12	
+L30	Nayara Prado	02/12	->	03/12	
+L31	Dani Garcia	04/12	->	05/12	
+L32	Lorena Cavatti	03/12	->	04/12	
+L33	Ryann Lucas	02/12	->	03/12	
+L34	Viviane Cardoso	05/07	->	06/07	
+L35	Fabiane Reusing	03/12	->	04/12	
+L36	Taysa Cartapasso	04/12	->	05/12	
+L37	Sulamita da Silva	03/07	->	04/07	
+L38	Tabata da Silva	04/12	->	05/12	
+L39	Ana Sissa e Geovane	02/12	->	03/12	
+L40	Flavia Rios	04/12	->	05/12	
+L41	Renata Napoleão	02/12	->	03/12	
+L42	Neide Lima	04/12	->	05/12	
+L43	Jhonathan e Luiz	04/10	->	05/10	
+L44	Jacqueline Vieira Jorge Oliveira	01/12	->	02/12	
+L45	Natuhemp LTDA	03/12	->	04/12	
+L46	Sencia Acessórios LTDA	03/12	->	04/12	
+L47	Jheniffer Martins de Souza	03/12	->	04/12	
+L48	Laisa Alexandra Oliveira Silva	03/12	->	04/12	
+L49	Artur Rodrigues	04/12	->	05/12	
+L50	Ana Coelho	03/12	->	04/12	
+L51	Monick Rosiane da Silva Dutra Cost	03/12	->	04/12	
+L52	JOALHERIA TAVARES LTDA	3	->	3	formato fora do padrão — conferir manualmente
+L53	Alessandro Lopes	02/12	->	03/12	
+L54	Driele e Maicon	02/10	->	03/10	
+L55	Maria Angelica	1/12	->	2/12	
+L56	Natanael	02/03	->	03/03	ÚLTIMA PARCELA
+L57	Thayna	01/12	->	02/12	
+L58	CAROLINA E NALVA	0/6	->	1/6	
+L59	MODA & PROPOSITO LTDA	0/10	->	1/10	
+L60	Victor - Decor Easy RENOVAÇÃO	1/12	->	2/12	
+L61	Willian Silva	01/12	->	02/12	
+L62	PURE SEOUL BR	01/12	->	02/12	
+L63	Thiago	1/4	->	2/4	
+L64	I. C. Boraschi Indústria e Comérci	1/12	->	2/12	
+L65	Juliana de Oliveira	1/12	->	2/12	
+L66	Ana Neves	0/6	->	1/6	
+L67	Débora KIM	01/12	->	02/12	
+L68	Aysllene Silva	01/12	->	02/12	
+L69	Rodrigo Zani	01/12	->	02/12	
+L70	Entre Nós	1/12	->	2/12	
+L71	Matheus e Gabriela	1/12	->	2/12	
+L72	ELA UP	01/12	->	02/12	
+L73	Matheus e Bianca	01/12	->	02/12	
