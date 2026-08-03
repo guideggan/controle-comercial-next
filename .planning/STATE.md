@@ -5,7 +5,7 @@
 See: .planning/PROJECT.md (updated 2026-07-01)
 
 **Core value:** Cada colaborador consegue ver, sozinho e a qualquer momento, quanto está distante da própria meta e quanto vai receber de comissão — e o gestor cadastra uma venda uma única vez e o sistema faz todo o cálculo automaticamente.
-**Current focus:** v1 encerrado (47/47 requisitos) + v1.1 (ajustes pós-teste do usuário) + v1.2 (plano Closer Jr / OTE) + v1.3 (atingimento correto SDR/SS + plano SDR Jr) + v1.4 (comissão especial João Pedro) completos
+**Current focus:** v1 encerrado (47/47 requisitos) + v1.1 (ajustes pós-teste do usuário) + v1.2 (plano Closer Jr / OTE) + v1.3 (atingimento correto SDR/SS + plano SDR Jr) + v1.4 (comissão especial João Pedro) completos. **v2 planejado em 2026-08-02** (Phases 11–16, 27 requisitos): plano de pagamento estruturado e valor presente — ver REQUIREMENTS.md §v2 e ROADMAP.md. Nenhuma fase do v2 iniciada.
 
 ## Current Position
 
@@ -156,6 +156,10 @@ Nenhum pendente na Fase 1, Fase 1.1, Fase 2, Fase 3, Fase 4, Fase 5, Fase 6, Fas
 
 ### Blockers/Concerns
 
+- **v2 / Phase 13 — decisão de gestão pendente:** a regra que define o PERCENTUAL de comissão não foi derivável dos dados (varia por pessoa? produto? origem? acordo individual?). O `PlanoComissao` config-driven suporta qualquer dessas leituras sem migração, mas **não modelar como percentual fixo por pessoa antes da confirmação**. Ver REQUIREMENTS.md §v2 "Pontos ainda em aberto".
+- **v2 / Phase 13 — risco de dinheiro real:** mudar a base da comissão de caixa para valor presente altera o valor pago às pessoas. Exige competência de corte explícita e decidida pela gestão, e PGMT-08 verde (valor presente batendo ao centavo com julho/2026) como pré-condição.
+- **v2 / Phase 11 — única migração destrutiva de semântica do v2:** conversão das 261 vendas históricas para componentes de pagamento. Dry-run com reconciliação antes/depois obrigatório antes do `--apply`, no mesmo padrão da Fase 10.
+- **v1 em produção hoje conta caixa, não valor presente:** enquanto o v2 não roda, a meta do closer e a receita do dashboard estão medindo caixa recebido. Para uma venda em 12x no cartão, isso significa comissão sobre 1/12 do valor no mês do fechamento se o operador for fiel ao caixa, ou um caixa inflado se ele marcar o 12x como pago. Não há configuração hoje em que os dois números estejam certos ao mesmo tempo.
 - Phase 10: Estrutura exata das duas planilhas (células mescladas, variação de cabeçalho, formatos de data) só será totalmente conhecida ao inspecionar os arquivos reais durante a fase.
 - Middleware (`src/middleware.ts`) só cobre `/painel/:path*` no matcher — pré-existente da Fase 1, não coberto por (admin) nem pelas rotas reais adicionadas desde então (`/inicio`, `/comissoes`, `/metas`, `/agendamentos`). Não é um problema de segurança (o guard real é sempre o layout/página server-side), mas o matcher poderia ser ampliado por UX numa fase futura.
 - **Bug em produção (descoberto na Fase 3, não corrigido — fora de escopo):** `plano-comissao.repo.ts` (Fase 2) tem o mesmo bug de datas corrigido em `venda.repo.ts` neste plano — `definirPlanoComissaoAction` está quebrada contra o banco real hoje (COLAB-02..05). Ver `.planning/phases/03-vendas-e-parcelas/deferred-items.md`. Recomendado priorizar correção antes/no início da Fase 4.

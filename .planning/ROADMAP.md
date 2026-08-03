@@ -24,6 +24,17 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Dashboard do Gestor** - Gestor vê receita, contagem por produto, comissão total e atingimento de meta consolidados
 - [x] **Phase 10: Importação do Histórico** - Script carrega a planilha de comissões histórica, recalcula e reconcilia com os totais originais
 
+### v2 — Plano de Pagamento e Valor Presente (a partir de 2026-08-02)
+
+O v1 modelou corretamente a cadeia de CAIXA (venda → parcela → recebimento → comissão), mas a métrica que a gestão usa para meta e faturamento é o **valor presente**, que o sistema não conhece. O v2 introduz o plano de pagamento estruturado — o dado que hoje só existe como texto livre no WhatsApp — e faz valor presente, TCV e caixa passarem a ser três números distintos e visíveis.
+
+- [ ] **Phase 11: Plano de Pagamento e Valor Presente** - A venda passa a ter N componentes de pagamento e o sistema calcula valor presente sozinho
+- [ ] **Phase 12: Os Três Números e a Meta da Empresa** - TCV, valor presente e caixa visíveis lado a lado; meta medida em valor presente
+- [ ] **Phase 13: Comissão sobre Valor Presente** - A base da comissão do closer deixa de ser caixa e passa a ser valor presente
+- [ ] **Phase 14: Cliente como Entidade** - Aluno e pagador deixam de ser texto livre e ganham ID
+- [ ] **Phase 15: Conciliação com Gateways** - Pagamentos conciliados por transaction_id do Asaas/Pagar.me, não por nome
+- [ ] **Phase 16: Integração GHL** - Agendadas/realizadas/leads vêm do CRM, não de digitação manual
+
 ## Phase Details
 
 ### Phase 1: Fundação — Auth, Papéis e Base
@@ -209,10 +220,101 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Fase 10 encerrada** (2026-07-02): construída em sessão única lean. IMPORT-01..03 completos e verificados rodando `--apply` duas vezes consecutivas contra o Neon real (idempotência confirmada — mesmo número exato de vendas nas duas execuções). Histórico de "Comissões_Vendas - NEXT.xlsx" carregado: 20 colaboradores, 14 produtos, 261 vendas, 1.454 parcelas (304 pagas), 58 apurações históricas. Reconciliação: 28/65 combinações (mês, pessoa, papel) batem exatamente; as demais são majoritariamente linhas "Pendente" da própria planilha que já carregavam uma comissão pré-calculada (achado documentado, não uma falha do importador). "Desempenho Time - NEXT (1).xlsx" (metas/agendamentos históricos) foi explicitamente descoped — layout de blocos livres não confiavelmente parseável no orçamento desta fase; metas/agendamentos são rastreados a partir de hoje (Fases 6/7). Nenhum dado de planilha nem relatório de reconciliação foi commitado (gitignored). tsc/vitest(156)/next build limpos.
 
+### Phase 11: Plano de Pagamento e Valor Presente
+**Goal**: A venda deixa de ser descrita por três campos escalares (entrada, mensalidade, nº de parcelas) e passa a ser descrita pelos componentes reais da negociação, cada um com forma, valor, data e explicação — e a partir deles o sistema calcula o valor presente do mês sozinho, sem ninguém interpretar texto livre.
+**Depends on**: Phase 3, Phase 4 (venda/parcela/recebimento já existentes)
+**Requirements**: PGMT-01, PGMT-02, PGMT-03, PGMT-04, PGMT-05, PGMT-06, PGMT-07, PGMT-08
+**Success Criteria** (what must be TRUE):
+  1. Uma venda com 3 formas de pagamento simultâneas (ex.: Rafaela — 5k sinal + 25k em 03/08 + 30k recorrência 6x) é cadastrada sem achatar nada, cada componente com sua data e sua explicação
+  2. O valor presente de julho/2026 calculado pelo sistema é R$ 604.833,33, batendo ao centavo com a apuração manual
+  3. Os 6 casos da §3 do documento (Karen, Tatiana, Viviane, Vanessa, Rafaela, Patrícia) passam como teste automatizado do módulo puro
+  4. Um componente datado em agosto não aparece no valor presente de julho, e aparece no de agosto
+  5. Cadastrar uma venda nova com entrada abaixo de 50% do TCV é recusado com mensagem clara; a Vanessa Militani (100% recorrência, julho) continua existindo no banco sem erro
+  6. Depois de converter as 261 vendas históricas para componentes, nenhuma apuração já FECHADA muda de valor (reconciliação linha a linha antes/depois)
+
+**Notas de implementação** (decididas no diagnóstico de 2026-08-02):
+- `Parcela` **não muda**. Ela é o cronograma de caixa e sustenta recebimento, comissão e auditoria — tudo isso continua funcionando. O componente entra como camada ACIMA dela.
+- `ComponentePagamento`: `vendaId`, `forma` (pix/sinal/cartao_parcelado/boleto/recorrencia), `contaCheioNoMes` (bool), `valor`, `parcelas`, `dataPrevista`, `descricao`, `ordem`.
+- `gerarCronogramaParcelas` (src/domain/vendas/parcelas.ts) passa a consumir componentes em vez de escalares. O motor de comissão e os services não mudam nesta fase.
+- Novo módulo puro `src/domain/vendas/valor-presente.ts`, no mesmo padrão zero-import dos demais domínios.
+- Conversão do histórico: `A_VISTA` → 1 componente `contaCheioNoMes=true` de valor = TCV; `MENSALISTA` com entrada → componente de entrada (`contaCheioNoMes=true`) + componente de recorrência (`contaCheioNoMes=false`). A forma exata (PIX vs cartão) se perde no histórico, mas o valor presente é preservado — que é o que a reconciliação precisa provar.
+- Riscos: é a única fase do v2 que faz migração destrutiva de semântica. Rodar em dry-run com relatório completo antes do `--apply`, no mesmo padrão da Fase 10.
+
+### Phase 12: Os Três Números e a Meta da Empresa
+**Goal**: O gestor para de olhar um número só e passa a ver TCV, valor presente e caixa lado a lado — sabendo, ao comunicar o resultado para a diretoria, quanto do valor presente virou dinheiro de fato. A meta passa a ser medida na mesma régua que a gestão usa.
+**Depends on**: Phase 11
+**Requirements**: FATUR-01, FATUR-02, FATUR-03, FATUR-04, FATUR-05, FATUR-06
+**Success Criteria** (what must be TRUE):
+  1. O dashboard mostra, para o mês selecionado, TCV, valor presente e caixa como três números distintos e rotulados
+  2. O faturamento aparece decomposto em valor presente das vendas novas + recorrência da carteira recebida
+  3. Rodando contra julho/2026: TCV R$ 859.000, valor presente R$ 604.833,33, faturamento R$ 711.847,59
+  4. A composição do valor presente por forma de pagamento é visível (julho: 26% caixa, 73% cartão contado cheio, 1% recorrência)
+  5. O acompanhamento de meta do closer usa valor presente como realizado, não caixa
+  6. Admin define a meta mensal da empresa e o dashboard mostra o atingimento dela
+
+**Notas de implementação**:
+- `Meta` hoje é `@@unique([colaboradorId, mesReferencia])` com `colaboradorId` obrigatório. Meta de empresa precisa de linha própria — avaliar tabela separada (`MetaEmpresa`) em vez de tornar `colaboradorId` nullable, que enfraqueceria a constraint existente.
+- `meta.service.ts::getAcompanhamentoMeta` linha ~195 é o ponto único onde o realizado do closer é resolvido — trocar a fonte ali propaga para /painel, /metas e o dashboard consolidado de uma vez.
+- Distinção carteira × venda nova (necessária para FATUR-02) é derivável do que já existe: `venda.mesReferencia == mês` é venda nova; parcela `MENSALIDADE` de venda com `mesReferencia` anterior é carteira.
+
+### Phase 13: Comissão sobre Valor Presente
+**Goal**: O closer passa a ser comissionado na mesma régua em que a venda é contada — sobre o valor presente, não sobre o que pingou no caixa naquele mês.
+**Depends on**: Phase 11, Phase 12
+**Requirements**: COMIS-08, COMIS-09, COMIS-10
+**Success Criteria** (what must be TRUE):
+  1. Uma venda de R$ 60.000 em 12x no cartão gera comissão sobre os R$ 60.000 no mês do fechamento, não R$ 5.000/mês por 12 meses
+  2. Uma venda com R$ 46.000 em boleto parcelado só gera comissão conforme cada boleto é pago
+  3. Reapurar qualquer mês já FECHADO reproduz exatamente os valores originais — a nova base só vale a partir da competência de corte
+  4. O extrato de comissão mostra de qual componente veio cada parcela da base
+
+**Notas de implementação**:
+- Esta é a fase que mexe em dinheiro que já foi pago a pessoas. A competência de corte precisa ser decisão explícita da gestão, gravada, e não um efeito colateral do deploy.
+- `apuracao.service.ts` já grava `inputSnapshot` completo — a auditoria de "que base foi usada nesta apuração" já existe e deve passar a registrar qual regra (caixa v1 ou valor presente v2) foi aplicada.
+- Depende de PGMT-08 estar verde: comissionar sobre um valor presente que ainda não bate com a planilha seria pagar errado.
+
+### Phase 14: Cliente como Entidade
+**Goal**: Aluno e pagador deixam de ser texto digitado a cada venda e passam a ser um registro com ID, encerrando o problema #7 da planilha (conciliação por nome, com grafias divergentes entre fontes).
+**Depends on**: Phase 11
+**Requirements**: CLIENTE-01, CLIENTE-02, CLIENTE-03
+**Success Criteria** (what must be TRUE):
+  1. Uma venda referencia um cliente por ID; o nome deixa de ser digitado livremente no formulário
+  2. Duas vendas do mesmo aluno (renovação, upgrade) aparecem ligadas
+  3. A conversão do histórico unifica grafias divergentes do mesmo aluno e emite relatório do que foi unificado, para conferência humana
+  4. Nenhuma venda histórica perde vínculo na conversão
+
+**Nota de sequenciamento**: barato agora (o banco tem ~275 vendas), progressivamente mais caro. É pré-requisito da Phase 15.
+
+### Phase 15: Conciliação com Gateways
+**Goal**: O passo mais manual do fechamento mensal — conferir parcela por parcela contra o extrato do gateway — deixa de existir.
+**Depends on**: Phase 14
+**Requirements**: CONCIL-01, CONCIL-02, CONCIL-03
+**Success Criteria** (what must be TRUE):
+  1. A parcela guarda o `transaction_id` do gateway que a originou
+  2. Importar o extrato do Asaas concilia os pagamentos do mês automaticamente, sem casar por nome
+  3. Pagamento no extrato sem parcela correspondente (e vice-versa) aparece em relatório de divergência, nunca é ignorado
+  4. Rodar a conciliação duas vezes não duplica nenhum recebimento
+
+### Phase 16: Integração GHL
+**Goal**: Os números de pré-venda (agendadas, realizadas, leads) passam a vir do CRM onde eles realmente vivem, em vez de digitação manual — hoje a tabela `agendamento` está vazia e o painel de meta de SDR/SS depende de alguém relançar o que já está no GHL.
+**Depends on**: Phase 2, Phase 7 (independente do resto do v2 — pode correr em paralelo)
+**Requirements**: GHL-01, GHL-02, GHL-03, GHL-04, GHL-05
+**Success Criteria** (what must be TRUE):
+  1. Reuniões agendadas e realizadas do mês vêm do GHL, deduplicadas por `contactId` — reagendamento não reconta
+  2. Os calendários apuráveis são configuráveis; D&F e Pós-Vendas nunca entram na contagem de pré-venda
+  3. A atribuição da pessoa usa `createdBy.userId`, não `assignedUserId`
+  4. Rodando contra julho/2026: 205 agendadas, 158 realizadas, 84,0% de presença
+  5. O SDR/SS para de lançar agendamento à mão e o painel de meta continua correto
+
+**Notas de implementação**:
+- IDs de calendário e custom fields estão na §8 do documento de apuração.
+- `contarCallsRealizadas` (src/domain/agendamentos/agregacao.ts) é a fonte única do v1 e deve continuar sendo — a integração troca a ORIGEM dos dados, não o caminho de contagem (AGEND-02 permanece válido).
+- Tags de canal são reajustadas ao longo do mês no GHL: reextrair um mês passado dá números diferentes. Definir se o sistema congela o número apurado no fechamento.
+
 ## Progress
 
 **Execution Order:**
 Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
+v2: 11 → 12 → 13 → 14 → 15, com 16 (GHL) livre para correr em paralelo a qualquer momento
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -227,6 +329,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Painel Self-Service do Colaborador | 1/1 | Complete | 2026-07-02 |
 | 9. Dashboard do Gestor | 1/1 | Complete | 2026-07-02 |
 | 10. Importação do Histórico | 1/1 | Complete | 2026-07-02 |
+| **v2** | | | |
+| 11. Plano de Pagamento e Valor Presente | 0/? | Pending | — |
+| 12. Os Três Números e a Meta da Empresa | 0/? | Pending | — |
+| 13. Comissão sobre Valor Presente | 0/? | Pending | — |
+| 14. Cliente como Entidade | 0/? | Pending | — |
+| 15. Conciliação com Gateways | 0/? | Pending | — |
+| 16. Integração GHL | 0/? | Pending | — |
 
 ---
 *Roadmap created: 2026-07-01*
+*v2 (Phases 11–16) added 2026-08-02, a partir do diagnóstico de gap contra `docs/APURACAO-COMERCIAL-NEXT.md`*

@@ -179,5 +179,132 @@ Explicitamente excluído para evitar aumento de escopo.
 - Unmapped: 0
 
 ---
+
+## v2 Requirements — Plano de Pagamento e Valor Presente
+
+**Definidos:** 2026-08-02, a partir da apuração real de julho/2026
+(`docs/APURACAO-COMERCIAL-NEXT.md`) e das decisões de negócio confirmadas com a
+gestão na mesma data (bloco abaixo).
+
+### Regras de negócio confirmadas em 02/08/2026
+
+Estas regras não estavam escritas em lugar nenhum antes desta data. Três delas
+(50% de entrada, boleto, base da comissão) também não estão no documento de
+apuração — foram confirmadas em conversa e são a fundação do v2.
+
+**1. O que decide se o dinheiro conta cheio no mês é a Next já ter garantido o
+recebimento.**
+
+| Forma de pagamento | Conta no mês | Comissão do closer |
+|---|---|---|
+| PIX / sinal | valor cheio | sobre o valor cheio, no mês |
+| Cartão parcelado (12x aprovado de uma vez) | valor cheio | sobre o valor cheio, no mês |
+| Boleto parcelado | só o boleto pago | só sobre o boleto pago |
+| Recorrência / assinatura | só a parcela paga | só sobre a parcela paga |
+
+Cartão aparece dos dois lados: parcelado em transação única conta cheio (a
+operadora aprovou tudo, o cliente não cancela o que falta); assinatura recorrente
+não conta cheio (o cliente cancela quando quiser). No modelo de dados esse
+atributo se chama `contaCheioNoMes` — **não** usar "irrevogável"/"garantido", que
+não são termos reconhecidos pelo usuário.
+
+As 4 "ressalvas" da §2 do documento são consequência dessa regra única, não quatro
+casos independentes:
+
+```
+valor presente do mês = Σ componentes contaCheioNoMes com data no mês
+                      + Σ parcelas recebidas dos demais componentes
+```
+
+**2. Para o cartão parcelado, "pago" significa "venda aprovada"** — não "as 12
+parcelas caíram". É como a planilha já trata hoje (Tatiana: status `Pago`, coluna
+V = 60.000, comissão sobre 60k em julho). Isso é o que concilia "só comissiona
+parcela paga" com "cartão 12x comissiona cheio no mês".
+
+**3. Toda venda exige no mínimo 50% de entrada.** A Next não aceita mais venda
+100% recorrência. A entrada pode ser parcelada em 12x no cartão, desde que seja o
+modelo de pagamento completo do cartão, não assinatura. Consequência: a ressalva
+(4) do documento (100% recorrência conta 1 parcela) vira regra **apenas
+histórica** — Vanessa Militani, julho/2026, precisa continuar representável, mas
+o formulário deve recusar cadastro novo abaixo de 50%.
+
+**4. Cada componente da negociação tem data e forma próprias, e precisa ser
+explicável.** Negociações fora do padrão são comuns (3 cartões diferentes, boleto
+começando em outro mês, sinal + saldo em data combinada) e hoje só existem como
+texto livre no WhatsApp.
+
+### Plano de Pagamento e Valor Presente (PGMT)
+
+- [ ] **PGMT-01**: A venda registra N componentes de pagamento, cada um com forma (PIX, sinal, cartão parcelado, boleto, recorrência), valor, nº de parcelas, data prevista e descrição livre
+- [ ] **PGMT-02**: Cada componente declara se conta cheio no mês ou parcela a parcela (`contaCheioNoMes`), derivado da forma mas explícito no dado
+- [ ] **PGMT-03**: O sistema calcula o valor presente do mês a partir dos componentes, sem interpretação humana
+- [ ] **PGMT-04**: Componente com data em outro mês não entra no valor presente do mês do fechamento — entra no mês da própria data
+- [ ] **PGMT-05**: O cadastro de venda nova é recusado quando a entrada é menor que 50% do TCV; vendas históricas abaixo disso continuam válidas
+- [ ] **PGMT-06**: O cronograma de parcelas passa a ser gerado a partir dos componentes, não dos campos escalares entrada/valorMensalidade/numeroParcelas
+- [ ] **PGMT-07**: As vendas já cadastradas (261 históricas + julho/2026) são convertidas para componentes sem alterar nenhum valor já apurado ou fechado
+- [ ] **PGMT-08**: O valor presente calculado bate ao centavo com os 14 fechamentos de julho/2026 — R$ 604.833,33 — usando os 6 casos da §3 do documento como fixture
+
+### Faturamento e Metas (FATUR)
+
+- [ ] **FATUR-01**: O gestor vê TCV, valor presente e caixa do mês como três números distintos, na mesma tela
+- [ ] **FATUR-02**: O faturamento do mês é apresentado como valor presente das vendas novas + recorrência da carteira recebida, com os dois lados visíveis (julho/2026: 604.833,33 + 107.014,26 = 711.847,59)
+- [ ] **FATUR-03**: A meta do closer passa a ser medida em valor presente, não em caixa recebido
+- [ ] **FATUR-04**: O admin define uma meta mensal da empresa, em valor presente, além das metas por colaborador
+- [ ] **FATUR-05**: O dashboard mostra o atingimento da meta da empresa no mês
+- [ ] **FATUR-06**: O gestor vê a composição do valor presente por forma de pagamento (quanto é caixa, quanto é cartão contado cheio, quanto é recorrência)
+
+### Comissão sobre Valor Presente (COMIS, continuação do v1)
+
+- [ ] **COMIS-08**: A base da comissão do closer passa a ser o valor presente do mês
+- [ ] **COMIS-09**: Componente `contaCheioNoMes` comissiona integralmente no mês do fechamento; boleto e recorrência comissionam só quando a parcela é efetivamente paga
+- [ ] **COMIS-10**: A mudança de base não altera nenhuma apuração já FECHADA — vale a partir de uma competência de corte explícita
+
+### Cliente como Entidade (CLIENTE)
+
+- [ ] **CLIENTE-01**: Aluno e pagador deixam de ser texto livre e viram registro próprio com ID
+- [ ] **CLIENTE-02**: Vendas do mesmo aluno ficam ligadas entre si (renovação, upgrade, segunda compra)
+- [ ] **CLIENTE-03**: A conversão do histórico deduplica grafias divergentes do mesmo aluno, com relatório do que foi unificado
+
+### Conciliação com Gateways (CONCIL)
+
+- [ ] **CONCIL-01**: A parcela guarda o `transaction_id` do gateway que a originou
+- [ ] **CONCIL-02**: Importar o extrato do Asaas/Pagar.me concilia pagamentos por `transaction_id`, não por nome de aluno
+- [ ] **CONCIL-03**: Divergências entre extrato e parcelas viram relatório explícito, nunca são aceitas em silêncio
+
+### Integração GHL (GHL)
+
+- [ ] **GHL-01**: Reuniões agendadas e realizadas vêm do GHL, deduplicadas por `contactId` (reagendamento não reconta)
+- [ ] **GHL-02**: Os calendários apuráveis são configuráveis; D&F e Pós-Vendas nunca contam como agendamento de pré-venda
+- [ ] **GHL-03**: A atribuição da pessoa usa `createdBy.userId`, não `assignedUserId`
+- [ ] **GHL-04**: Leads são contados pelas tags `orgânico` e `tráfego-pago`; a tag `mql` marca MQL
+- [ ] **GHL-05**: O dashboard mostra taxa de presença e conversão call → venda (julho/2026: 84,0% e 8,9%)
+
+### Mapa v2: requisito → fase
+
+| Requisito | Fase | Status |
+|-----------|------|--------|
+| PGMT-01..08 | Phase 11 | Pending |
+| FATUR-01, 02, 06 | Phase 12 | Pending |
+| FATUR-03, 04, 05 | Phase 12 | Pending |
+| COMIS-08, 09, 10 | Phase 13 | Pending |
+| CLIENTE-01, 02, 03 | Phase 14 | Pending |
+| CONCIL-01, 02, 03 | Phase 15 | Pending |
+| GHL-01..05 | Phase 16 | Pending |
+
+**Coverage v2:**
+- v2 requirements: 27 total
+- Mapped to phases: 27/27 ✓
+- Complete: 0/27
+
+### Pontos ainda em aberto (não viram requisito até serem respondidos)
+
+Herdados da §11 do documento de apuração, ainda sem resposta da gestão:
+
+1. **A regra do percentual de comissão** — varia por pessoa, produto, origem ou acordo? O `PlanoComissao` config-driven já suporta qualquer uma dessas leituras sem migração, mas **não modelar como percentual fixo por pessoa antes da confirmação**.
+2. **O que `OTE` substitui na prática** — o formato `salario_bonus_atingimento` já existe; falta confirmar se substitui totalmente a comissão por venda ou complementa.
+3. **Como unificar as duas carteiras** (abas de comissão × abas FINANCEIRO/Guru), que hoje têm alunos e gateways diferentes.
+4. **Contratos sem parcela definida** (`0/6`, `0/10`) cuja cobrança nunca começou.
+
+---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-02 after Phase 10 (Importação do Histórico) completion — all v1 requirements complete*
+*Last updated: 2026-08-02 — v2 (plano de pagamento e valor presente) definido a partir da apuração de julho/2026; v1 permanece 47/47 completo*
